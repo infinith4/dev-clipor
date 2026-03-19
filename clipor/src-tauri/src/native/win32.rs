@@ -20,7 +20,6 @@ use windows::Win32::System::DataExchange::{
 #[cfg(windows)]
 use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalSize, GlobalUnlock, GMEM_MOVEABLE};
 #[cfg(windows)]
-use windows::Win32::Foundation::HWND;
 #[cfg(windows)]
 use winreg::enums::{HKEY_CURRENT_USER, KEY_ALL_ACCESS};
 #[cfg(windows)]
@@ -71,7 +70,7 @@ pub fn set_clipboard_text(_text: &str) -> Result<(), String> {
 #[cfg(windows)]
 pub fn get_clipboard_image() -> Result<Option<Vec<u8>>, String> {
     unsafe {
-        if OpenClipboard(HWND::default()).is_err() {
+        if OpenClipboard(None).is_err() {
             return Ok(None);
         }
 
@@ -114,7 +113,7 @@ pub fn get_clipboard_image() -> Result<Option<Vec<u8>>, String> {
 #[cfg(windows)]
 pub fn set_clipboard_image(dib_data: &[u8]) -> Result<(), String> {
     unsafe {
-        OpenClipboard(HWND::default()).map_err(|e| e.to_string())?;
+        OpenClipboard(None).map_err(|e| e.to_string())?;
 
         let result = (|| -> Result<(), String> {
             EmptyClipboard().map_err(|e| e.to_string())?;
@@ -148,7 +147,7 @@ pub fn set_clipboard_image(_dib_data: &[u8]) -> Result<(), String> {
 #[cfg(windows)]
 pub fn clipboard_has_image() -> bool {
     unsafe {
-        if OpenClipboard(HWND::default()).is_err() {
+        if OpenClipboard(None).is_err() {
             return false;
         }
         let has = GetClipboardData(CF_DIB).is_ok();

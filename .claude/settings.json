@@ -44,7 +44,9 @@
       "Bash(rm -rf node_modules package-lock.json)",
       "Bash(npm i:*)",
       "Bash(git fetch:*)",
-      "Bash(git tag:*)"
+      "Bash(git tag:*)",
+      "Bash(gh release:*)",
+      "Bash(gh auth:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
