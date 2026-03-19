@@ -35,7 +35,10 @@
       "Bash(cargo search:*)",
       "Bash(gh pr:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm run:*)",
+      "Bash(du -sh /workspaces/dev-clipor/clipor/src-tauri/target/*/)",
+      "Bash(cargo clean:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
