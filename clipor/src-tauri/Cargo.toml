@@ -1,0 +1,33 @@
+[package]
+name = "clipor"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "clipor_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.5.6", features = [] }
+
+[dependencies]
+chrono = { version = "0.4.44", features = ["serde"] }
+dirs = "6.0.0"
+rusqlite = { version = "0.39.0", features = ["bundled"] }
+rdev = "0.5.3"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+sha2 = "0.10.8"
+tauri = { version = "2.10.3", features = ["tray-icon"] }
+clipboard-win = "5.4.1"
+windows = { version = "0.62.2", features = [
+  "Win32_Foundation",
+  "Win32_System_DataExchange",
+  "Win32_System_Memory",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_WindowsAndMessaging"
+] }
+winreg = "0.56.0"
+
+[dev-dependencies]
+tempfile = "3.27.0"

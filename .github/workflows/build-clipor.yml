@@ -1,0 +1,78 @@
+name: Build & Release Clipor
+
+on:
+  push:
+    tags:
+      - 'clipor-v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: clipboard-manager
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: clipboard-manager/src-tauri
+
+      - run: npm ci
+
+      - run: npm test
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: clipboard-manager
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Clipor ${{ github.ref_name }}'
+          releaseBody: |
+            ## Clipor ${{ github.ref_name }}
+
+            ### Downloads
+            - **MSI**: Windows Installer (推奨)
+            - **NSIS**: セットアップ実行ファイル
+            - **EXE**: ポータブル実行ファイル
+
+            ### Changes
+            See [commit history](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}) for details.
+          releaseDraft: false
+          prerelease: false
+
+      - name: Upload standalone exe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipor-exe
+          path: clipboard-manager/src-tauri/target/release/clipor.exe
+          if-no-files-found: ignore
+
+      - name: Upload MSI
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipor-msi
+          path: clipboard-manager/src-tauri/target/release/bundle/msi/*.msi
+          if-no-files-found: ignore
+
+      - name: Upload NSIS installer
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipor-nsis
+          path: clipboard-manager/src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: ignore
