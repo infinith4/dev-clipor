@@ -42,7 +42,9 @@
       "Bash(ls -lh /workspaces/dev-clipor/clipor/src-tauri/target/release/clipor*)",
       "WebSearch",
       "Bash(rm -rf node_modules package-lock.json)",
-      "Bash(npm i:*)"
+      "Bash(npm i:*)",
+      "Bash(git fetch:*)",
+      "Bash(git tag:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
