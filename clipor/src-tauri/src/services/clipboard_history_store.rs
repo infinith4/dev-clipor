@@ -1,27 +1,41 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 
 use chrono::Local;
 use rusqlite::{params, Connection, OptionalExtension};
 use sha2::{Digest, Sha256};
 
 use crate::models::clipboard_entry::{ClipboardEntry, ClipboardHistoryPage};
+use crate::services::crypto_service;
 
 const MAX_TEXT_BYTES: usize = 100 * 1024;
 
 #[derive(Debug, Clone)]
 pub struct ClipboardHistoryStore {
     db_path: PathBuf,
+    pub(crate) encryption_key: Arc<Mutex<Option<[u8; 32]>>>,
 }
 
 impl ClipboardHistoryStore {
-    pub fn new(db_path: PathBuf) -> Self {
-        Self { db_path }
+    pub fn new(db_path: PathBuf, encryption_key: Arc<Mutex<Option<[u8; 32]>>>) -> Self {
+        Self {
+            db_path,
+            encryption_key,
+        }
     }
 
     pub fn initialize(&self) -> Result<(), String> {
         let connection = self.connect()?;
         ensure_schema(&connection).map_err(|error| error.to_string())
+    }
+
+    pub fn has_encryption_key(&self) -> bool {
+        self.encryption_key
+            .lock()
+            .ok()
+            .map(|k| k.is_some())
+            .unwrap_or(false)
     }
 
     pub fn save_text(
@@ -38,17 +52,32 @@ impl ClipboardHistoryStore {
         let copied_at = Local::now().to_rfc3339();
         let text_hash = hash_text(&truncated_text);
         let char_count = truncated_text.chars().count();
-        let connection = self.connect()?;
 
+        let key = self
+            .encryption_key
+            .lock()
+            .map_err(|e| e.to_string())?;
+
+        let (stored_text, encrypted) = if let Some(ref k) = *key {
+            (crypto_service::encrypt_text(&truncated_text, k)?, 1i64)
+        } else {
+            (truncated_text, 0i64)
+        };
+
+        drop(key);
+
+        let connection = self.connect()?;
         connection
             .execute(
-                "INSERT INTO clipboard_entries (text, text_hash, copied_at, source_app, is_pinned, char_count)
-                 VALUES (?1, ?2, ?3, ?4, 0, ?5)
+                "INSERT INTO clipboard_entries (text, text_hash, copied_at, source_app, is_pinned, char_count, encrypted)
+                 VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6)
                  ON CONFLICT(text_hash) DO UPDATE SET
+                   text = excluded.text,
                    copied_at = excluded.copied_at,
                    source_app = excluded.source_app,
-                   char_count = excluded.char_count",
-                params![truncated_text, text_hash, copied_at, source_app, char_count as i64],
+                   char_count = excluded.char_count,
+                   encrypted = excluded.encrypted",
+                params![stored_text, text_hash, copied_at, source_app, char_count as i64, encrypted],
             )
             .map_err(|error| error.to_string())?;
 
@@ -63,24 +92,109 @@ impl ClipboardHistoryStore {
     ) -> Result<ClipboardHistoryPage, String> {
         let page = page.max(1);
         let page_size = page_size.max(1);
-        let offset = ((page - 1) * page_size) as i64;
         let connection = self.connect()?;
 
-        let total = if let Some(search) = search.filter(|value| !value.trim().is_empty()) {
+        let has_encrypted: bool = connection
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM clipboard_entries WHERE encrypted = 1)",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(false);
+
+        if has_encrypted {
+            self.list_history_with_decryption(&connection, page, page_size, search)
+        } else {
+            self.list_history_plain(&connection, page, page_size, search)
+        }
+    }
+
+    fn list_history_with_decryption(
+        &self,
+        connection: &Connection,
+        page: usize,
+        page_size: usize,
+        search: Option<&str>,
+    ) -> Result<ClipboardHistoryPage, String> {
+        let key = self.encryption_key.lock().map_err(|e| e.to_string())?;
+
+        let mut stmt = connection
+            .prepare(
+                "SELECT id, text, copied_at, source_app, is_pinned, char_count, encrypted
+                 FROM clipboard_entries
+                 ORDER BY is_pinned DESC, copied_at DESC",
+            )
+            .map_err(|e| e.to_string())?;
+
+        let rows = stmt
+            .query_map([], map_entry_row_with_encrypted)
+            .map_err(|e| e.to_string())?;
+
+        let all_raw: Vec<(ClipboardEntry, bool)> = rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| e.to_string())?;
+
+        let mut entries: Vec<ClipboardEntry> = all_raw
+            .into_iter()
+            .map(|(mut entry, is_encrypted)| {
+                if is_encrypted {
+                    if let Some(ref k) = *key {
+                        entry.text = crypto_service::decrypt_text(&entry.text, k)
+                            .unwrap_or_else(|_| "[復号失敗]".to_string());
+                    } else {
+                        entry.text = "[ロック中]".to_string();
+                    }
+                }
+                entry
+            })
+            .collect();
+
+        if let Some(search) = search.filter(|s| !s.trim().is_empty()) {
+            let lower = search.to_lowercase();
+            entries.retain(|e| e.text.to_lowercase().contains(&lower));
+        }
+
+        let total = entries.len();
+        let offset = (page - 1) * page_size;
+        let page_entries: Vec<ClipboardEntry> =
+            entries.into_iter().skip(offset).take(page_size).collect();
+
+        Ok(ClipboardHistoryPage {
+            entries: page_entries,
+            total,
+            page,
+            page_size,
+        })
+    }
+
+    fn list_history_plain(
+        &self,
+        connection: &Connection,
+        page: usize,
+        page_size: usize,
+        search: Option<&str>,
+    ) -> Result<ClipboardHistoryPage, String> {
+        let offset = ((page - 1) * page_size) as i64;
+
+        let total = if let Some(search) = search.filter(|v| !v.trim().is_empty()) {
             connection
                 .query_row(
                     "SELECT COUNT(*) FROM clipboard_entries WHERE text LIKE ?1",
                     params![format!("%{search}%")],
                     |row| row.get::<_, i64>(0),
                 )
-                .map_err(|error| error.to_string())? as usize
+                .map_err(|e| e.to_string())? as usize
         } else {
             connection
-                .query_row("SELECT COUNT(*) FROM clipboard_entries", [], |row| row.get::<_, i64>(0))
-                .map_err(|error| error.to_string())? as usize
+                .query_row(
+                    "SELECT COUNT(*) FROM clipboard_entries",
+                    [],
+                    |row| row.get::<_, i64>(0),
+                )
+                .map_err(|e| e.to_string())? as usize
         };
 
-        let query = if search.filter(|value| !value.trim().is_empty()).is_some() {
+        let query = if search.filter(|v| !v.trim().is_empty()).is_some() {
             "SELECT id, text, copied_at, source_app, is_pinned, char_count
              FROM clipboard_entries
              WHERE text LIKE ?1
@@ -93,23 +207,23 @@ impl ClipboardHistoryStore {
              LIMIT ?1 OFFSET ?2"
         };
 
-        let mut statement = connection.prepare(query).map_err(|error| error.to_string())?;
-        let rows = if let Some(search) = search.filter(|value| !value.trim().is_empty()) {
+        let mut statement = connection.prepare(query).map_err(|e| e.to_string())?;
+        let rows = if let Some(search) = search.filter(|v| !v.trim().is_empty()) {
             statement
                 .query_map(
                     params![format!("%{search}%"), page_size as i64, offset],
                     map_entry_row,
                 )
-                .map_err(|error| error.to_string())?
+                .map_err(|e| e.to_string())?
         } else {
             statement
                 .query_map(params![page_size as i64, offset], map_entry_row)
-                .map_err(|error| error.to_string())?
+                .map_err(|e| e.to_string())?
         };
 
         let entries = rows
             .collect::<Result<Vec<_>, _>>()
-            .map_err(|error| error.to_string())?;
+            .map_err(|e| e.to_string())?;
 
         Ok(ClipboardHistoryPage {
             entries,
@@ -121,15 +235,29 @@ impl ClipboardHistoryStore {
 
     pub fn get_entry(&self, id: i64) -> Result<Option<ClipboardEntry>, String> {
         let connection = self.connect()?;
-        connection
+        let result = connection
             .query_row(
-                "SELECT id, text, copied_at, source_app, is_pinned, char_count
+                "SELECT id, text, copied_at, source_app, is_pinned, char_count, encrypted
                  FROM clipboard_entries WHERE id = ?1",
                 params![id],
-                map_entry_row,
+                map_entry_row_with_encrypted,
             )
             .optional()
-            .map_err(|error| error.to_string())
+            .map_err(|e| e.to_string())?;
+
+        if let Some((mut entry, is_encrypted)) = result {
+            if is_encrypted {
+                let key = self.encryption_key.lock().map_err(|e| e.to_string())?;
+                if let Some(ref k) = *key {
+                    entry.text = crypto_service::decrypt_text(&entry.text, k)?;
+                } else {
+                    return Err("アプリがロックされています。".to_string());
+                }
+            }
+            Ok(Some(entry))
+        } else {
+            Ok(None)
+        }
     }
 
     pub fn set_pinned(&self, id: i64, pinned: bool) -> Result<(), String> {
@@ -147,11 +275,20 @@ impl ClipboardHistoryStore {
         let truncated = truncate_text(text, MAX_TEXT_BYTES);
         let text_hash = hash_text(&truncated);
         let char_count = truncated.chars().count() as i64;
+
+        let key = self.encryption_key.lock().map_err(|e| e.to_string())?;
+        let (stored_text, encrypted) = if let Some(ref k) = *key {
+            (crypto_service::encrypt_text(&truncated, k)?, 1i64)
+        } else {
+            (truncated, 0i64)
+        };
+        drop(key);
+
         let connection = self.connect()?;
         connection
             .execute(
-                "UPDATE clipboard_entries SET text = ?2, text_hash = ?3, char_count = ?4 WHERE id = ?1",
-                params![id, truncated, text_hash, char_count],
+                "UPDATE clipboard_entries SET text = ?2, text_hash = ?3, char_count = ?4, encrypted = ?5 WHERE id = ?1",
+                params![id, stored_text, text_hash, char_count, encrypted],
             )
             .map_err(|error| error.to_string())?;
         Ok(())
@@ -165,10 +302,62 @@ impl ClipboardHistoryStore {
         Ok(())
     }
 
+    pub fn encrypt_all_entries(&self, key: &[u8; 32]) -> Result<(), String> {
+        let connection = self.connect()?;
+        let mut stmt = connection
+            .prepare("SELECT id, text FROM clipboard_entries WHERE encrypted = 0")
+            .map_err(|e| e.to_string())?;
+
+        let entries: Vec<(i64, String)> = stmt
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+            .map_err(|e| e.to_string())?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| e.to_string())?;
+
+        for (id, text) in entries {
+            let encrypted_text = crypto_service::encrypt_text(&text, key)?;
+            connection
+                .execute(
+                    "UPDATE clipboard_entries SET text = ?2, encrypted = 1 WHERE id = ?1",
+                    params![id, encrypted_text],
+                )
+                .map_err(|e| e.to_string())?;
+        }
+
+        Ok(())
+    }
+
+    pub fn decrypt_all_entries(&self, key: &[u8; 32]) -> Result<(), String> {
+        let connection = self.connect()?;
+        let mut stmt = connection
+            .prepare("SELECT id, text FROM clipboard_entries WHERE encrypted = 1")
+            .map_err(|e| e.to_string())?;
+
+        let entries: Vec<(i64, String)> = stmt
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+            .map_err(|e| e.to_string())?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| e.to_string())?;
+
+        for (id, text) in entries {
+            let decrypted_text = crypto_service::decrypt_text(&text, key)?;
+            connection
+                .execute(
+                    "UPDATE clipboard_entries SET text = ?2, encrypted = 0 WHERE id = ?1",
+                    params![id, decrypted_text],
+                )
+                .map_err(|e| e.to_string())?;
+        }
+
+        Ok(())
+    }
+
     fn trim_to_limit(&self, max_history_items: usize) -> Result<(), String> {
         let connection = self.connect()?;
         let total = connection
-            .query_row("SELECT COUNT(*) FROM clipboard_entries", [], |row| row.get::<_, i64>(0))
+            .query_row("SELECT COUNT(*) FROM clipboard_entries", [], |row| {
+                row.get::<_, i64>(0)
+            })
             .map_err(|error| error.to_string())? as usize;
 
         if total <= max_history_items {
@@ -216,7 +405,8 @@ pub(crate) fn ensure_schema(connection: &Connection) -> rusqlite::Result<()> {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE,
             sort_order INTEGER DEFAULT 0,
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            encrypted INTEGER DEFAULT 0
         );
         CREATE TABLE IF NOT EXISTS templates (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -226,10 +416,39 @@ pub(crate) fn ensure_schema(connection: &Connection) -> rusqlite::Result<()> {
             sort_order INTEGER DEFAULT 0,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
+            encrypted INTEGER DEFAULT 0,
             FOREIGN KEY (group_id) REFERENCES template_groups(id) ON DELETE CASCADE
         );
         CREATE INDEX IF NOT EXISTS idx_templates_group ON templates(group_id, sort_order);",
-    )
+    )?;
+
+    let has_clipboard_encrypted_col = connection
+        .prepare("SELECT encrypted FROM clipboard_entries LIMIT 0")
+        .is_ok();
+
+    if !has_clipboard_encrypted_col {
+        connection
+            .execute_batch("ALTER TABLE clipboard_entries ADD COLUMN encrypted INTEGER DEFAULT 0")?;
+    }
+
+    let has_template_group_encrypted_col = connection
+        .prepare("SELECT encrypted FROM template_groups LIMIT 0")
+        .is_ok();
+
+    if !has_template_group_encrypted_col {
+        connection
+            .execute_batch("ALTER TABLE template_groups ADD COLUMN encrypted INTEGER DEFAULT 0")?;
+    }
+
+    let has_template_encrypted_col = connection
+        .prepare("SELECT encrypted FROM templates LIMIT 0")
+        .is_ok();
+
+    if !has_template_encrypted_col {
+        connection.execute_batch("ALTER TABLE templates ADD COLUMN encrypted INTEGER DEFAULT 0")?;
+    }
+
+    Ok(())
 }
 
 fn truncate_text(value: &str, max_bytes: usize) -> String {
@@ -267,16 +486,41 @@ fn map_entry_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ClipboardEntry> {
     })
 }
 
+fn map_entry_row_with_encrypted(
+    row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<(ClipboardEntry, bool)> {
+    Ok((
+        ClipboardEntry {
+            id: row.get(0)?,
+            text: row.get(1)?,
+            copied_at: row.get(2)?,
+            source_app: row.get(3)?,
+            is_pinned: row.get::<_, i64>(4)? != 0,
+            char_count: row.get::<_, i64>(5)? as usize,
+        },
+        row.get::<_, i64>(6).unwrap_or(0) != 0,
+    ))
+}
+
 #[cfg(test)]
 mod tests {
+    use std::sync::{Arc, Mutex};
+
     use tempfile::tempdir;
 
     use super::ClipboardHistoryStore;
 
+    fn make_store(dir: &std::path::Path) -> ClipboardHistoryStore {
+        ClipboardHistoryStore::new(
+            dir.join("history.db"),
+            Arc::new(Mutex::new(None)),
+        )
+    }
+
     #[test]
     fn deduplicates_by_hash_and_keeps_single_row() {
         let temp = tempdir().unwrap();
-        let store = ClipboardHistoryStore::new(temp.path().join("history.db"));
+        let store = make_store(temp.path());
 
         store.save_text("alpha", None, 100).unwrap();
         store.save_text("alpha", None, 100).unwrap();
@@ -289,7 +533,7 @@ mod tests {
     #[test]
     fn trims_oldest_unpinned_rows() {
         let temp = tempdir().unwrap();
-        let store = ClipboardHistoryStore::new(temp.path().join("history.db"));
+        let store = make_store(temp.path());
 
         store.save_text("one", None, 10).unwrap();
         store.save_text("two", None, 10).unwrap();
@@ -303,5 +547,24 @@ mod tests {
         let page = store.list_history(1, 10, None).unwrap();
         assert_eq!(page.total, 3);
         assert!(page.entries.iter().any(|entry| entry.id == oldest_id));
+    }
+
+    #[test]
+    fn encryption_roundtrip() {
+        let temp = tempdir().unwrap();
+        let key: [u8; 32] = [42u8; 32];
+        let store = ClipboardHistoryStore::new(
+            temp.path().join("history.db"),
+            Arc::new(Mutex::new(Some(key))),
+        );
+
+        store.save_text("secret data", None, 100).unwrap();
+
+        let page = store.list_history(1, 10, None).unwrap();
+        assert_eq!(page.total, 1);
+        assert_eq!(page.entries[0].text, "secret data");
+
+        let entry = store.get_entry(page.entries[0].id).unwrap().unwrap();
+        assert_eq!(entry.text, "secret data");
     }
 }

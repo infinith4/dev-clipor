@@ -19,7 +19,9 @@ use crate::commands::clipboard::{
     delete_history_entry, get_history, paste_history_entry, set_clipboard_converted,
     set_clipboard_formatted, set_history_pinned, update_history_entry,
 };
-use crate::commands::settings::{get_settings, update_settings};
+use crate::commands::settings::{
+    get_settings, remove_password, set_password, update_settings, verify_password,
+};
 use crate::commands::template::{
     delete_template, export_templates, get_template_groups, get_templates, import_templates,
     paste_template, upsert_template,
@@ -49,8 +51,9 @@ pub fn run() {
     let base_dir = app_base_dir();
     let db_path = base_dir.join("history.db");
     let settings_path = base_dir.join("settings.json");
-    let history_store = ClipboardHistoryStore::new(db_path.clone());
-    let template_store = TemplateStore::new(db_path);
+    let encryption_key = Arc::new(Mutex::new(None));
+    let history_store = ClipboardHistoryStore::new(db_path.clone(), encryption_key.clone());
+    let template_store = TemplateStore::new(db_path, encryption_key);
     let settings_service = SettingsService::new(settings_path);
     let paste_service = PasteService;
     let clipboard_guard = Arc::new(AtomicBool::new(false));
@@ -160,7 +163,10 @@ pub fn run() {
             export_templates,
             import_templates,
             get_settings,
-            update_settings
+            update_settings,
+            set_password,
+            verify_password,
+            remove_password
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

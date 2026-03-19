@@ -52,8 +52,10 @@ describe("PopupWindow", () => {
               pageSize: 20,
               hotkey: "Ctrl+Alt+M",
               launchOnStartup: false,
+              requirePassword: false,
             },
             saveSettings: vi.fn(),
+            refresh: vi.fn(),
         }}
         onDismissError={vi.fn()}
         onSelectTab={onSelectTab}
@@ -109,8 +111,10 @@ describe("PopupWindow", () => {
             pageSize: 20,
             hotkey: "Ctrl+Alt+M",
             launchOnStartup: false,
+            requirePassword: false,
           },
           saveSettings: vi.fn(),
+          refresh: vi.fn(),
         }}
         onDismissError={vi.fn()}
         onSelectTab={onSelectTab}

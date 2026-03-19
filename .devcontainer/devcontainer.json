@@ -1,19 +1,28 @@
 {
-  "name": "dev-clipboard",
+  "name": "dev-clipor",
   "dockerComposeFile": "docker-compose.yml",
   "service": "devcontainer",
-  "workspaceFolder": "/workspaces/dev-clipboard",
+  "workspaceFolder": "/workspaces/dev-clipor",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "22"
     },
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "stable",
+      "targets": "x86_64-pc-windows-gnu"
+    },
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.12"
-    },
+    }
+  },
+  "remoteEnv": {
+    "CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER": "x86_64-w64-mingw32-gcc"
   },
   "customizations": {
     "vscode": {
       "extensions": [
+        "rust-lang.rust-analyzer",
+        "tauri-apps.tauri-vscode",
         "ms-python.python",
         "ms-python.vscode-pylance",
         "dbaeumer.vscode-eslint",

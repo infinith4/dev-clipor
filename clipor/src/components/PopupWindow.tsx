@@ -66,13 +66,16 @@ interface PopupWindowProps {
       pageSize: number;
       hotkey: string;
       launchOnStartup: boolean;
+      requirePassword: boolean;
     };
     saveSettings: (settings: {
       maxHistoryItems: number;
       pageSize: number;
       hotkey: string;
       launchOnStartup: boolean;
+      requirePassword: boolean;
     }) => void;
+    refresh: () => void;
   };
   onSelectTab: (tab: PopupTab) => void;
   onDismissError: () => void;
@@ -335,7 +338,11 @@ function PopupWindow({
 
         {activeTab === "settings" ? (
           <section className="tab-panel">
-            <SettingsView settings={settings.settings} onSave={settings.saveSettings} />
+            <SettingsView
+              settings={settings.settings}
+              onSave={settings.saveSettings}
+              onPasswordChanged={settings.refresh}
+            />
           </section>
         ) : null}
       </section>

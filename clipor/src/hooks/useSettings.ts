@@ -9,10 +9,12 @@ const defaultSettings: AppSettings = {
   pageSize: 20,
   hotkey: "Ctrl+Alt+M",
   launchOnStartup: false,
+  requirePassword: false,
 };
 
 export function useSettings(setError: SetError) {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  const [setupSkipped, setSetupSkipped] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -41,9 +43,15 @@ export function useSettings(setError: SetError) {
     [setError],
   );
 
+  const skipSetup = useCallback(() => {
+    setSetupSkipped(true);
+  }, []);
+
   return {
     settings,
+    setupSkipped,
     refresh,
     saveSettings,
+    skipSetup,
   };
 }

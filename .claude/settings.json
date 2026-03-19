@@ -32,12 +32,17 @@
       "Bash(npx -p typescript tsc --noEmit)",
       "Bash(npm outdated:*)",
       "Bash(cargo update:*)",
-      "Bash(cargo search:*)"
+      "Bash(cargo search:*)",
+      "Bash(gh pr:*)",
+      "Bash(git add:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
       "Bash(git push --force*)",
       "Bash(git reset --hard*)"
+    ],
+    "additionalDirectories": [
+      "/workspaces/dev-clipor/.claude/skills"
     ]
   },
   "env": {

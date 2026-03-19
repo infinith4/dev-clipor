@@ -24,9 +24,16 @@ pub fn spawn_monitor(
                 continue;
             }
 
+            let settings = settings_service.load().unwrap_or_default();
+
+            // If password is required but key not yet available (locked), skip saving
+            if settings.require_password && !history_store.has_encryption_key() {
+                thread::sleep(Duration::from_millis(400));
+                continue;
+            }
+
             match win32::get_clipboard_text() {
                 Ok(Some(text)) if !text.trim().is_empty() && text != last_seen => {
-                    let settings = settings_service.load().unwrap_or_default();
                     let _ = history_store.save_text(&text, None, settings.max_history_items);
                     last_seen = text;
                 }

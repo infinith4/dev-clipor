@@ -44,4 +44,5 @@ export interface AppSettings {
   pageSize: number;
   hotkey: string;
   launchOnStartup: boolean;
+  requirePassword: boolean;
 }

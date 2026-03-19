@@ -12,6 +12,11 @@ pub struct AppSettings {
     #[serde(default = "default_hotkey")]
     pub hotkey: String,
     pub launch_on_startup: bool,
+    pub require_password: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password_salt: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password_verify: Option<String>,
 }
 
 impl Default for AppSettings {
@@ -21,6 +26,9 @@ impl Default for AppSettings {
             page_size: 20,
             hotkey: default_hotkey(),
             launch_on_startup: false,
+            require_password: false,
+            password_salt: None,
+            password_verify: None,
         }
     }
 }
