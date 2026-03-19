@@ -18,8 +18,9 @@ use windows::Win32::System::DataExchange::{
     CloseClipboard, GetClipboardData, OpenClipboard, SetClipboardData, EmptyClipboard,
 };
 #[cfg(windows)]
-use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalSize, GlobalUnlock, GMEM_MOVEABLE};
+use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalSize, GlobalUnlock, GMEM_MOVEABLE, HGLOBAL};
 #[cfg(windows)]
+use windows::Win32::Foundation::HANDLE;
 #[cfg(windows)]
 use winreg::enums::{HKEY_CURRENT_USER, KEY_ALL_ACCESS};
 #[cfg(windows)]
@@ -75,27 +76,27 @@ pub fn get_clipboard_image() -> Result<Option<Vec<u8>>, String> {
         }
 
         let result = (|| -> Result<Option<Vec<u8>>, String> {
-            let handle = GetClipboardData(CF_DIB);
-            if handle.is_err() {
-                return Ok(None);
-            }
-            let handle = handle.unwrap();
+            let handle = match GetClipboardData(CF_DIB) {
+                Ok(h) => h,
+                Err(_) => return Ok(None),
+            };
+            let hmem = HGLOBAL(handle.0);
 
-            let ptr = GlobalLock(std::mem::transmute(handle));
+            let ptr = GlobalLock(hmem);
             if ptr.is_null() {
                 return Ok(None);
             }
 
-            let size = GlobalSize(std::mem::transmute(handle));
+            let size = GlobalSize(hmem);
             if size == 0 {
-                GlobalUnlock(std::mem::transmute(handle));
+                let _ = GlobalUnlock(hmem);
                 return Ok(None);
             }
 
             let data = std::slice::from_raw_parts(ptr as *const u8, size);
             let result = data.to_vec();
 
-            GlobalUnlock(std::mem::transmute(handle));
+            let _ = GlobalUnlock(hmem);
             Ok(Some(result))
         })();
 
@@ -126,9 +127,10 @@ pub fn set_clipboard_image(dib_data: &[u8]) -> Result<(), String> {
             }
 
             std::ptr::copy_nonoverlapping(dib_data.as_ptr(), ptr as *mut u8, dib_data.len());
-            GlobalUnlock(hmem);
+            let _ = GlobalUnlock(hmem);
 
-            SetClipboardData(CF_DIB, std::mem::transmute(hmem))
+            let handle = HANDLE(hmem.0);
+            SetClipboardData(CF_DIB, Some(handle))
                 .map_err(|e| e.to_string())?;
             Ok(())
         })();
