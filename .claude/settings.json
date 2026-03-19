@@ -38,7 +38,11 @@
       "Bash(git commit:*)",
       "Bash(npm run:*)",
       "Bash(du -sh /workspaces/dev-clipor/clipor/src-tauri/target/*/)",
-      "Bash(cargo clean:*)"
+      "Bash(cargo clean:*)",
+      "Bash(ls -lh /workspaces/dev-clipor/clipor/src-tauri/target/release/clipor*)",
+      "WebSearch",
+      "Bash(rm -rf node_modules package-lock.json)",
+      "Bash(npm i:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",

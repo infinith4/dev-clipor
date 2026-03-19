@@ -20,7 +20,8 @@
     "icon": ["icons/icon.ico"],
     "targets": ["msi", "nsis"],
     "windows": {
-      "digestAlgorithm": "sha256"
+      "digestAlgorithm": "sha256",
+      "signCommand": "echo %1"
     }
   }
 }

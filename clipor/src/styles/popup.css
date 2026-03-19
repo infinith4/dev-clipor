@@ -674,6 +674,30 @@ button.danger:hover {
   justify-content: flex-end;
 }
 
+/* --- Tooltip preview (Clibor-style hover) --- */
+.tooltip-preview {
+  position: fixed;
+  z-index: 9999;
+  background: #ffffee;
+  border: 1px solid #cccc99;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+  padding: 6px 8px;
+  max-width: 320px;
+  max-height: 400px;
+  overflow: auto;
+  pointer-events: none;
+}
+
+.tooltip-preview-text {
+  margin: 0;
+  font-family: "Meiryo UI", "Segoe UI", sans-serif;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #222;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 /* --- No animation --- */
 @keyframes rise-in {
   from { opacity: 1; }
