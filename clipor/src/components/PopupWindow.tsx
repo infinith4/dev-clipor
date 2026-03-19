@@ -20,6 +20,8 @@ interface PopupWindowProps {
       isPinned: boolean;
       charCount: number;
       sourceApp?: string | null;
+      contentType: string;
+      imageData?: string | null;
     }>;
     loading: boolean;
     page: number;

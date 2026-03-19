@@ -7,6 +7,8 @@ export interface ClipboardEntry {
   isPinned: boolean;
   charCount: number;
   sourceApp?: string | null;
+  contentType: string;
+  imageData?: string | null;
 }
 
 export interface ClipboardHistoryPage {

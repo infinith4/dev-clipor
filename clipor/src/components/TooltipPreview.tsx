@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 
 interface TooltipPreviewProps {
-  text: string;
+  text?: string;
+  imageData?: string | null;
   anchorRect: DOMRect | null;
 }
 
-function TooltipPreview({ text, anchorRect }: TooltipPreviewProps) {
+function TooltipPreview({ text, imageData, anchorRect }: TooltipPreviewProps) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
@@ -35,6 +36,7 @@ function TooltipPreview({ text, anchorRect }: TooltipPreviewProps) {
   }, [anchorRect]);
 
   if (!anchorRect) return null;
+  if (!text && !imageData) return null;
 
   return (
     <div
@@ -42,7 +44,15 @@ function TooltipPreview({ text, anchorRect }: TooltipPreviewProps) {
       className="tooltip-preview"
       style={{ top: position.top, left: position.left }}
     >
-      <pre className="tooltip-preview-text">{text}</pre>
+      {imageData ? (
+        <img
+          src={`data:image/png;base64,${imageData}`}
+          alt="preview"
+          className="tooltip-preview-image"
+        />
+      ) : (
+        <pre className="tooltip-preview-text">{text}</pre>
+      )}
     </div>
   );
 }

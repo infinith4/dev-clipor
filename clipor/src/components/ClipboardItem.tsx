@@ -11,7 +11,8 @@ interface ClipboardItemProps {
 }
 
 function ClipboardItem({ entry, isSelected, onSelect, onPaste, onContextMenu }: ClipboardItemProps) {
-  const preview = entry.text.replace(/\r?\n/g, " ").slice(0, 80);
+  const isImage = entry.contentType === "image";
+  const preview = isImage ? "[画像]" : entry.text.replace(/\r?\n/g, " ").slice(0, 80);
   const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
   const articleRef = useRef<HTMLElement>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -48,13 +49,25 @@ function ClipboardItem({ entry, isSelected, onSelect, onPaste, onContextMenu }: 
       onMouseLeave={handleMouseLeave}
     >
       <div className="clipboard-body">
-        <p>{preview}</p>
+        {isImage && entry.imageData ? (
+          <img
+            src={`data:image/png;base64,${entry.imageData}`}
+            alt="clipboard image"
+            className="clipboard-thumbnail"
+          />
+        ) : (
+          <p>{preview}</p>
+        )}
       </div>
       <footer className="clipboard-meta">
         {entry.isPinned ? <span className="badge">Pin</span> : null}
-        <span>{entry.charCount}文字</span>
+        {isImage ? <span>画像</span> : <span>{entry.charCount}文字</span>}
       </footer>
-      <TooltipPreview text={entry.text} anchorRect={hoverRect} />
+      <TooltipPreview
+        text={isImage ? undefined : entry.text}
+        imageData={isImage ? entry.imageData : undefined}
+        anchorRect={hoverRect}
+      />
     </article>
   );
 }

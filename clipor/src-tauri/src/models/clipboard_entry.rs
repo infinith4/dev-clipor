@@ -9,6 +9,11 @@ pub struct ClipboardEntry {
     pub source_app: Option<String>,
     pub is_pinned: bool,
     pub char_count: usize,
+    /// "text" or "image"
+    pub content_type: String,
+    /// Base64-encoded PNG data (only for image entries)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image_data: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]

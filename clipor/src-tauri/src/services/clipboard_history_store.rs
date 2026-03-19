@@ -69,8 +69,8 @@ impl ClipboardHistoryStore {
         let connection = self.connect()?;
         connection
             .execute(
-                "INSERT INTO clipboard_entries (text, text_hash, copied_at, source_app, is_pinned, char_count, encrypted)
-                 VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6)
+                "INSERT INTO clipboard_entries (text, text_hash, copied_at, source_app, is_pinned, char_count, encrypted, content_type)
+                 VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, 'text')
                  ON CONFLICT(text_hash) DO UPDATE SET
                    text = excluded.text,
                    copied_at = excluded.copied_at,
@@ -78,6 +78,31 @@ impl ClipboardHistoryStore {
                    char_count = excluded.char_count,
                    encrypted = excluded.encrypted",
                 params![stored_text, text_hash, copied_at, source_app, char_count as i64, encrypted],
+            )
+            .map_err(|error| error.to_string())?;
+
+        self.trim_to_limit(max_history_items)
+    }
+
+    /// Save an image entry. `png_base64` is the base64-encoded PNG data.
+    pub fn save_image(
+        &self,
+        png_base64: &str,
+        image_hash: &str,
+        max_history_items: usize,
+    ) -> Result<(), String> {
+        let copied_at = Local::now().to_rfc3339();
+        let display_text = "[画像]".to_string();
+
+        let connection = self.connect()?;
+        connection
+            .execute(
+                "INSERT INTO clipboard_entries (text, text_hash, copied_at, source_app, is_pinned, char_count, encrypted, content_type, image_data)
+                 VALUES (?1, ?2, ?3, NULL, 0, 0, 0, 'image', ?4)
+                 ON CONFLICT(text_hash) DO UPDATE SET
+                   copied_at = excluded.copied_at,
+                   image_data = excluded.image_data",
+                params![display_text, image_hash, copied_at, png_base64],
             )
             .map_err(|error| error.to_string())?;
 
@@ -120,7 +145,7 @@ impl ClipboardHistoryStore {
 
         let mut stmt = connection
             .prepare(
-                "SELECT id, text, copied_at, source_app, is_pinned, char_count, encrypted
+                "SELECT id, text, copied_at, source_app, is_pinned, char_count, encrypted, content_type, image_data
                  FROM clipboard_entries
                  ORDER BY is_pinned DESC, copied_at DESC",
             )
@@ -195,13 +220,13 @@ impl ClipboardHistoryStore {
         };
 
         let query = if search.filter(|v| !v.trim().is_empty()).is_some() {
-            "SELECT id, text, copied_at, source_app, is_pinned, char_count
+            "SELECT id, text, copied_at, source_app, is_pinned, char_count, content_type, image_data
              FROM clipboard_entries
              WHERE text LIKE ?1
              ORDER BY is_pinned DESC, copied_at DESC
              LIMIT ?2 OFFSET ?3"
         } else {
-            "SELECT id, text, copied_at, source_app, is_pinned, char_count
+            "SELECT id, text, copied_at, source_app, is_pinned, char_count, content_type, image_data
              FROM clipboard_entries
              ORDER BY is_pinned DESC, copied_at DESC
              LIMIT ?1 OFFSET ?2"
@@ -237,7 +262,7 @@ impl ClipboardHistoryStore {
         let connection = self.connect()?;
         let result = connection
             .query_row(
-                "SELECT id, text, copied_at, source_app, is_pinned, char_count, encrypted
+                "SELECT id, text, copied_at, source_app, is_pinned, char_count, encrypted, content_type, image_data
                  FROM clipboard_entries WHERE id = ?1",
                 params![id],
                 map_entry_row_with_encrypted,
@@ -305,7 +330,7 @@ impl ClipboardHistoryStore {
     pub fn encrypt_all_entries(&self, key: &[u8; 32]) -> Result<(), String> {
         let connection = self.connect()?;
         let mut stmt = connection
-            .prepare("SELECT id, text FROM clipboard_entries WHERE encrypted = 0")
+            .prepare("SELECT id, text FROM clipboard_entries WHERE encrypted = 0 AND content_type = 'text'")
             .map_err(|e| e.to_string())?;
 
         let entries: Vec<(i64, String)> = stmt
@@ -422,6 +447,7 @@ pub(crate) fn ensure_schema(connection: &Connection) -> rusqlite::Result<()> {
         CREATE INDEX IF NOT EXISTS idx_templates_group ON templates(group_id, sort_order);",
     )?;
 
+    // Migration: add encrypted column
     let has_clipboard_encrypted_col = connection
         .prepare("SELECT encrypted FROM clipboard_entries LIMIT 0")
         .is_ok();
@@ -429,6 +455,28 @@ pub(crate) fn ensure_schema(connection: &Connection) -> rusqlite::Result<()> {
     if !has_clipboard_encrypted_col {
         connection
             .execute_batch("ALTER TABLE clipboard_entries ADD COLUMN encrypted INTEGER DEFAULT 0")?;
+    }
+
+    // Migration: add content_type column
+    let has_content_type_col = connection
+        .prepare("SELECT content_type FROM clipboard_entries LIMIT 0")
+        .is_ok();
+
+    if !has_content_type_col {
+        connection.execute_batch(
+            "ALTER TABLE clipboard_entries ADD COLUMN content_type TEXT DEFAULT 'text'"
+        )?;
+    }
+
+    // Migration: add image_data column
+    let has_image_data_col = connection
+        .prepare("SELECT image_data FROM clipboard_entries LIMIT 0")
+        .is_ok();
+
+    if !has_image_data_col {
+        connection.execute_batch(
+            "ALTER TABLE clipboard_entries ADD COLUMN image_data TEXT"
+        )?;
     }
 
     let has_template_group_encrypted_col = connection
@@ -483,6 +531,8 @@ fn map_entry_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ClipboardEntry> {
         source_app: row.get(3)?,
         is_pinned: row.get::<_, i64>(4)? != 0,
         char_count: row.get::<_, i64>(5)? as usize,
+        content_type: row.get::<_, String>(6).unwrap_or_else(|_| "text".to_string()),
+        image_data: row.get::<_, Option<String>>(7).unwrap_or(None),
     })
 }
 
@@ -497,6 +547,8 @@ fn map_entry_row_with_encrypted(
             source_app: row.get(3)?,
             is_pinned: row.get::<_, i64>(4)? != 0,
             char_count: row.get::<_, i64>(5)? as usize,
+            content_type: row.get::<_, String>(7).unwrap_or_else(|_| "text".to_string()),
+            image_data: row.get::<_, Option<String>>(8).unwrap_or(None),
         },
         row.get::<_, i64>(6).unwrap_or(0) != 0,
     ))
@@ -528,6 +580,7 @@ mod tests {
         let page = store.list_history(1, 10, None).unwrap();
         assert_eq!(page.total, 1);
         assert_eq!(page.entries[0].text, "alpha");
+        assert_eq!(page.entries[0].content_type, "text");
     }
 
     #[test]
@@ -566,5 +619,18 @@ mod tests {
 
         let entry = store.get_entry(page.entries[0].id).unwrap().unwrap();
         assert_eq!(entry.text, "secret data");
+    }
+
+    #[test]
+    fn save_and_retrieve_image() {
+        let temp = tempdir().unwrap();
+        let store = make_store(temp.path());
+
+        store.save_image("iVBORw0KGgo=", "abc123hash", 100).unwrap();
+
+        let page = store.list_history(1, 10, None).unwrap();
+        assert_eq!(page.total, 1);
+        assert_eq!(page.entries[0].content_type, "image");
+        assert_eq!(page.entries[0].image_data.as_deref(), Some("iVBORw0KGgo="));
     }
 }

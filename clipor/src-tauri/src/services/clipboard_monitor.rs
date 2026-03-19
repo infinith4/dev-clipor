@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use crate::native::win32;
 use crate::services::clipboard_history_store::ClipboardHistoryStore;
+use crate::services::image_util;
 use crate::services::settings_service::SettingsService;
 
 pub fn spawn_monitor(
@@ -14,6 +15,7 @@ pub fn spawn_monitor(
 ) {
     thread::spawn(move || {
         let mut last_seen = String::new();
+        let mut last_image_hash = String::new();
 
         loop {
             if clipboard_guard.swap(false, Ordering::SeqCst) {
@@ -32,10 +34,39 @@ pub fn spawn_monitor(
                 continue;
             }
 
+            // Check for image first
+            if win32::clipboard_has_image() {
+                if let Ok(Some(dib_data)) = win32::get_clipboard_image() {
+                    if dib_data.len() <= image_util::MAX_IMAGE_BYTES {
+                        let hash = image_util::hash_image(&dib_data);
+                        if hash != last_image_hash {
+                            if let Ok(png) = image_util::dib_to_png(&dib_data) {
+                                let b64 = image_util::png_to_base64(&png);
+                                let _ = history_store.save_image(
+                                    &b64,
+                                    &hash,
+                                    settings.max_history_items,
+                                );
+                                last_image_hash = hash;
+                                // Also update last_seen so we don't double-save
+                                // if the clipboard also has text representation
+                                if let Ok(Some(text)) = win32::get_clipboard_text() {
+                                    last_seen = text;
+                                }
+                            }
+                        }
+                    }
+                }
+                thread::sleep(Duration::from_millis(400));
+                continue;
+            }
+
+            // Text clipboard
             match win32::get_clipboard_text() {
                 Ok(Some(text)) if !text.trim().is_empty() && text != last_seen => {
                     let _ = history_store.save_text(&text, None, settings.max_history_items);
                     last_seen = text;
+                    last_image_hash.clear();
                 }
                 Ok(Some(text)) => {
                     last_seen = text;

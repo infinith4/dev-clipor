@@ -14,9 +14,20 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
 #[cfg(windows)]
 use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
 #[cfg(windows)]
+use windows::Win32::System::DataExchange::{
+    CloseClipboard, GetClipboardData, OpenClipboard, SetClipboardData, EmptyClipboard,
+};
+#[cfg(windows)]
+use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalSize, GlobalUnlock, GMEM_MOVEABLE};
+#[cfg(windows)]
+use windows::Win32::Foundation::HWND;
+#[cfg(windows)]
 use winreg::enums::{HKEY_CURRENT_USER, KEY_ALL_ACCESS};
 #[cfg(windows)]
 use winreg::RegKey;
+
+#[cfg(windows)]
+const CF_DIB: u32 = 8;
 
 #[cfg(windows)]
 pub fn cursor_position() -> Result<(i32, i32), String> {
@@ -53,6 +64,102 @@ pub fn set_clipboard_text(text: &str) -> Result<(), String> {
 #[cfg(not(windows))]
 pub fn set_clipboard_text(_text: &str) -> Result<(), String> {
     Ok(())
+}
+
+/// Get image data from clipboard as raw DIB bytes.
+/// Returns None if no image is on the clipboard.
+#[cfg(windows)]
+pub fn get_clipboard_image() -> Result<Option<Vec<u8>>, String> {
+    unsafe {
+        if OpenClipboard(HWND::default()).is_err() {
+            return Ok(None);
+        }
+
+        let result = (|| -> Result<Option<Vec<u8>>, String> {
+            let handle = GetClipboardData(CF_DIB);
+            if handle.is_err() {
+                return Ok(None);
+            }
+            let handle = handle.unwrap();
+
+            let ptr = GlobalLock(std::mem::transmute(handle));
+            if ptr.is_null() {
+                return Ok(None);
+            }
+
+            let size = GlobalSize(std::mem::transmute(handle));
+            if size == 0 {
+                GlobalUnlock(std::mem::transmute(handle));
+                return Ok(None);
+            }
+
+            let data = std::slice::from_raw_parts(ptr as *const u8, size);
+            let result = data.to_vec();
+
+            GlobalUnlock(std::mem::transmute(handle));
+            Ok(Some(result))
+        })();
+
+        let _ = CloseClipboard();
+        result
+    }
+}
+
+#[cfg(not(windows))]
+pub fn get_clipboard_image() -> Result<Option<Vec<u8>>, String> {
+    Ok(None)
+}
+
+/// Set image data (raw DIB) to the clipboard.
+#[cfg(windows)]
+pub fn set_clipboard_image(dib_data: &[u8]) -> Result<(), String> {
+    unsafe {
+        OpenClipboard(HWND::default()).map_err(|e| e.to_string())?;
+
+        let result = (|| -> Result<(), String> {
+            EmptyClipboard().map_err(|e| e.to_string())?;
+
+            let hmem = GlobalAlloc(GMEM_MOVEABLE, dib_data.len())
+                .map_err(|e| e.to_string())?;
+            let ptr = GlobalLock(hmem);
+            if ptr.is_null() {
+                return Err("GlobalLock failed".into());
+            }
+
+            std::ptr::copy_nonoverlapping(dib_data.as_ptr(), ptr as *mut u8, dib_data.len());
+            GlobalUnlock(hmem);
+
+            SetClipboardData(CF_DIB, std::mem::transmute(hmem))
+                .map_err(|e| e.to_string())?;
+            Ok(())
+        })();
+
+        let _ = CloseClipboard();
+        result
+    }
+}
+
+#[cfg(not(windows))]
+pub fn set_clipboard_image(_dib_data: &[u8]) -> Result<(), String> {
+    Ok(())
+}
+
+/// Check if clipboard currently contains an image (CF_DIB).
+#[cfg(windows)]
+pub fn clipboard_has_image() -> bool {
+    unsafe {
+        if OpenClipboard(HWND::default()).is_err() {
+            return false;
+        }
+        let has = GetClipboardData(CF_DIB).is_ok();
+        let _ = CloseClipboard();
+        has
+    }
+}
+
+#[cfg(not(windows))]
+pub fn clipboard_has_image() -> bool {
+    false
 }
 
 #[cfg(windows)]

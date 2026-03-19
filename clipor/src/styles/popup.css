@@ -674,6 +674,16 @@ button.danger:hover {
   justify-content: flex-end;
 }
 
+/* --- Clipboard image thumbnail --- */
+.clipboard-thumbnail {
+  max-width: 100%;
+  max-height: 48px;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: #f0f0f0;
+}
+
 /* --- Tooltip preview (Clibor-style hover) --- */
 .tooltip-preview {
   position: fixed;
@@ -696,6 +706,12 @@ button.danger:hover {
   color: #222;
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+.tooltip-preview-image {
+  max-width: 300px;
+  max-height: 380px;
+  object-fit: contain;
 }
 
 /* --- No animation --- */
