@@ -80,5 +80,52 @@ pub fn hash_image(data: &[u8]) -> String {
     format!("{digest:x}")
 }
 
+/// Convert PNG bytes back to raw DIB (BITMAPINFOHEADER + pixel data) for clipboard.
+pub fn png_to_dib(png_bytes: &[u8]) -> Result<Vec<u8>, String> {
+    let img = image::load_from_memory_with_format(png_bytes, image::ImageFormat::Png)
+        .map_err(|e| format!("Failed to decode PNG: {e}"))?;
+    let rgba = img.to_rgba8();
+    let width = rgba.width();
+    let height = rgba.height();
+
+    let bytes_per_pixel: u32 = 4; // BGRA
+    let row_size = ((width * bytes_per_pixel + 3) / 4) * 4; // padded to 4 bytes
+    let pixel_data_size = row_size * height;
+    let header_size: u32 = 40; // BITMAPINFOHEADER
+
+    let mut dib = Vec::with_capacity((header_size + pixel_data_size) as usize);
+
+    // BITMAPINFOHEADER (40 bytes)
+    dib.extend_from_slice(&header_size.to_le_bytes());       // biSize
+    dib.extend_from_slice(&(width as i32).to_le_bytes());    // biWidth
+    dib.extend_from_slice(&(height as i32).to_le_bytes());   // biHeight (positive = bottom-up)
+    dib.extend_from_slice(&1u16.to_le_bytes());              // biPlanes
+    dib.extend_from_slice(&32u16.to_le_bytes());             // biBitCount
+    dib.extend_from_slice(&0u32.to_le_bytes());              // biCompression (BI_RGB)
+    dib.extend_from_slice(&pixel_data_size.to_le_bytes());   // biSizeImage
+    dib.extend_from_slice(&0i32.to_le_bytes());              // biXPelsPerMeter
+    dib.extend_from_slice(&0i32.to_le_bytes());              // biYPelsPerMeter
+    dib.extend_from_slice(&0u32.to_le_bytes());              // biClrUsed
+    dib.extend_from_slice(&0u32.to_le_bytes());              // biClrImportant
+
+    // Pixel data: bottom-up, BGRA order
+    for y in (0..height).rev() {
+        for x in 0..width {
+            let pixel = rgba.get_pixel(x, y);
+            dib.push(pixel[2]); // B
+            dib.push(pixel[1]); // G
+            dib.push(pixel[0]); // R
+            dib.push(pixel[3]); // A
+        }
+        // Pad row to 4-byte boundary (already aligned for 32-bit, but be safe)
+        let padding = (row_size - width * bytes_per_pixel) as usize;
+        for _ in 0..padding {
+            dib.push(0);
+        }
+    }
+
+    Ok(dib)
+}
+
 /// Maximum image size to store (2 MB of raw DIB).
 pub const MAX_IMAGE_BYTES: usize = 2 * 1024 * 1024;
