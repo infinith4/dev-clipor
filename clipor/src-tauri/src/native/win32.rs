@@ -18,9 +18,9 @@ use windows::Win32::System::DataExchange::{
     CloseClipboard, GetClipboardData, OpenClipboard, SetClipboardData, EmptyClipboard,
 };
 #[cfg(windows)]
-use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalSize, GlobalUnlock, GMEM_MOVEABLE, HGLOBAL};
+use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalSize, GlobalUnlock, GMEM_MOVEABLE};
 #[cfg(windows)]
-use windows::Win32::Foundation::HANDLE;
+use windows::Win32::Foundation::{HANDLE, HGLOBAL};
 #[cfg(windows)]
 use winreg::enums::{HKEY_CURRENT_USER, KEY_ALL_ACCESS};
 #[cfg(windows)]
