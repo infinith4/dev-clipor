@@ -34,7 +34,8 @@
       "Bash(cargo update:*)",
       "Bash(cargo search:*)",
       "Bash(gh pr:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
