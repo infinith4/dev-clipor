@@ -8,6 +8,8 @@ interface TemplateEditorProps {
     id?: number;
     title: string;
     text: string;
+    contentType?: string;
+    imageData?: string | null;
     groupId?: number;
     newGroupName?: string;
   }) => void;
@@ -26,11 +28,14 @@ function TemplateEditor({
 }: TemplateEditorProps) {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
+  const [contentType, setContentType] = useState<"text" | "image">("text");
+  const [imageData, setImageData] = useState<string | null>(null);
   const [groupId, setGroupId] = useState<number | "new">("new");
   const [newGroupName, setNewGroupName] = useState("");
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importJson, setImportJson] = useState("");
   const importTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImportSubmit = useCallback(() => {
     const trimmed = importJson.trim();
@@ -46,10 +51,42 @@ function TemplateEditor({
     setShowImportDialog(false);
   }, []);
 
+  const handleImageSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) return;
+
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+    if (file.size > MAX_SIZE) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Remove "data:image/png;base64," prefix
+      const base64 = result.split(",")[1];
+      if (base64) {
+        setImageData(base64);
+        setContentType("image");
+        if (!title.trim()) {
+          setTitle(file.name.replace(/\.[^.]+$/, ""));
+        }
+        if (!text.trim()) {
+          setText("[画像]");
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+    // Reset input so the same file can be selected again
+    event.target.value = "";
+  }, [title, text]);
+
   useEffect(() => {
     if (editingTemplate) {
       setTitle(editingTemplate.title);
       setText(editingTemplate.text);
+      setContentType(editingTemplate.contentType === "image" ? "image" : "text");
+      setImageData(editingTemplate.imageData ?? null);
       setGroupId(editingTemplate.groupId);
       setNewGroupName("");
       return;
@@ -57,22 +94,32 @@ function TemplateEditor({
 
     setTitle("");
     setText("");
+    setContentType("text");
+    setImageData(null);
     setGroupId(groups[0]?.id ?? "new");
     setNewGroupName("");
   }, [editingTemplate, groups]);
 
   const handleSave = () => {
-    if (!title.trim() || !text.trim()) {
-      return;
-    }
+    if (!title.trim()) return;
+    if (contentType === "text" && !text.trim()) return;
+    if (contentType === "image" && !imageData) return;
 
     onSave({
       id: editingTemplate?.id,
       title: title.trim(),
-      text: text.trim(),
+      text: contentType === "image" ? (text.trim() || "[画像]") : text.trim(),
+      contentType,
+      imageData: contentType === "image" ? imageData : null,
       groupId: typeof groupId === "number" ? groupId : undefined,
       newGroupName: groupId === "new" ? newGroupName.trim() : undefined,
     });
+  };
+
+  const handleClearImage = () => {
+    setContentType("text");
+    setImageData(null);
+    if (text === "[画像]") setText("");
   };
 
   return (
@@ -109,15 +156,67 @@ function TemplateEditor({
           />
         </label>
       ) : null}
-      <label>
-        <span>Template body</span>
-        <textarea
-          rows={6}
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          placeholder={"{{date}} や {{clipboard}} を利用できます。"}
-        />
-      </label>
+      <div className="field-grid">
+        <label>
+          <span>Type</span>
+          <select
+            value={contentType}
+            onChange={(event) => {
+              const val = event.target.value as "text" | "image";
+              setContentType(val);
+              if (val === "text") {
+                setImageData(null);
+                if (text === "[画像]") setText("");
+              }
+            }}
+          >
+            <option value="text">Text</option>
+            <option value="image">Image</option>
+          </select>
+        </label>
+      </div>
+      {contentType === "image" ? (
+        <div className="image-upload-area">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            style={{ display: "none" }}
+          />
+          {imageData ? (
+            <div className="image-preview-container">
+              <img
+                src={`data:image/png;base64,${imageData}`}
+                alt="preview"
+                className="template-image-preview"
+              />
+              <div className="row-actions">
+                <button type="button" onClick={() => fileInputRef.current?.click()}>
+                  Change
+                </button>
+                <button type="button" onClick={handleClearImage}>
+                  Remove
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button type="button" onClick={() => fileInputRef.current?.click()}>
+              Select image file
+            </button>
+          )}
+        </div>
+      ) : (
+        <label>
+          <span>Template body</span>
+          <textarea
+            rows={6}
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            placeholder={"{{date}} や {{clipboard}} を利用できます。"}
+          />
+        </label>
+      )}
       <div className="row-actions">
         <button type="button" onClick={handleSave}>
           {editingTemplate ? "Update" : "Create"}

@@ -6,9 +6,9 @@
 
 ## 対応内容
 
-### 1. ホットキーを `Ctrl+Alt+M` に変更
+### 1. ホットキーを `Ctrl+Alt+Z` に変更
 
-- 既定ホットキーを `Ctrl+Alt+M` に変更
+- 既定ホットキーを `Ctrl+Alt+Z` に変更
 - 設定画面からホットキー文字列を変更可能にした
 - Hotkey 検出を Windows `RegisterHotKey` ベースに変更して安定化した
 

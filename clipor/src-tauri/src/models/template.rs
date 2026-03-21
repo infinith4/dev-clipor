@@ -17,6 +17,8 @@ pub struct TemplateEntry {
     pub group_name: String,
     pub title: String,
     pub text: String,
+    pub content_type: String,
+    pub image_data: Option<String>,
     pub sort_order: i64,
     pub created_at: String,
     pub updated_at: String,

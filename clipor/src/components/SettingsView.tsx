@@ -123,7 +123,7 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
         <input
           type="text"
           value={draft.hotkey}
-          placeholder="Ctrl+Alt+M"
+          placeholder="Ctrl+Alt+Z"
           onChange={(event) =>
             setDraft((current) => ({
               ...current,
@@ -132,7 +132,7 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
           }
         />
       </label>
-      <p className="help-text">例: Ctrl+Alt+M, Ctrl+Shift+K, Alt+F2</p>
+      <p className="help-text">例: Ctrl+Alt+Z, Ctrl+Shift+K, Alt+F2</p>
       <label className="checkbox-row">
         <input
           type="checkbox"

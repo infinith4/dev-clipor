@@ -1,12 +1,13 @@
-import { useCallback, useRef, useState } from "react";
-import type { TemplateEntry } from "../types";
-import TooltipPreview from "./TooltipPreview";
+import { useCallback, useRef } from "react";
+import type { HoverPreviewPayload, TemplateEntry } from "../types";
 
 interface TemplateListProps {
   templates: TemplateEntry[];
   selectedTemplateId: number | null;
   onSelect: (template: TemplateEntry) => void;
   onPaste: (id: number) => void;
+  onHoverPreview: (payload: HoverPreviewPayload & { anchorRect: DOMRect }) => void;
+  onHoverPreviewEnd: () => void;
 }
 
 function TemplateItemRow({
@@ -14,41 +15,57 @@ function TemplateItemRow({
   isSelected,
   onSelect,
   onPaste,
+  onHoverPreview,
+  onHoverPreviewEnd,
 }: {
   template: TemplateEntry;
   isSelected: boolean;
   onSelect: (template: TemplateEntry) => void;
   onPaste: (id: number) => void;
+  onHoverPreview: (payload: HoverPreviewPayload & { anchorRect: DOMRect }) => void;
+  onHoverPreviewEnd: () => void;
 }) {
+  const isImage = template.contentType === "image" && template.imageData;
   const preview = template.text.replace(/\r?\n/g, " ").slice(0, 60);
-  const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
-  const articleRef = useRef<HTMLElement>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const itemRef = useRef<HTMLElement | null>(null);
 
   const handleMouseEnter = useCallback(() => {
     hoverTimerRef.current = setTimeout(() => {
-      if (articleRef.current) {
-        setHoverRect(articleRef.current.getBoundingClientRect());
+      const anchorRect = itemRef.current?.getBoundingClientRect();
+      if (!anchorRect) {
+        return;
       }
+
+      onHoverPreview({
+        anchorRect,
+        title: template.title,
+        text: isImage ? null : template.text,
+        imageData: isImage ? (template.imageData ?? null) : null,
+        charCount: null,
+        copiedAt: null,
+        contextLabel: template.groupName,
+      });
     }, 300);
-  }, []);
+  }, [isImage, onHoverPreview, template]);
 
   const handleMouseLeave = useCallback(() => {
     if (hoverTimerRef.current) {
       clearTimeout(hoverTimerRef.current);
       hoverTimerRef.current = null;
     }
-    setHoverRect(null);
-  }, []);
+    onHoverPreviewEnd();
+  }, [onHoverPreviewEnd]);
 
   return (
     <article
-      ref={articleRef}
+      ref={itemRef}
       className={`panel-card${isSelected ? " selected" : ""}`}
       role="button"
       tabIndex={0}
       onClick={() => onPaste(template.id)}
       onFocus={() => onSelect(template)}
+      onBlur={handleMouseLeave}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -58,13 +75,27 @@ function TemplateItemRow({
           <span className="badge">{template.groupName}</span>
         </div>
       </div>
-      <p className="template-text">{preview}</p>
-      <TooltipPreview text={template.text} anchorRect={hoverRect} />
+      {isImage ? (
+        <img
+          src={`data:image/png;base64,${template.imageData}`}
+          alt={template.title}
+          className="template-image-thumb"
+        />
+      ) : (
+        <p className="template-text">{preview}</p>
+      )}
     </article>
   );
 }
 
-function TemplateList({ templates, selectedTemplateId, onSelect, onPaste }: TemplateListProps) {
+function TemplateList({
+  templates,
+  selectedTemplateId,
+  onSelect,
+  onPaste,
+  onHoverPreview,
+  onHoverPreviewEnd,
+}: TemplateListProps) {
   if (templates.length === 0) {
     return <div className="empty-state">定型文はまだありません。</div>;
   }
@@ -78,6 +109,8 @@ function TemplateList({ templates, selectedTemplateId, onSelect, onPaste }: Temp
           isSelected={selectedTemplateId === template.id}
           onSelect={onSelect}
           onPaste={onPaste}
+          onHoverPreview={onHoverPreview}
+          onHoverPreviewEnd={onHoverPreviewEnd}
         />
       ))}
     </div>

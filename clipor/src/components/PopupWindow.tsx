@@ -7,7 +7,8 @@ import SearchBar from "./SearchBar";
 import SettingsView from "./SettingsView";
 import TemplateEditor from "./TemplateEditor";
 import TemplateList from "./TemplateList";
-import type { ClipboardEntry, PopupTab, TemplateEntry } from "../types";
+import TooltipPreview from "./TooltipPreview";
+import type { ClipboardEntry, HoverPreviewPayload, PopupTab, TemplateEntry } from "../types";
 
 interface PopupWindowProps {
   activeTab: PopupTab;
@@ -55,6 +56,8 @@ interface PopupWindowProps {
       id?: number;
       title: string;
       text: string;
+      contentType?: string;
+      imageData?: string | null;
       groupId?: number;
       newGroupName?: string;
     }) => void;
@@ -98,6 +101,9 @@ function PopupWindow({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; entry: ClipboardEntry } | null>(null);
   const [editingEntry, setEditingEntry] = useState<ClipboardEntry | null>(null);
   const [editText, setEditText] = useState("");
+  const [hoverPreview, setHoverPreview] = useState<
+    (HoverPreviewPayload & { anchorRect: DOMRect }) | null
+  >(null);
   const visibleTemplates = useMemo(() => templates.templates, [templates.templates]);
   const isCompactLayout = activeTab === "history" || activeTab === "templates";
 
@@ -129,6 +135,14 @@ function PopupWindow({
 
   const closeContextMenu = useCallback(() => {
     setContextMenu(null);
+  }, []);
+
+  const handleHoverPreview = useCallback((payload: HoverPreviewPayload & { anchorRect: DOMRect }) => {
+    setHoverPreview(payload);
+  }, []);
+
+  const clearHoverPreview = useCallback(() => {
+    setHoverPreview(null);
   }, []);
 
   const buildContextMenuItems = useCallback(
@@ -175,6 +189,10 @@ function PopupWindow({
       templates.templates.find((template) => template.id === templates.selectedTemplateId) ?? null,
     );
   }, [activeTab, templates.selectedTemplateId, templates.templates]);
+
+  useEffect(() => {
+    setHoverPreview(null);
+  }, [activeTab]);
 
   return (
     <main className={`popup-shell${isCompactLayout ? " compact-shell" : ""}`}>
@@ -241,6 +259,8 @@ function PopupWindow({
                   onSelect={history.setSelectedEntryId}
                   onPaste={history.pasteEntry}
                   onContextMenu={handleContextMenu}
+                  onHoverPreview={handleHoverPreview}
+                  onHoverPreviewEnd={clearHoverPreview}
                 />
               ))}
               {!history.loading && history.entries.length === 0 ? (
@@ -318,6 +338,8 @@ function PopupWindow({
                 selectedTemplateId={templates.selectedTemplateId}
                 onSelect={templates.setSelectedTemplate}
                 onPaste={templates.pasteTemplate}
+                onHoverPreview={handleHoverPreview}
+                onHoverPreviewEnd={clearHoverPreview}
               />
             </div>
             <TemplateEditor
@@ -347,6 +369,16 @@ function PopupWindow({
             />
           </section>
         ) : null}
+
+        <TooltipPreview
+          anchorRect={hoverPreview?.anchorRect ?? null}
+          title={hoverPreview?.title}
+          text={hoverPreview?.text ?? undefined}
+          imageData={hoverPreview?.imageData ?? null}
+          charCount={hoverPreview?.charCount ?? undefined}
+          copiedAt={hoverPreview?.copiedAt ?? undefined}
+          contextLabel={hoverPreview?.contextLabel ?? null}
+        />
       </section>
     </main>
   );

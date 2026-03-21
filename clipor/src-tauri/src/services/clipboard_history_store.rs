@@ -479,6 +479,26 @@ pub(crate) fn ensure_schema(connection: &Connection) -> rusqlite::Result<()> {
         )?;
     }
 
+    // Migration: add content_type column to templates
+    let has_template_content_type = connection
+        .prepare("SELECT content_type FROM templates LIMIT 0")
+        .is_ok();
+    if !has_template_content_type {
+        connection.execute_batch(
+            "ALTER TABLE templates ADD COLUMN content_type TEXT DEFAULT 'text'"
+        )?;
+    }
+
+    // Migration: add image_data column to templates
+    let has_template_image_data = connection
+        .prepare("SELECT image_data FROM templates LIMIT 0")
+        .is_ok();
+    if !has_template_image_data {
+        connection.execute_batch(
+            "ALTER TABLE templates ADD COLUMN image_data TEXT"
+        )?;
+    }
+
     let has_template_group_encrypted_col = connection
         .prepare("SELECT encrypted FROM template_groups LIMIT 0")
         .is_ok();

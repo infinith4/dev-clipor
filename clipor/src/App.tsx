@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
 import type { Window } from "@tauri-apps/api/window";
 import PopupWindow from "./components/PopupWindow";
+import PreviewPanel from "./components/PreviewPanel";
 import { useClipboardHistory } from "./hooks/useClipboardHistory";
 import { useSettings } from "./hooks/useSettings";
 import { useTemplates } from "./hooks/useTemplates";
@@ -13,7 +14,24 @@ const COMPACT_WINDOW_WIDTH = 230;
 const SETTINGS_WINDOW_WIDTH = 420;
 const WINDOW_HEIGHT = 720;
 
+// Detect if this is the preview window by checking the Tauri window label
+const isPreviewWindow = (() => {
+  try {
+    return getCurrentWindow().label === "preview";
+  } catch {
+    return false;
+  }
+})();
+
 function App() {
+  if (isPreviewWindow) {
+    return <PreviewPanel />;
+  }
+
+  return <MainApp />;
+}
+
+function MainApp() {
   const [activeTab, setActiveTab] = useState<PopupTab>("history");
   const [error, setError] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
@@ -29,6 +47,11 @@ function App() {
   const settings = useSettings(setError);
   const history = useClipboardHistory(settings.settings.pageSize, setError);
   const templates = useTemplates(setError);
+
+  const hidePopup = useCallback(async () => {
+    await invoke("hide_preview").catch(() => {});
+    await popupWindowRef.current?.hide();
+  }, []);
 
   // Check if password is required on mount
   useEffect(() => {
@@ -118,6 +141,39 @@ function App() {
     );
   }, [templates.templates]);
 
+  // Show preview when selected item changes (keyboard navigation)
+  useEffect(() => {
+    if (activeTab === "history" && selectedHistoryId !== null) {
+      const entry = history.entries.find((e) => e.id === selectedHistoryId);
+      if (entry) {
+        const isImage = entry.contentType === "image";
+        invoke("show_preview", {
+          payload: {
+            text: isImage ? null : entry.text,
+            imageData: isImage ? (entry.imageData ?? null) : null,
+            charCount: entry.charCount,
+            copiedAt: entry.copiedAt,
+          },
+        }).catch(() => {});
+      }
+    } else if (activeTab === "templates" && selectedTemplateId !== null) {
+      const tmpl = templates.templates.find((t) => t.id === selectedTemplateId);
+      if (tmpl) {
+        const isImage = tmpl.contentType === "image" && tmpl.imageData;
+        invoke("show_preview", {
+          payload: {
+            text: isImage ? null : tmpl.text,
+            imageData: isImage ? (tmpl.imageData ?? null) : null,
+            charCount: null,
+            copiedAt: null,
+          },
+        }).catch(() => {});
+      }
+    } else {
+      invoke("hide_preview").catch(() => {});
+    }
+  }, [activeTab, selectedHistoryId, selectedTemplateId, history.entries, templates.templates]);
+
   useEffect(() => {
     const unlistenPopupPromise = listen("hotkey://toggle-popup", async () => {
       await Promise.all([history.refresh(), templates.refresh()]);
@@ -142,7 +198,7 @@ function App() {
         target?.isContentEditable;
 
       if (event.key === "Escape") {
-        await popupWindowRef.current?.hide();
+        await hidePopup();
         return;
       }
 
@@ -213,6 +269,7 @@ function App() {
     };
   }, [
     activeTab,
+    hidePopup,
     history.entries,
     history.refresh,
     history.selectEntry,
@@ -222,6 +279,30 @@ function App() {
     templates.refresh,
     templates.templates,
   ]);
+
+  useEffect(() => {
+    if (locked || needsSetup) {
+      return;
+    }
+
+    const handleWindowBlur = () => {
+      void hidePopup();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        void hidePopup();
+      }
+    };
+
+    window.addEventListener("blur", handleWindowBlur);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("blur", handleWindowBlur);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [hidePopup, locked, needsSetup]);
 
   useEffect(() => {
     const resizeWindow = async () => {
@@ -336,8 +417,17 @@ function App() {
       onSelectTab={setActiveTab}
       onDismissError={() => setError(null)}
       onRegisterAsTemplate={(entry) => {
-        const title = entry.text.replace(/\r?\n/g, " ").slice(0, 30);
-        templates.saveTemplate({ title, text: entry.text, newGroupName: "履歴から登録" });
+        const isImage = entry.contentType === "image";
+        const title = isImage
+          ? "[画像]"
+          : entry.text.replace(/\r?\n/g, " ").slice(0, 30);
+        templates.saveTemplate({
+          title,
+          text: isImage ? "[画像]" : entry.text,
+          contentType: entry.contentType,
+          imageData: entry.imageData ?? undefined,
+          newGroupName: "履歴から登録",
+        });
         setActiveTab("templates");
       }}
       settings={{ ...settings, refresh: () => void settings.refresh() }}

@@ -26,6 +26,8 @@ pub fn upsert_template(
     id: Option<i64>,
     title: String,
     text: String,
+    content_type: Option<String>,
+    image_data: Option<String>,
     group_id: Option<i64>,
     new_group_name: Option<String>,
 ) -> Result<(), String> {
@@ -33,6 +35,8 @@ pub fn upsert_template(
         id,
         title,
         text,
+        content_type,
+        image_data,
         group_id,
         new_group_name,
     })
@@ -53,10 +57,6 @@ pub fn paste_template(
         .template_store
         .get_template(id)?
         .ok_or_else(|| "定型文が見つかりません。".to_string())?;
-    let clipboard_text = state.paste_service.get_clipboard_text()?;
-    let rendered = state
-        .template_store
-        .render_placeholders(&template.text, &clipboard_text);
 
     // ウィンドウを隠してフォーカスを元のアプリに戻してからペースト
     if let Some(window) = app.get_webview_window("main") {
@@ -64,6 +64,23 @@ pub fn paste_template(
     }
     std::thread::sleep(std::time::Duration::from_millis(100));
 
+    if template.content_type == "image" {
+        if let Some(ref b64) = template.image_data {
+            use base64::Engine;
+            let png_bytes = base64::engine::general_purpose::STANDARD
+                .decode(b64)
+                .map_err(|e| format!("Base64 decode error: {e}"))?;
+            let dib_data = crate::services::image_util::png_to_dib(&png_bytes)?;
+            return state
+                .paste_service
+                .paste_image(&dib_data, state.clipboard_guard.clone());
+        }
+    }
+
+    let clipboard_text = state.paste_service.get_clipboard_text()?;
+    let rendered = state
+        .template_store
+        .render_placeholders(&template.text, &clipboard_text);
     state
         .paste_service
         .paste_text(&rendered, state.clipboard_guard.clone())

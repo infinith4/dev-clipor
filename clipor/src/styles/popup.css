@@ -385,6 +385,34 @@ textarea {
   color: rgba(255, 255, 255, 0.8);
 }
 
+/* --- Template image --- */
+.template-image-thumb {
+  max-width: 100%;
+  max-height: 60px;
+  object-fit: contain;
+  border-radius: 2px;
+  margin-top: 2px;
+}
+
+.image-upload-area {
+  margin: 4px 0;
+}
+
+.template-image-preview {
+  max-width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+  border-radius: 2px;
+  border: 1px solid var(--line);
+  margin-bottom: 4px;
+}
+
+.image-preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 /* --- Badge --- */
 .badge {
   display: inline-flex;
@@ -684,7 +712,7 @@ button.danger:hover {
   background: #f0f0f0;
 }
 
-/* --- Tooltip preview (Clibor-style hover) --- */
+/* --- Tooltip preview (in-window overlay) --- */
 .tooltip-preview {
   position: fixed;
   z-index: 9999;
@@ -692,10 +720,34 @@ button.danger:hover {
   border: 1px solid #cccc99;
   box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
   padding: 6px 8px;
-  max-width: 320px;
-  max-height: 400px;
+  width: calc(100vw - 12px);
+  max-height: 50vh;
   overflow: auto;
   pointer-events: none;
+}
+
+.tooltip-preview-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.tooltip-preview-title {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tooltip-preview-separator {
+  border: none;
+  border-top: 1px solid #cccc99;
+  margin: 4px 0;
 }
 
 .tooltip-preview-text {
@@ -711,6 +763,50 @@ button.danger:hover {
 .tooltip-preview-image {
   max-width: 300px;
   max-height: 380px;
+  object-fit: contain;
+}
+
+/* --- Preview panel (separate window) --- */
+.preview-panel {
+  height: 100vh;
+  overflow: auto;
+  background: #ffffee;
+  padding: 8px 10px;
+  font-family: "Meiryo UI", "Segoe UI", "Yu Gothic UI", sans-serif;
+}
+
+.preview-panel-empty {
+  height: 100vh;
+  background: #ffffee;
+}
+
+.preview-panel-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.preview-panel-separator {
+  border: none;
+  border-top: 1px solid #cccc99;
+  margin: 6px 0;
+}
+
+.preview-panel-text {
+  margin: 0;
+  font-family: "Meiryo UI", "Segoe UI", sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #222;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.preview-panel-image {
+  max-width: 100%;
+  max-height: calc(100vh - 60px);
   object-fit: contain;
 }
 

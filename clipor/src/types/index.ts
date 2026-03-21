@@ -18,6 +18,15 @@ export interface ClipboardHistoryPage {
   pageSize: number;
 }
 
+export interface HoverPreviewPayload {
+  title?: string;
+  text?: string | null;
+  imageData?: string | null;
+  charCount?: number | null;
+  copiedAt?: string | null;
+  contextLabel?: string | null;
+}
+
 export interface TemplateGroup {
   id: number;
   name: string;
@@ -31,6 +40,8 @@ export interface TemplateEntry {
   groupName: string;
   title: string;
   text: string;
+  contentType: string;
+  imageData?: string | null;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;

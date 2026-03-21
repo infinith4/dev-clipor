@@ -19,6 +19,7 @@ use crate::commands::clipboard::{
     delete_history_entry, get_history, paste_history_entry, set_clipboard_converted,
     set_clipboard_formatted, set_history_pinned, update_history_entry,
 };
+use crate::commands::preview::{hide_preview, show_preview};
 use crate::commands::settings::{
     get_settings, remove_password, set_password, update_settings, verify_password,
 };
@@ -65,9 +66,19 @@ pub fn run() {
 
     tauri::Builder::default()
         .on_window_event({
+            let history_store = history_store.clone();
+            let settings_service = settings_service.clone();
             let popup_shown_at = popup_shown_at.clone();
             move |window, event| {
                 if window.label() == "main" && matches!(event, WindowEvent::Focused(false)) {
+                    let locked = settings_service
+                        .load()
+                        .map(|settings| settings.require_password && !history_store.has_encryption_key())
+                        .unwrap_or(false);
+                    if locked {
+                        return;
+                    }
+
                     let should_ignore = popup_shown_at
                         .lock()
                         .ok()
@@ -76,8 +87,51 @@ pub fn run() {
                         .unwrap_or(false);
 
                     if !should_ignore {
-                        let _ = window.hide();
+                        // Delay check to allow focus transitions
+                        let app = window.app_handle().clone();
+                        std::thread::spawn(move || {
+                            std::thread::sleep(Duration::from_millis(150));
+                            let main_focused = app
+                                .get_webview_window("main")
+                                .and_then(|mw| mw.is_focused().ok())
+                                .unwrap_or(false);
+                            let preview_focused = app
+                                .get_webview_window("preview")
+                                .and_then(|pw| pw.is_focused().ok())
+                                .unwrap_or(false);
+                            // Only hide if neither window has focus
+                            if !main_focused && !preview_focused {
+                                if let Some(mw) = app.get_webview_window("main") {
+                                    let _ = mw.hide();
+                                }
+                                if let Some(pw) = app.get_webview_window("preview") {
+                                    let _ = pw.hide();
+                                }
+                            }
+                        });
                     }
+                }
+
+                // When preview loses focus, hide it; also hide main if main isn't focused
+                if window.label() == "preview" && matches!(event, WindowEvent::Focused(false)) {
+                    let app = window.app_handle().clone();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(Duration::from_millis(150));
+                        // Always hide preview
+                        if let Some(pw) = app.get_webview_window("preview") {
+                            let _ = pw.hide();
+                        }
+                        // Hide main too if it didn't regain focus
+                        let main_focused = app
+                            .get_webview_window("main")
+                            .and_then(|mw| mw.is_focused().ok())
+                            .unwrap_or(false);
+                        if !main_focused {
+                            if let Some(mw) = app.get_webview_window("main") {
+                                let _ = mw.hide();
+                            }
+                        }
+                    });
                 }
             }
         })
@@ -166,7 +220,9 @@ pub fn run() {
             update_settings,
             set_password,
             verify_password,
-            remove_password
+            remove_password,
+            show_preview,
+            hide_preview
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

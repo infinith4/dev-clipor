@@ -8,6 +8,8 @@ interface SaveTemplateInput {
   id?: number;
   title: string;
   text: string;
+  contentType?: string;
+  imageData?: string | null;
   groupId?: number;
   newGroupName?: string;
 }
@@ -58,6 +60,8 @@ export function useTemplates(setError: SetError) {
           id: payload.id,
           title: payload.title,
           text: payload.text,
+          contentType: payload.contentType ?? "text",
+          imageData: payload.imageData ?? null,
           groupId: payload.groupId,
           newGroupName: payload.newGroupName,
         });

@@ -19,6 +19,8 @@ pub struct UpsertTemplateInput {
     pub id: Option<i64>,
     pub title: String,
     pub text: String,
+    pub content_type: Option<String>,
+    pub image_data: Option<String>,
     pub group_id: Option<i64>,
     pub new_group_name: Option<String>,
 }
@@ -76,7 +78,7 @@ impl TemplateStore {
         let key = self.current_key()?;
         let mut statement = connection
             .prepare(
-                "SELECT t.id, t.group_id, g.name, t.title, t.text, t.sort_order, t.created_at, t.updated_at, g.encrypted, t.encrypted
+                "SELECT t.id, t.group_id, g.name, t.title, t.text, t.sort_order, t.created_at, t.updated_at, g.encrypted, t.encrypted, t.content_type, t.image_data
                  FROM templates t
                  JOIN template_groups g ON g.id = t.group_id
                  ORDER BY g.sort_order ASC, t.sort_order ASC, t.updated_at DESC, t.id DESC",
@@ -156,21 +158,24 @@ impl TemplateStore {
             input.text.clone()
         };
 
+        let content_type = input.content_type.as_deref().unwrap_or("text");
+        let image_data = input.image_data.as_deref();
+
         if let Some(id) = input.id {
             transaction
                 .execute(
                     "UPDATE templates
-                     SET group_id = ?2, title = ?3, text = ?4, updated_at = ?5, encrypted = ?6
+                     SET group_id = ?2, title = ?3, text = ?4, updated_at = ?5, encrypted = ?6, content_type = ?7, image_data = ?8
                      WHERE id = ?1",
-                    params![id, group_id, stored_title, stored_text, now, encrypted],
+                    params![id, group_id, stored_title, stored_text, now, encrypted, content_type, image_data],
                 )
                 .map_err(|error| error.to_string())?;
         } else {
             transaction
                 .execute(
-                    "INSERT INTO templates (group_id, title, text, sort_order, created_at, updated_at, encrypted)
-                     VALUES (?1, ?2, ?3, 0, ?4, ?4, ?5)",
-                    params![group_id, stored_title, stored_text, now, encrypted],
+                    "INSERT INTO templates (group_id, title, text, sort_order, created_at, updated_at, encrypted, content_type, image_data)
+                     VALUES (?1, ?2, ?3, 0, ?4, ?4, ?5, ?6, ?7)",
+                    params![group_id, stored_title, stored_text, now, encrypted, content_type, image_data],
                 )
                 .map_err(|error| error.to_string())?;
         }
@@ -192,7 +197,7 @@ impl TemplateStore {
         let key = self.current_key()?;
         connection
             .query_row(
-                "SELECT t.id, t.group_id, g.name, t.title, t.text, t.sort_order, t.created_at, t.updated_at, g.encrypted, t.encrypted
+                "SELECT t.id, t.group_id, g.name, t.title, t.text, t.sort_order, t.created_at, t.updated_at, g.encrypted, t.encrypted, t.content_type, t.image_data
                  FROM templates t
                  JOIN template_groups g ON g.id = t.group_id
                  WHERE t.id = ?1",
@@ -270,13 +275,16 @@ impl TemplateStore {
         }
 
         for template in payload.templates {
+            let content_type = &template.content_type;
+            let image_data = template.image_data.as_deref();
+
             let encrypted = if let Some(key) = write_key.as_ref() {
                 let encrypted_title = crypto_service::encrypt_text(&template.title, key)?;
                 let encrypted_text = crypto_service::encrypt_text(&template.text, key)?;
                 transaction
                     .execute(
-                        "INSERT INTO templates (id, group_id, title, text, sort_order, created_at, updated_at, encrypted)
-                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1)",
+                        "INSERT INTO templates (id, group_id, title, text, sort_order, created_at, updated_at, encrypted, content_type, image_data)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, ?8, ?9)",
                         params![
                             template.id,
                             template.group_id,
@@ -284,7 +292,9 @@ impl TemplateStore {
                             encrypted_text,
                             template.sort_order,
                             template.created_at,
-                            template.updated_at
+                            template.updated_at,
+                            content_type,
+                            image_data
                         ],
                     )
                     .map_err(|error| error.to_string())?;
@@ -295,8 +305,8 @@ impl TemplateStore {
 
             transaction
                 .execute(
-                    "INSERT INTO templates (id, group_id, title, text, sort_order, created_at, updated_at, encrypted)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                    "INSERT INTO templates (id, group_id, title, text, sort_order, created_at, updated_at, encrypted, content_type, image_data)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
                     params![
                         template.id,
                         template.group_id,
@@ -305,7 +315,9 @@ impl TemplateStore {
                         template.sort_order,
                         template.created_at,
                         template.updated_at,
-                        encrypted
+                        encrypted,
+                        content_type,
+                        image_data
                     ],
                 )
                 .map_err(|error| error.to_string())?;
@@ -531,6 +543,8 @@ fn map_template_row_with_encrypted(
         sort_order: row.get(5)?,
         created_at: row.get(6)?,
         updated_at: row.get(7)?,
+        content_type: row.get::<_, String>(10).unwrap_or_else(|_| "text".to_string()),
+        image_data: row.get::<_, Option<String>>(11).unwrap_or(None),
         },
         row.get::<_, i64>(8).unwrap_or(0) != 0,
         row.get::<_, i64>(9).unwrap_or(0) != 0,
@@ -600,6 +614,8 @@ mod tests {
                 id: None,
                 title: "Greeting".into(),
                 text: "Hello".into(),
+                content_type: None,
+                image_data: None,
                 group_id: None,
                 new_group_name: Some("General".into()),
             })
@@ -624,6 +640,8 @@ mod tests {
                 id: None,
                 title: "Greeting".into(),
                 text: "Hello secret".into(),
+                content_type: None,
+                image_data: None,
                 group_id: None,
                 new_group_name: Some("General".into()),
             })

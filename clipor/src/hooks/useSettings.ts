@@ -7,7 +7,7 @@ type SetError = (message: string | null) => void;
 const defaultSettings: AppSettings = {
   maxHistoryItems: 1000,
   pageSize: 20,
-  hotkey: "Ctrl+Alt+M",
+  hotkey: "Ctrl+Alt+Z",
   launchOnStartup: false,
   requirePassword: false,
 };
