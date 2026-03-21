@@ -20,7 +20,7 @@ pub fn get_templates(
         .list_templates(search.as_deref(), group_id)
 }
 
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub fn upsert_template(
     state: State<'_, AppState>,
     id: Option<i64>,
