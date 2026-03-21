@@ -145,41 +145,35 @@ function MainApp() {
     );
   }, [templates.templates]);
 
-  // Show preview when selected item changes (keyboard navigation)
-  useEffect(() => {
-    if (locked || needsSetup) {
-      return;
-    }
-    if (activeTab === "history" && selectedHistoryId !== null) {
-      const entry = history.entries.find((e) => e.id === selectedHistoryId);
-      if (entry) {
-        const isImage = entry.contentType === "image";
-        invoke("show_preview", {
-          payload: {
-            text: isImage ? null : entry.text,
-            imageData: isImage ? (entry.imageData ?? null) : null,
-            charCount: entry.charCount,
-            copiedAt: entry.copiedAt,
-          },
-        }).catch(() => {});
-      }
-    } else if (activeTab === "templates" && selectedTemplateId !== null) {
-      const tmpl = templates.templates.find((t) => t.id === selectedTemplateId);
-      if (tmpl) {
-        const isImage = tmpl.contentType === "image" && tmpl.imageData;
-        invoke("show_preview", {
-          payload: {
-            text: isImage ? null : tmpl.text,
-            imageData: isImage ? (tmpl.imageData ?? null) : null,
-            charCount: null,
-            copiedAt: null,
-          },
-        }).catch(() => {});
-      }
-    } else {
-      invoke("hide_preview").catch(() => {});
-    }
-  }, [activeTab, locked, needsSetup, selectedHistoryId, selectedTemplateId, history.entries, templates.templates]);
+  // Show preview for a history entry by id
+  const showHistoryPreview = useCallback((id: number) => {
+    const entry = history.entries.find((e) => e.id === id);
+    if (!entry) return;
+    const isImage = entry.contentType === "image";
+    invoke("show_preview", {
+      payload: {
+        text: isImage ? null : entry.text,
+        imageData: isImage ? (entry.imageData ?? null) : null,
+        charCount: entry.charCount,
+        copiedAt: entry.copiedAt,
+      },
+    }).catch((e) => console.error("[show_preview]", e));
+  }, [history.entries]);
+
+  // Show preview for a template entry by id
+  const showTemplatePreview = useCallback((id: number) => {
+    const tmpl = templates.templates.find((t) => t.id === id);
+    if (!tmpl) return;
+    const isImage = tmpl.contentType === "image" && tmpl.imageData;
+    invoke("show_preview", {
+      payload: {
+        text: isImage ? null : tmpl.text,
+        imageData: isImage ? (tmpl.imageData ?? null) : null,
+        charCount: null,
+        copiedAt: null,
+      },
+    }).catch((e) => console.error("[show_preview]", e));
+  }, [templates.templates]);
 
   useEffect(() => {
     const unlistenPopupPromise = listen("hotkey://toggle-popup", async () => {
@@ -222,14 +216,18 @@ function MainApp() {
         if (event.key === "ArrowDown" && history.entries.length > 0) {
           event.preventDefault();
           const nextIndex = currentIndex >= 0 ? Math.min(currentIndex + 1, history.entries.length - 1) : 0;
-          setSelectedHistoryId(history.entries[nextIndex].id);
+          const nextId = history.entries[nextIndex].id;
+          setSelectedHistoryId(nextId);
+          showHistoryPreview(nextId);
           return;
         }
 
         if (event.key === "ArrowUp" && history.entries.length > 0) {
           event.preventDefault();
           const nextIndex = currentIndex >= 0 ? Math.max(currentIndex - 1, 0) : 0;
-          setSelectedHistoryId(history.entries[nextIndex].id);
+          const nextId = history.entries[nextIndex].id;
+          setSelectedHistoryId(nextId);
+          showHistoryPreview(nextId);
           return;
         }
 
@@ -250,14 +248,18 @@ function MainApp() {
           event.preventDefault();
           const nextIndex =
             currentIndex >= 0 ? Math.min(currentIndex + 1, templates.templates.length - 1) : 0;
-          setSelectedTemplateId(templates.templates[nextIndex].id);
+          const nextId = templates.templates[nextIndex].id;
+          setSelectedTemplateId(nextId);
+          showTemplatePreview(nextId);
           return;
         }
 
         if (event.key === "ArrowUp" && templates.templates.length > 0) {
           event.preventDefault();
           const nextIndex = currentIndex >= 0 ? Math.max(currentIndex - 1, 0) : 0;
-          setSelectedTemplateId(templates.templates[nextIndex].id);
+          const nextId = templates.templates[nextIndex].id;
+          setSelectedTemplateId(nextId);
+          showTemplatePreview(nextId);
           return;
         }
 
@@ -287,6 +289,8 @@ function MainApp() {
     history.selectEntry,
     selectedHistoryId,
     selectedTemplateId,
+    showHistoryPreview,
+    showTemplatePreview,
     templates.pasteTemplate,
     templates.refresh,
     templates.templates,
