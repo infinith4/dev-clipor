@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
-use tauri::{
-    AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Position, Size, State,
-    WebviewUrl, WebviewWindowBuilder,
-};
+use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Position, Size, State};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -32,6 +29,9 @@ pub fn show_preview(
     let main_window = app
         .get_webview_window("main")
         .ok_or("main window not found")?;
+    let preview = app
+        .get_webview_window("preview")
+        .ok_or("preview window not found")?;
 
     let main_pos = main_window
         .outer_position()
@@ -56,26 +56,10 @@ pub fn show_preview(
 
     let preview_y = main_pos.y;
 
-    // Store payload so the preview window can fetch it on mount
+    // Store payload for the preview window to fetch on mount
     if let Ok(mut latest) = state.latest.lock() {
         *latest = Some(payload.clone());
     }
-
-    let preview = if let Some(w) = app.get_webview_window("preview") {
-        w
-    } else {
-        WebviewWindowBuilder::new(&app, "preview", WebviewUrl::default())
-            .title("Preview")
-            .inner_size(PREVIEW_WIDTH as f64, PREVIEW_HEIGHT as f64)
-            .visible(false)
-            .decorations(false)
-            .transparent(false)
-            .always_on_top(true)
-            .skip_taskbar(true)
-            .focused(false)
-            .build()
-            .map_err(|e| format!("preview window build error: {}", e))?
-    };
 
     preview
         .set_size(Size::Physical(PhysicalSize::new(
@@ -89,12 +73,12 @@ pub fn show_preview(
         )))
         .map_err(|e| e.to_string())?;
 
-    // Emit content to the preview window (works if JS is already loaded)
+    // Send content to the preview window
     let _ = app.emit_to("preview", "preview://update", &payload);
 
     preview.show().map_err(|e| e.to_string())?;
 
-    // Return focus to main window (preview should not steal focus)
+    // Return focus to main window
     let _ = main_window.set_focus();
 
     Ok(())

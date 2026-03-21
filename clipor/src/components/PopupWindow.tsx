@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import ClipboardItem from "./ClipboardItem";
 import ContextMenu from "./ContextMenu";
 import type { MenuItem } from "./ContextMenu";
@@ -7,7 +8,6 @@ import SearchBar from "./SearchBar";
 import SettingsView from "./SettingsView";
 import TemplateEditor from "./TemplateEditor";
 import TemplateList from "./TemplateList";
-import TooltipPreview from "./TooltipPreview";
 import type { ClipboardEntry, HoverPreviewPayload, PopupTab, TemplateEntry } from "../types";
 
 interface PopupWindowProps {
@@ -101,9 +101,6 @@ function PopupWindow({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; entry: ClipboardEntry } | null>(null);
   const [editingEntry, setEditingEntry] = useState<ClipboardEntry | null>(null);
   const [editText, setEditText] = useState("");
-  const [hoverPreview, setHoverPreview] = useState<
-    (HoverPreviewPayload & { anchorRect: DOMRect }) | null
-  >(null);
   const visibleTemplates = useMemo(() => templates.templates, [templates.templates]);
   const isCompactLayout = activeTab === "history" || activeTab === "templates";
 
@@ -138,11 +135,18 @@ function PopupWindow({
   }, []);
 
   const handleHoverPreview = useCallback((payload: HoverPreviewPayload & { anchorRect: DOMRect }) => {
-    setHoverPreview(payload);
+    invoke("show_preview", {
+      payload: {
+        text: payload.text ?? null,
+        imageData: payload.imageData ?? null,
+        charCount: payload.charCount ?? null,
+        copiedAt: payload.copiedAt ?? null,
+      },
+    }).catch((e) => console.error("[show_preview]", e));
   }, []);
 
   const clearHoverPreview = useCallback(() => {
-    setHoverPreview(null);
+    invoke("hide_preview").catch(() => {});
   }, []);
 
   const buildContextMenuItems = useCallback(
@@ -191,7 +195,7 @@ function PopupWindow({
   }, [activeTab, templates.selectedTemplateId, templates.templates]);
 
   useEffect(() => {
-    setHoverPreview(null);
+    invoke("hide_preview").catch(() => {});
   }, [activeTab]);
 
   return (
@@ -370,15 +374,6 @@ function PopupWindow({
           </section>
         ) : null}
 
-        <TooltipPreview
-          anchorRect={hoverPreview?.anchorRect ?? null}
-          title={hoverPreview?.title}
-          text={hoverPreview?.text ?? undefined}
-          imageData={hoverPreview?.imageData ?? null}
-          charCount={hoverPreview?.charCount ?? undefined}
-          copiedAt={hoverPreview?.copiedAt ?? undefined}
-          contextLabel={hoverPreview?.contextLabel ?? null}
-        />
       </section>
     </main>
   );

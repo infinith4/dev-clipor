@@ -146,6 +146,21 @@ pub fn run() {
 
             let _ = window.hide();
 
+            // Pre-create the preview window (hidden) so its JS is loaded
+            // before the first hover. This avoids race conditions where
+            // events are emitted before the webview is ready.
+            let preview = WebviewWindowBuilder::new(app, "preview", WebviewUrl::default())
+                .title("Preview")
+                .inner_size(320.0, 400.0)
+                .visible(false)
+                .decorations(false)
+                .transparent(false)
+                .always_on_top(true)
+                .skip_taskbar(true)
+                .focused(false)
+                .build()?;
+            let _ = preview.hide();
+
             let tray_menu = MenuBuilder::new(app)
                 .text("show_history", "履歴を表示")
                 .text("show_templates", "定型文を表示")
