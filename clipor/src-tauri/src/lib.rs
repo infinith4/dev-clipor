@@ -19,7 +19,7 @@ use crate::commands::clipboard::{
     delete_history_entry, get_history, paste_history_entry, set_clipboard_converted,
     set_clipboard_formatted, set_history_pinned, update_history_entry,
 };
-use crate::commands::preview::{hide_preview, show_preview};
+use crate::commands::preview::{get_preview_data, hide_preview, show_preview, PreviewState};
 use crate::commands::settings::{
     get_settings, remove_password, set_password, update_settings, verify_password,
 };
@@ -71,10 +71,16 @@ pub fn run() {
             let popup_shown_at = popup_shown_at.clone();
             move |window, event| {
                 if window.label() == "main" && matches!(event, WindowEvent::Focused(false)) {
-                    let locked = settings_service
+                    let require_pw = settings_service
                         .load()
-                        .map(|settings| settings.require_password && !history_store.has_encryption_key())
+                        .map(|s| s.require_password)
                         .unwrap_or(false);
+                    let has_key = history_store.has_encryption_key();
+                    let locked = require_pw && !has_key;
+                    eprintln!(
+                        "[blur] require_password={}, has_encryption_key={}, locked={}",
+                        require_pw, has_key, locked
+                    );
                     if locked {
                         return;
                     }
@@ -112,27 +118,9 @@ pub fn run() {
                     }
                 }
 
-                // When preview loses focus, hide it; also hide main if main isn't focused
-                if window.label() == "preview" && matches!(event, WindowEvent::Focused(false)) {
-                    let app = window.app_handle().clone();
-                    std::thread::spawn(move || {
-                        std::thread::sleep(Duration::from_millis(150));
-                        // Always hide preview
-                        if let Some(pw) = app.get_webview_window("preview") {
-                            let _ = pw.hide();
-                        }
-                        // Hide main too if it didn't regain focus
-                        let main_focused = app
-                            .get_webview_window("main")
-                            .and_then(|mw| mw.is_focused().ok())
-                            .unwrap_or(false);
-                        if !main_focused {
-                            if let Some(mw) = app.get_webview_window("main") {
-                                let _ = mw.hide();
-                            }
-                        }
-                    });
-                }
+                // Preview window blur: no action needed.
+                // Preview is hidden by JS (mouseLeave → hide_preview command)
+                // and by main's blur handler (both windows hide together).
             }
         })
         .manage(AppState {
@@ -141,6 +129,9 @@ pub fn run() {
             settings_service: settings_service.clone(),
             paste_service: paste_service.clone(),
             clipboard_guard: clipboard_guard.clone(),
+        })
+        .manage(PreviewState {
+            latest: Mutex::new(None),
         })
         .setup(move |app| {
             let window = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
@@ -222,7 +213,8 @@ pub fn run() {
             verify_password,
             remove_password,
             show_preview,
-            hide_preview
+            hide_preview,
+            get_preview_data
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -252,13 +244,16 @@ fn show_popup(app: &AppHandle, popup_shown_at: &Arc<Mutex<Option<Instant>>>) -> 
         let work_area = monitor.work_area();
         let min_x = work_area.position.x;
         let min_y = work_area.position.y;
-        let available_width = (work_area.size.width as i32 - POPUP_MARGIN * 2).max(230);
+        let max_x = min_x + work_area.size.width as i32;
+        let max_y = min_y + work_area.size.height as i32;
         let available_height = (work_area.size.height as i32 - POPUP_MARGIN * 2).max(280);
 
-        target_width = POPUP_WIDTH.min(available_width).max(POPUP_WIDTH);
+        target_width = POPUP_WIDTH;
         target_height = POPUP_HEIGHT.min(available_height);
-        target_x = min_x + ((work_area.size.width as i32 - target_width) / 2);
-        target_y = min_y + ((work_area.size.height as i32 - target_height) / 2);
+
+        // Position at cursor, but clamp so the window stays within the work area
+        target_x = cursor_x.max(min_x).min(max_x - target_width);
+        target_y = cursor_y.max(min_y).min(max_y - target_height);
     }
 
     if let Ok(mut shown_at) = popup_shown_at.lock() {

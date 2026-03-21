@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
+use std::sync::Mutex;
 use tauri::{
-    AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Position, Size, WebviewUrl,
-    WebviewWindowBuilder,
+    AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Position, Size, State,
+    WebviewUrl, WebviewWindowBuilder,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -13,11 +14,21 @@ pub struct PreviewPayload {
     pub copied_at: Option<String>,
 }
 
+/// Shared state to hold the latest preview data so the preview window
+/// can fetch it on mount (before event listeners are set up).
+pub struct PreviewState {
+    pub latest: Mutex<Option<PreviewPayload>>,
+}
+
 const PREVIEW_WIDTH: u32 = 320;
 const PREVIEW_HEIGHT: u32 = 400;
 
 #[tauri::command]
-pub fn show_preview(app: AppHandle, payload: PreviewPayload) -> Result<(), String> {
+pub fn show_preview(
+    app: AppHandle,
+    state: State<'_, PreviewState>,
+    payload: PreviewPayload,
+) -> Result<(), String> {
     let main_window = app
         .get_webview_window("main")
         .ok_or("main window not found")?;
@@ -45,24 +56,25 @@ pub fn show_preview(app: AppHandle, payload: PreviewPayload) -> Result<(), Strin
 
     let preview_y = main_pos.y;
 
+    // Store payload so the preview window can fetch it on mount
+    if let Ok(mut latest) = state.latest.lock() {
+        *latest = Some(payload.clone());
+    }
+
     let preview = if let Some(w) = app.get_webview_window("preview") {
         w
     } else {
-        WebviewWindowBuilder::new(
-            &app,
-            "preview",
-            WebviewUrl::default(),
-        )
-        .title("Preview")
-        .inner_size(PREVIEW_WIDTH as f64, PREVIEW_HEIGHT as f64)
-        .visible(false)
-        .decorations(false)
-        .transparent(false)
-        .always_on_top(true)
-        .skip_taskbar(true)
-        .focused(false)
-        .build()
-        .map_err(|e| e.to_string())?
+        WebviewWindowBuilder::new(&app, "preview", WebviewUrl::default())
+            .title("Preview")
+            .inner_size(PREVIEW_WIDTH as f64, PREVIEW_HEIGHT as f64)
+            .visible(false)
+            .decorations(false)
+            .transparent(false)
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .focused(false)
+            .build()
+            .map_err(|e| format!("preview window build error: {}", e))?
     };
 
     preview
@@ -77,9 +89,8 @@ pub fn show_preview(app: AppHandle, payload: PreviewPayload) -> Result<(), Strin
         )))
         .map_err(|e| e.to_string())?;
 
-    // Emit content to the preview window
-    app.emit_to("preview", "preview://update", &payload)
-        .map_err(|e| e.to_string())?;
+    // Emit content to the preview window (works if JS is already loaded)
+    let _ = app.emit_to("preview", "preview://update", &payload);
 
     preview.show().map_err(|e| e.to_string())?;
 
@@ -95,4 +106,15 @@ pub fn hide_preview(app: AppHandle) -> Result<(), String> {
         let _ = preview.hide();
     }
     Ok(())
+}
+
+/// Called by PreviewPanel on mount to get the latest preview data
+#[tauri::command]
+pub fn get_preview_data(state: State<'_, PreviewState>) -> Result<Option<PreviewPayload>, String> {
+    let data = state
+        .latest
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
+    Ok(data)
 }

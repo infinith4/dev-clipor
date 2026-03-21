@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
 interface PreviewPayload {
@@ -19,6 +20,14 @@ function PreviewPanel() {
   const [data, setData] = useState<PreviewPayload | null>(null);
 
   useEffect(() => {
+    // Fetch initial data (stored before JS was ready)
+    invoke<PreviewPayload | null>("get_preview_data")
+      .then((result) => {
+        if (result) setData(result);
+      })
+      .catch(() => {});
+
+    // Listen for subsequent updates
     const unlistenPromise = listen<PreviewPayload>("preview://update", (event) => {
       setData(event.payload);
     });

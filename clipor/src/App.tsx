@@ -88,17 +88,21 @@ function MainApp() {
   }, [setupPassword, setupConfirm, settings, history, templates]);
 
   const handleUnlock = useCallback(async () => {
+    console.log("[unlock] attempting with password length:", lockPassword.length);
     try {
       const ok = await invoke<boolean>("verify_password", { password: lockPassword });
+      console.log("[unlock] verify_password result:", ok);
       if (ok) {
         setLocked(false);
         setLockPassword("");
         setLockError(null);
         await Promise.all([history.refresh(), templates.refresh()]);
+        console.log("[unlock] success, data refreshed");
       } else {
         setLockError("パスワードが正しくありません。");
       }
     } catch (e) {
+      console.error("[unlock] error:", e);
       setLockError(e instanceof Error ? e.message : "認証に失敗しました。");
     }
   }, [lockPassword, history, templates]);
@@ -143,6 +147,9 @@ function MainApp() {
 
   // Show preview when selected item changes (keyboard navigation)
   useEffect(() => {
+    if (locked || needsSetup) {
+      return;
+    }
     if (activeTab === "history" && selectedHistoryId !== null) {
       const entry = history.entries.find((e) => e.id === selectedHistoryId);
       if (entry) {
@@ -172,7 +179,7 @@ function MainApp() {
     } else {
       invoke("hide_preview").catch(() => {});
     }
-  }, [activeTab, selectedHistoryId, selectedTemplateId, history.entries, templates.templates]);
+  }, [activeTab, locked, needsSetup, selectedHistoryId, selectedTemplateId, history.entries, templates.templates]);
 
   useEffect(() => {
     const unlistenPopupPromise = listen("hotkey://toggle-popup", async () => {
@@ -198,7 +205,10 @@ function MainApp() {
         target?.isContentEditable;
 
       if (event.key === "Escape") {
-        await hidePopup();
+        // Don't hide during lock/setup screens
+        if (!locked && !needsSetup) {
+          await hidePopup();
+        }
         return;
       }
 
@@ -270,6 +280,8 @@ function MainApp() {
   }, [
     activeTab,
     hidePopup,
+    locked,
+    needsSetup,
     history.entries,
     history.refresh,
     history.selectEntry,
@@ -280,29 +292,8 @@ function MainApp() {
     templates.templates,
   ]);
 
-  useEffect(() => {
-    if (locked || needsSetup) {
-      return;
-    }
-
-    const handleWindowBlur = () => {
-      void hidePopup();
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        void hidePopup();
-      }
-    };
-
-    window.addEventListener("blur", handleWindowBlur);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener("blur", handleWindowBlur);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [hidePopup, locked, needsSetup]);
+  // Focus loss is handled by Rust on_window_event (respects lock state).
+  // No JS-side blur handler needed — it would bypass Rust's lock guard.
 
   useEffect(() => {
     const resizeWindow = async () => {
