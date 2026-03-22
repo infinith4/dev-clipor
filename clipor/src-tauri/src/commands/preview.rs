@@ -26,6 +26,8 @@ pub struct PreviewState {
 
 const PREVIEW_WIDTH: u32 = 320;
 const PREVIEW_HEIGHT: u32 = 400;
+const PREVIEW_IMAGE_WIDTH: u32 = 520;
+const PREVIEW_IMAGE_HEIGHT: u32 = 520;
 
 #[tauri::command]
 pub fn show_preview(
@@ -42,6 +44,11 @@ pub fn show_preview(
         .map_err(|e| e.to_string())?;
     let main_size = main_window.outer_size().map_err(|e| e.to_string())?;
 
+    // Use larger size for image previews
+    let is_image = payload.image_data.is_some();
+    let pw = if is_image { PREVIEW_IMAGE_WIDTH } else { PREVIEW_WIDTH };
+    let ph = if is_image { PREVIEW_IMAGE_HEIGHT } else { PREVIEW_HEIGHT };
+
     // Determine preview position: prefer right of main window, fall back to left
     let right_edge = main_pos.x + main_size.width as i32;
     let preview_x = if let Ok(Some(monitor)) =
@@ -49,10 +56,10 @@ pub fn show_preview(
     {
         let work_area = monitor.work_area();
         let screen_right = work_area.position.x + work_area.size.width as i32;
-        if right_edge + PREVIEW_WIDTH as i32 + 4 <= screen_right {
+        if right_edge + pw as i32 + 4 <= screen_right {
             right_edge + 4
         } else {
-            main_pos.x - PREVIEW_WIDTH as i32 - 4
+            main_pos.x - pw as i32 - 4
         }
     } else {
         right_edge + 4
@@ -87,10 +94,7 @@ pub fn show_preview(
     };
 
     preview
-        .set_size(Size::Physical(PhysicalSize::new(
-            PREVIEW_WIDTH,
-            PREVIEW_HEIGHT,
-        )))
+        .set_size(Size::Physical(PhysicalSize::new(pw, ph)))
         .map_err(|e| e.to_string())?;
     preview
         .set_position(Position::Physical(PhysicalPosition::new(

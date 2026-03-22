@@ -806,8 +806,12 @@ button.danger:hover {
 
 .preview-panel-image {
   max-width: 100%;
-  max-height: calc(100vh - 60px);
+  max-height: calc(100vh - 50px);
+  width: 100%;
   object-fit: contain;
+  border: 1px solid #cccc99;
+  border-radius: 2px;
+  background: #f0f0f0;
 }
 
 /* --- No animation --- */
