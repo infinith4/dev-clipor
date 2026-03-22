@@ -4,6 +4,34 @@ use crate::models::app_settings::AppSettings;
 use crate::services::crypto_service;
 use crate::AppState;
 
+/// Force-reset password: deletes all encrypted entries that cannot be decrypted,
+/// clears password settings. Use when the old password is lost.
+#[tauri::command]
+pub fn force_reset_password(state: State<'_, AppState>) -> Result<(), String> {
+    // Delete encrypted clipboard entries that can't be recovered
+    state.history_store.delete_encrypted_entries()?;
+    state.template_store.delete_encrypted_entries()?;
+
+    // Clear key from memory
+    {
+        let mut key_guard = state
+            .history_store
+            .encryption_key
+            .lock()
+            .map_err(|e| e.to_string())?;
+        *key_guard = None;
+    }
+
+    // Clear password from settings
+    let mut settings = state.settings_service.load().unwrap_or_default();
+    settings.require_password = false;
+    settings.password_salt = None;
+    settings.password_verify = None;
+    state.settings_service.save(&settings)?;
+
+    Ok(())
+}
+
 #[tauri::command]
 pub fn get_settings(state: State<'_, AppState>) -> Result<AppSettings, String> {
     let mut settings = state.settings_service.load()?;

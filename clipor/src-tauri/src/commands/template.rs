@@ -9,7 +9,7 @@ pub fn get_template_groups(state: State<'_, AppState>) -> Result<Vec<TemplateGro
     state.template_store.list_groups()
 }
 
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub fn get_templates(
     state: State<'_, AppState>,
     search: Option<String>,

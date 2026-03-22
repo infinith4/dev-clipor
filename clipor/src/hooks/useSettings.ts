@@ -14,7 +14,7 @@ const defaultSettings: AppSettings = {
 
 export function useSettings(setError: SetError) {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
-  const [setupSkipped, setSetupSkipped] = useState(false);
+  const [setupSkipped, setSetupSkipped] = useState(true);
 
   const refresh = useCallback(async () => {
     try {

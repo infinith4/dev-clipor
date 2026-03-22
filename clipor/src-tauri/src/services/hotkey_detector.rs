@@ -243,7 +243,7 @@ mod tests {
 
     #[test]
     fn normalizes_hotkey_text() {
-        assert_eq!(normalize_hotkey("ctrl + alt + m").unwrap(), "Ctrl+Alt+Z");
+        assert_eq!(normalize_hotkey("ctrl + alt + m").unwrap(), "Ctrl+Alt+M");
     }
 
     #[test]

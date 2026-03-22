@@ -319,6 +319,15 @@ impl ClipboardHistoryStore {
         Ok(())
     }
 
+    /// Delete all encrypted entries (used when password is force-reset).
+    pub fn delete_encrypted_entries(&self) -> Result<(), String> {
+        let connection = self.connect()?;
+        connection
+            .execute("DELETE FROM clipboard_entries WHERE encrypted = 1", [])
+            .map_err(|error| error.to_string())?;
+        Ok(())
+    }
+
     pub fn delete_entry(&self, id: i64) -> Result<(), String> {
         let connection = self.connect()?;
         connection

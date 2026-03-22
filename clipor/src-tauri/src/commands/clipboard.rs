@@ -3,7 +3,7 @@ use tauri::{AppHandle, Manager, State};
 use crate::models::clipboard_entry::ClipboardHistoryPage;
 use crate::AppState;
 
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub fn get_history(
     state: State<'_, AppState>,
     page: usize,

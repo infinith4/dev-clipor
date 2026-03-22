@@ -183,6 +183,18 @@ impl TemplateStore {
         transaction.commit().map_err(|error| error.to_string())
     }
 
+    /// Delete all encrypted templates and groups (used when password is force-reset).
+    pub fn delete_encrypted_entries(&self) -> Result<(), String> {
+        let connection = self.connect()?;
+        connection
+            .execute("DELETE FROM templates WHERE encrypted = 1", [])
+            .map_err(|error| error.to_string())?;
+        connection
+            .execute("DELETE FROM template_groups WHERE encrypted = 1", [])
+            .map_err(|error| error.to_string())?;
+        Ok(())
+    }
+
     pub fn delete_template(&self, id: i64) -> Result<(), String> {
         let connection = self.connect()?;
         let _ = self.resolve_write_encryption(&connection)?;

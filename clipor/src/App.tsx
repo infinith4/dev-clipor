@@ -307,7 +307,6 @@ function MainApp() {
 
       const width = activeTab === "settings" ? SETTINGS_WINDOW_WIDTH : COMPACT_WINDOW_WIDTH;
       await popupWindowRef.current.setSize(new LogicalSize(width, WINDOW_HEIGHT));
-      await popupWindowRef.current.center();
     };
 
     void resizeWindow();

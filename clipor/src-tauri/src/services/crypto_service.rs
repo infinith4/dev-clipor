@@ -6,6 +6,9 @@ use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use pbkdf2::pbkdf2_hmac_array;
 use sha2::Sha256;
 
+#[cfg(debug_assertions)]
+const PBKDF2_ITERATIONS: u32 = 1_000;
+#[cfg(not(debug_assertions))]
 const PBKDF2_ITERATIONS: u32 = 100_000;
 const NONCE_LEN: usize = 12;
 

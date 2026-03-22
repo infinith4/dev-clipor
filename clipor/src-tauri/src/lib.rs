@@ -21,7 +21,8 @@ use crate::commands::clipboard::{
 };
 use crate::commands::preview::{get_preview_data, hide_preview, show_preview, PreviewState};
 use crate::commands::settings::{
-    get_settings, remove_password, set_password, update_settings, verify_password,
+    force_reset_password, get_settings, remove_password, set_password, update_settings,
+    verify_password,
 };
 use crate::commands::template::{
     delete_template, export_templates, get_template_groups, get_templates, import_templates,
@@ -63,6 +64,13 @@ pub fn run() {
     history_store.initialize().expect("initialize database");
     let settings = settings_service.load().unwrap_or_else(|_| AppSettings::default());
     let _ = settings_service.save(&settings);
+
+    // Clean up orphaned encrypted entries when password is not configured.
+    // This handles the case where password was force-reset or settings were manually cleared.
+    if !settings.require_password {
+        let _ = history_store.delete_encrypted_entries();
+        let _ = template_store.delete_encrypted_entries();
+    }
 
     tauri::Builder::default()
         .on_window_event({
@@ -146,20 +154,8 @@ pub fn run() {
 
             let _ = window.hide();
 
-            // Pre-create the preview window (hidden) so its JS is loaded
-            // before the first hover. This avoids race conditions where
-            // events are emitted before the webview is ready.
-            let preview = WebviewWindowBuilder::new(app, "preview", WebviewUrl::default())
-                .title("Preview")
-                .inner_size(320.0, 400.0)
-                .visible(false)
-                .decorations(false)
-                .transparent(false)
-                .always_on_top(true)
-                .skip_taskbar(true)
-                .focused(false)
-                .build()?;
-            let _ = preview.hide();
+            // Preview window is created lazily on first hover (in show_preview command).
+            // PreviewPanel fetches data via get_preview_data on mount, so no race condition.
 
             let tray_menu = MenuBuilder::new(app)
                 .text("show_history", "履歴を表示")
@@ -227,6 +223,7 @@ pub fn run() {
             set_password,
             verify_password,
             remove_password,
+            force_reset_password,
             show_preview,
             hide_preview,
             get_preview_data
