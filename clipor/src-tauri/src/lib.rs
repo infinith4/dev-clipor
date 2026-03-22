@@ -104,7 +104,23 @@ pub fn run() {
                         // Delay check to allow focus transitions
                         let app = window.app_handle().clone();
                         std::thread::spawn(move || {
-                            std::thread::sleep(Duration::from_millis(150));
+                            std::thread::sleep(Duration::from_millis(200));
+
+                            // Check if preview was recently shown (show_preview causes
+                            // a brief focus loss on main)
+                            let preview_recently_shown = app
+                                .try_state::<PreviewState>()
+                                .and_then(|ps| ps.shown_at.lock().ok().and_then(|t| *t))
+                                .map(|t| t.elapsed() < Duration::from_millis(500))
+                                .unwrap_or(false);
+                            if preview_recently_shown {
+                                // Re-focus main instead of hiding
+                                if let Some(mw) = app.get_webview_window("main") {
+                                    let _ = mw.set_focus();
+                                }
+                                return;
+                            }
+
                             let main_focused = app
                                 .get_webview_window("main")
                                 .and_then(|mw| mw.is_focused().ok())
@@ -140,6 +156,7 @@ pub fn run() {
         })
         .manage(PreviewState {
             latest: Mutex::new(None),
+            shown_at: Mutex::new(None),
         })
         .setup(move |app| {
             let window = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
@@ -154,8 +171,18 @@ pub fn run() {
 
             let _ = window.hide();
 
-            // Preview window is created lazily on first hover (in show_preview command).
-            // PreviewPanel fetches data via get_preview_data on mount, so no race condition.
+            // Pre-create the preview window (hidden) so React loads immediately.
+            // This avoids a blank flash on the first hover.
+            let _preview = WebviewWindowBuilder::new(app, "preview", WebviewUrl::default())
+                .title("Preview")
+                .inner_size(320.0, 400.0)
+                .visible(false)
+                .decorations(false)
+                .transparent(false)
+                .always_on_top(true)
+                .skip_taskbar(true)
+                .focused(false)
+                .build()?;
 
             let tray_menu = MenuBuilder::new(app)
                 .text("show_history", "履歴を表示")

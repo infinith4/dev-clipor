@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
+use std::time::Instant;
 use tauri::{
     AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Position, Size, State,
     WebviewUrl, WebviewWindowBuilder,
@@ -18,6 +19,9 @@ pub struct PreviewPayload {
 /// can fetch it on mount (before event listeners are set up).
 pub struct PreviewState {
     pub latest: Mutex<Option<PreviewPayload>>,
+    /// Timestamp of the last show_preview call, used by the blur handler
+    /// to avoid hiding windows immediately after preview is shown.
+    pub shown_at: Mutex<Option<Instant>>,
 }
 
 const PREVIEW_WIDTH: u32 = 320;
@@ -59,6 +63,10 @@ pub fn show_preview(
     // Store payload so the preview window can fetch it via get_preview_data on mount
     if let Ok(mut latest) = state.latest.lock() {
         *latest = Some(payload.clone());
+    }
+    // Record timestamp so the blur handler knows preview was just shown
+    if let Ok(mut shown_at) = state.shown_at.lock() {
+        *shown_at = Some(Instant::now());
     }
 
     // Get or create the preview window
