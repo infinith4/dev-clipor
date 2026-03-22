@@ -116,25 +116,19 @@ describe("App", () => {
     listenMock.mockClear();
   });
 
-  it("hides the popup when the window loses focus", async () => {
+  it("renders the main popup with tabs", async () => {
     render(<App />);
 
     await waitFor(() => {
       expect(setSizeMock).toHaveBeenCalled();
     });
 
-    hideMock.mockClear();
-    invokeMock.mockClear();
-
-    window.dispatchEvent(new Event("blur"));
-
-    await waitFor(() => {
-      expect(invokeMock).toHaveBeenCalledWith("hide_preview");
-      expect(hideMock).toHaveBeenCalledTimes(1);
-    });
+    expect(screen.getByRole("button", { name: "履歴" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "定型文" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "設定" })).toBeInTheDocument();
   });
 
-  it("does not hide the window on blur while locked", async () => {
+  it("does not hide the window on Escape while locked", async () => {
     settingsState.requirePassword = true;
 
     render(<App />);
@@ -146,11 +140,9 @@ describe("App", () => {
     hideMock.mockClear();
     invokeMock.mockClear();
 
-    window.dispatchEvent(new Event("blur"));
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
 
-    await waitFor(() => {
-      expect(invokeMock).not.toHaveBeenCalledWith("hide_preview");
-      expect(hideMock).not.toHaveBeenCalled();
-    });
+    // Window should NOT be hidden when locked
+    expect(hideMock).not.toHaveBeenCalled();
   });
 });

@@ -1,10 +1,17 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import PopupWindow from "../components/PopupWindow";
+
+const invokeMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: invokeMock,
+}));
 
 describe("PopupWindow", () => {
   afterEach(() => {
     vi.useRealTimers();
+    invokeMock.mockClear();
   });
 
   it("renders template editor after switching tabs", async () => {
@@ -129,7 +136,7 @@ describe("PopupWindow", () => {
     expect(screen.getByRole("button", { name: "Create" })).toBeInTheDocument();
   });
 
-  it("shows hover information for clipboard entries", async () => {
+  it("calls show_preview on hover over clipboard entry", async () => {
     vi.useFakeTimers();
 
     render(
@@ -206,15 +213,13 @@ describe("PopupWindow", () => {
       await vi.advanceTimersByTimeAsync(300);
     });
 
-    const tooltip = document.querySelector(".tooltip-preview");
-    expect(tooltip).not.toBeNull();
-
-    const tooltipQueries = within(tooltip as HTMLElement);
-    expect(tooltipQueries.getByText("VS Code")).toBeInTheDocument();
-    expect(tooltipQueries.getByText("22文字")).toBeInTheDocument();
-    expect(tooltipQueries.getByText("copied-at")).toBeInTheDocument();
-    expect(
-      tooltipQueries.getByText((_, element) => element?.textContent === "first line\nsecond line"),
-    ).toBeInTheDocument();
+    // Preview is now shown via invoke("show_preview") in a separate Tauri window
+    expect(invokeMock).toHaveBeenCalledWith("show_preview", expect.objectContaining({
+      payload: expect.objectContaining({
+        text: "first line\nsecond line",
+        charCount: 22,
+        copiedAt: "copied-at",
+      }),
+    }));
   });
 });
