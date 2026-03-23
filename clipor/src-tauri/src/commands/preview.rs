@@ -5,6 +5,8 @@ use tauri::{
     AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Position, Size, State,
 };
 
+use crate::AppState;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewPayload {
@@ -23,18 +25,16 @@ pub struct PreviewState {
     pub shown_at: Mutex<Option<Instant>>,
 }
 
-const PREVIEW_WIDTH: u32 = 320;
-const PREVIEW_HEIGHT: u32 = 400;
-const PREVIEW_IMAGE_WIDTH: u32 = 520;
-const PREVIEW_IMAGE_HEIGHT: u32 = 520;
-
 #[tauri::command(rename_all = "camelCase")]
 pub fn show_preview(
     app: AppHandle,
+    app_state: State<'_, AppState>,
     state: State<'_, PreviewState>,
     payload: PreviewPayload,
     anchor_y: Option<i32>,
 ) -> Result<(), String> {
+    let settings = app_state.settings_service.load().unwrap_or_default();
+
     let main_window = app
         .get_webview_window("main")
         .ok_or("main window not found")?;
@@ -46,8 +46,8 @@ pub fn show_preview(
 
     // Use larger size for image previews
     let is_image = payload.image_data.is_some();
-    let pw = if is_image { PREVIEW_IMAGE_WIDTH } else { PREVIEW_WIDTH };
-    let ph = if is_image { PREVIEW_IMAGE_HEIGHT } else { PREVIEW_HEIGHT };
+    let pw = if is_image { settings.preview_image_width } else { settings.preview_width };
+    let ph = if is_image { settings.preview_image_height } else { settings.preview_height };
 
     // Determine preview X: prefer right of main window, fall back to left
     let right_edge = main_pos.x + main_size.width as i32;

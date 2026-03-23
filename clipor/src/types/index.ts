@@ -57,5 +57,10 @@ export interface AppSettings {
   pageSize: number;
   hotkey: string;
   launchOnStartup: boolean;
+  blurDelayMs: number;
+  previewWidth: number;
+  previewHeight: number;
+  previewImageWidth: number;
+  previewImageHeight: number;
   requirePassword: boolean;
 }

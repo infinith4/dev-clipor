@@ -133,6 +133,86 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
         />
       </label>
       <p className="help-text">例: Ctrl+Alt+Z, Ctrl+Shift+K, Alt+F2</p>
+      <label>
+        <span>Blur delay (ms)</span>
+        <input
+          type="number"
+          min={0}
+          max={1000}
+          value={draft.blurDelayMs}
+          onChange={(event) =>
+            setDraft((current) => ({
+              ...current,
+              blurDelayMs: Number(event.target.value),
+            }))
+          }
+        />
+      </label>
+      <p className="help-text">フォーカス移動時にウィンドウを閉じるまでの遅延</p>
+      <label>
+        <span>Preview size (W x H)</span>
+        <div style={{ display: "flex", gap: "4px" }}>
+          <input
+            type="number"
+            min={100}
+            max={1000}
+            value={draft.previewWidth}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                previewWidth: Number(event.target.value),
+              }))
+            }
+            style={{ width: "70px" }}
+          />
+          <span style={{ alignSelf: "center" }}>x</span>
+          <input
+            type="number"
+            min={100}
+            max={1000}
+            value={draft.previewHeight}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                previewHeight: Number(event.target.value),
+              }))
+            }
+            style={{ width: "70px" }}
+          />
+        </div>
+      </label>
+      <label>
+        <span>Image preview size (W x H)</span>
+        <div style={{ display: "flex", gap: "4px" }}>
+          <input
+            type="number"
+            min={100}
+            max={1500}
+            value={draft.previewImageWidth}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                previewImageWidth: Number(event.target.value),
+              }))
+            }
+            style={{ width: "70px" }}
+          />
+          <span style={{ alignSelf: "center" }}>x</span>
+          <input
+            type="number"
+            min={100}
+            max={1500}
+            value={draft.previewImageHeight}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                previewImageHeight: Number(event.target.value),
+              }))
+            }
+            style={{ width: "70px" }}
+          />
+        </div>
+      </label>
       <label className="checkbox-row">
         <input
           type="checkbox"

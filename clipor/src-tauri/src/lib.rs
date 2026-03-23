@@ -90,10 +90,9 @@ pub fn run() {
                         return;
                     }
 
-                    let require_pw = settings_service
-                        .load()
-                        .map(|s| s.require_password)
-                        .unwrap_or(false);
+                    let settings = settings_service.load().unwrap_or_default();
+                    let require_pw = settings.require_password;
+                    let blur_delay_ms = settings.blur_delay_ms;
                     let has_key = history_store.has_encryption_key();
                     let locked = require_pw && !has_key;
                     eprintln!(
@@ -119,7 +118,7 @@ pub fn run() {
                     // Delay check to allow focus transitions
                     let app = window.app_handle().clone();
                     std::thread::spawn(move || {
-                        std::thread::sleep(Duration::from_millis(300));
+                        std::thread::sleep(Duration::from_millis(blur_delay_ms));
 
                         // Check if preview was recently shown
                         let preview_recently_shown = app

@@ -9,6 +9,11 @@ const defaultSettings: AppSettings = {
   pageSize: 20,
   hotkey: "Ctrl+Alt+Z",
   launchOnStartup: false,
+  blurDelayMs: 100,
+  previewWidth: 320,
+  previewHeight: 400,
+  previewImageWidth: 520,
+  previewImageHeight: 520,
   requirePassword: false,
 };
 

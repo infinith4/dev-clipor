@@ -12,6 +12,11 @@ pub struct AppSettings {
     #[serde(default = "default_hotkey")]
     pub hotkey: String,
     pub launch_on_startup: bool,
+    pub blur_delay_ms: u64,
+    pub preview_width: u32,
+    pub preview_height: u32,
+    pub preview_image_width: u32,
+    pub preview_image_height: u32,
     pub require_password: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password_salt: Option<String>,
@@ -26,6 +31,11 @@ impl Default for AppSettings {
             page_size: 20,
             hotkey: default_hotkey(),
             launch_on_startup: false,
+            blur_delay_ms: 100,
+            preview_width: 320,
+            preview_height: 400,
+            preview_image_width: 520,
+            preview_image_height: 520,
             require_password: false,
             password_salt: None,
             password_verify: None,
