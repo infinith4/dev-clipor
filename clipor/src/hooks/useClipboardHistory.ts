@@ -41,6 +41,7 @@ export function useClipboardHistory(initialPageSize: number, setError: SetError)
   const selectEntry = useCallback(
     async (id: number) => {
       try {
+        await invoke("hide_preview").catch(() => {});
         await invoke("paste_history_entry", { id });
         setError(null);
       } catch (error) {

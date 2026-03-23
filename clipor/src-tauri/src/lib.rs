@@ -79,6 +79,17 @@ pub fn run() {
             let popup_shown_at = popup_shown_at.clone();
             move |window, event| {
                 if window.label() == "main" && matches!(event, WindowEvent::Focused(false)) {
+                    // Skip blur if popup was never shown (startup blur events)
+                    let ever_shown = popup_shown_at
+                        .lock()
+                        .ok()
+                        .and_then(|shown_at| *shown_at)
+                        .is_some();
+                    if !ever_shown {
+                        eprintln!("[blur] ignoring — popup never shown yet");
+                        return;
+                    }
+
                     let require_pw = settings_service
                         .load()
                         .map(|s| s.require_password)

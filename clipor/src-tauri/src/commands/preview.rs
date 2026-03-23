@@ -57,14 +57,14 @@ pub fn show_preview(
         let work_area = monitor.work_area();
         let screen_right = work_area.position.x + work_area.size.width as i32;
         let sb = work_area.position.y + work_area.size.height as i32;
-        let px = if right_edge + pw as i32 + 4 <= screen_right {
-            right_edge + 4
+        let px = if right_edge + pw as i32 + 1 <= screen_right {
+            right_edge + 1
         } else {
-            main_pos.x - pw as i32 - 4
+            main_pos.x - pw as i32 - 1
         };
         (px, sb)
     } else {
-        (right_edge + 4, main_pos.y + main_size.height as i32)
+        (right_edge + 1, main_pos.y + main_size.height as i32)
     };
 
     // Determine preview Y: align with selected item, clamped to screen

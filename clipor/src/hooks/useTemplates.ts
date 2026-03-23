@@ -44,6 +44,7 @@ export function useTemplates(setError: SetError) {
   const pasteTemplate = useCallback(
     async (id: number) => {
       try {
+        await invoke("hide_preview").catch(() => {});
         await invoke("paste_template", { id });
         setError(null);
       } catch (error) {
