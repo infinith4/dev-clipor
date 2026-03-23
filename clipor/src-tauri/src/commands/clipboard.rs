@@ -102,6 +102,22 @@ pub fn set_clipboard_converted(state: State<'_, AppState>, id: i64) -> Result<()
     crate::native::win32::set_clipboard_text(&converted)
 }
 
+/// クリップボードにテキストを整形してセット（テキスト直接指定）
+#[tauri::command]
+pub fn set_clipboard_text_formatted(state: State<'_, AppState>, text: String) -> Result<(), String> {
+    let formatted = format_text(&text);
+    state.clipboard_guard.store(true, std::sync::atomic::Ordering::SeqCst);
+    crate::native::win32::set_clipboard_text(&formatted)
+}
+
+/// クリップボードにテキストを変換してセット（テキスト直接指定）
+#[tauri::command]
+pub fn set_clipboard_text_converted(state: State<'_, AppState>, text: String) -> Result<(), String> {
+    let converted = convert_text(&text);
+    state.clipboard_guard.store(true, std::sync::atomic::Ordering::SeqCst);
+    crate::native::win32::set_clipboard_text(&converted)
+}
+
 fn format_text(text: &str) -> String {
     let trimmed = text.trim();
     let lines: Vec<&str> = trimmed.lines().map(|line| line.trim()).collect();

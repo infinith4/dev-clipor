@@ -138,6 +138,14 @@ function PopupWindow({
         action: () => void templates.deleteTemplate(template.id),
         danger: true,
       },
+      {
+        label: "クリップボードにセット(整形)",
+        action: () => void invoke("set_clipboard_text_formatted", { text: template.text }),
+      },
+      {
+        label: "クリップボードにセット(変換)",
+        action: () => void invoke("set_clipboard_text_converted", { text: template.text }),
+      },
     ],
     [templates],
   );
