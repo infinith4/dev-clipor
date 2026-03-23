@@ -64,8 +64,7 @@ function ClipboardItem({
         event.preventDefault();
         onContextMenu(event, entry);
       }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={() => onSelect(entry.id)}
     >
       <div className="clipboard-body">
         {isImage && entry.imageData ? (

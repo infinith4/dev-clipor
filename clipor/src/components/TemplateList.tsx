@@ -65,8 +65,7 @@ function TemplateItemRow({
       tabIndex={0}
       onClick={() => onPaste(template.id)}
       onFocus={() => onSelect(template)}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={() => onSelect(template)}
     >
       <div className="template-header">
         <div>
