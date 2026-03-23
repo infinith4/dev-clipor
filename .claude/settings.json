@@ -70,7 +70,10 @@
       "Bash(taskkill //F //PID 52216)",
       "Bash(taskkill //F //IM node.exe)",
       "Bash(find /c/Projects/github/infinith4/dev-clipor/clipor -maxdepth 2 -type f \\\\\\(-name vitest.config.* -o -name .nycrc* -o -name c8.config.* -o -name *.coverage.* \\\\\\))",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npm view:*)",
+      "Bash(npx npm-check-updates:*)",
+      "Bash(node -e \"const p=require\\(''./package.json''\\); console.log\\(''react:'', p.dependencies.react\\); console.log\\(''typescript:'', p.devDependencies.typescript\\); console.log\\(''vite:'', p.devDependencies.vite\\); console.log\\(''vitest:'', p.devDependencies.vitest\\); console.log\\(''@testing-library/react:'', p.devDependencies[''@testing-library/react'']\\);\")"
     ],
     "deny": [
       "Bash(rm -rf /)",

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import PopupWindow from "../components/PopupWindow";
-import type { AppSettings, ClipboardEntry, TemplateEntry } from "../types";
+import type { AppSettings, ClipboardEntry, PopupTab, TemplateEntry } from "../types";
 
 /* ------------------------------------------------------------------ */
 /*  Tauri invoke mock                                                  */
@@ -61,9 +61,9 @@ type PropsOverrides = {
   history?: Record<string, unknown>;
   templates?: Record<string, unknown>;
   settings?: Record<string, unknown>;
-  onSelectTab?: ReturnType<typeof vi.fn>;
-  onDismissError?: ReturnType<typeof vi.fn>;
-  onRegisterAsTemplate?: ReturnType<typeof vi.fn>;
+  onSelectTab?: (tab: PopupTab) => void;
+  onDismissError?: () => void;
+  onRegisterAsTemplate?: (entry: ClipboardEntry) => void;
 };
 
 function makeProps(overrides: PropsOverrides = {}) {
@@ -73,9 +73,9 @@ function makeProps(overrides: PropsOverrides = {}) {
     history: histOverrides = {},
     templates: tmplOverrides = {},
     settings: setOverrides = {},
-    onSelectTab = vi.fn(),
-    onDismissError = vi.fn(),
-    onRegisterAsTemplate = vi.fn(),
+    onSelectTab = vi.fn<(tab: PopupTab) => void>(),
+    onDismissError = vi.fn<() => void>(),
+    onRegisterAsTemplate = vi.fn<(entry: ClipboardEntry) => void>(),
   } = overrides;
 
   return {
