@@ -3,7 +3,6 @@ use std::sync::Mutex;
 use std::time::Instant;
 use tauri::{
     AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Position, Size, State,
-    WebviewUrl, WebviewWindowBuilder,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,14 +34,19 @@ pub fn show_preview(
     state: State<'_, PreviewState>,
     payload: PreviewPayload,
 ) -> Result<(), String> {
+    eprintln!("[show_preview] called, has_text={}, has_image={}", payload.text.is_some(), payload.image_data.is_some());
+
     let main_window = app
         .get_webview_window("main")
         .ok_or("main window not found")?;
+    eprintln!("[show_preview] step1: got main window");
 
     let main_pos = main_window
         .outer_position()
-        .map_err(|e| e.to_string())?;
-    let main_size = main_window.outer_size().map_err(|e| e.to_string())?;
+        .map_err(|e| { eprintln!("[show_preview] outer_position failed: {}", e); e.to_string() })?;
+    let main_size = main_window.outer_size()
+        .map_err(|e| { eprintln!("[show_preview] outer_size failed: {}", e); e.to_string() })?;
+    eprintln!("[show_preview] step2: main pos=({},{}), size={}x{}", main_pos.x, main_pos.y, main_size.width, main_size.height);
 
     // Use larger size for image previews
     let is_image = payload.image_data.is_some();
@@ -66,6 +70,7 @@ pub fn show_preview(
     };
 
     let preview_y = main_pos.y;
+    eprintln!("[show_preview] step3: preview target pos=({},{}), size={}x{}", preview_x, preview_y, pw, ph);
 
     // Store payload so the preview window can fetch it via get_preview_data on mount
     if let Ok(mut latest) = state.latest.lock() {
@@ -76,36 +81,29 @@ pub fn show_preview(
         *shown_at = Some(Instant::now());
     }
 
-    // Get or create the preview window
-    let preview = if let Some(w) = app.get_webview_window("preview") {
-        w
-    } else {
-        WebviewWindowBuilder::new(&app, "preview", WebviewUrl::default())
-            .title("Preview")
-            .inner_size(PREVIEW_WIDTH as f64, PREVIEW_HEIGHT as f64)
-            .visible(false)
-            .decorations(false)
-            .transparent(false)
-            .always_on_top(true)
-            .skip_taskbar(true)
-            .focused(false)
-            .build()
-            .map_err(|e| format!("preview window build error: {}", e))?
-    };
+    // Reuse the preview window created at startup
+    let preview = app
+        .get_webview_window("preview")
+        .ok_or("preview window not found")?;
+    eprintln!("[show_preview] step4: got preview window");
 
     preview
         .set_size(Size::Physical(PhysicalSize::new(pw, ph)))
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| { eprintln!("[show_preview] set_size failed: {}", e); e.to_string() })?;
+    eprintln!("[show_preview] step5: size set");
+
     preview
         .set_position(Position::Physical(PhysicalPosition::new(
             preview_x, preview_y,
         )))
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| { eprintln!("[show_preview] set_position failed: {}", e); e.to_string() })?;
+    eprintln!("[show_preview] step6: position set");
 
     // Send content to the preview window (works if JS is already loaded)
     let _ = app.emit_to("preview", "preview://update", &payload);
 
-    preview.show().map_err(|e| e.to_string())?;
+    preview.show().map_err(|e| { eprintln!("[show_preview] show failed: {}", e); e.to_string() })?;
+    eprintln!("[show_preview] step7: window shown at ({}, {}), size={}x{}", preview_x, preview_y, pw, ph);
 
     // Return focus to main window
     let _ = main_window.set_focus();
@@ -115,6 +113,7 @@ pub fn show_preview(
 
 #[tauri::command]
 pub fn hide_preview(app: AppHandle) -> Result<(), String> {
+    eprintln!("[hide_preview] called");
     if let Some(preview) = app.get_webview_window("preview") {
         let _ = preview.hide();
     }

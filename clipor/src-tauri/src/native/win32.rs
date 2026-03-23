@@ -245,3 +245,24 @@ pub fn set_launch_on_startup(
 ) -> Result<(), String> {
     Ok(())
 }
+
+/// Returns the PID of the process that owns the current foreground window.
+#[cfg(windows)]
+pub fn foreground_window_pid() -> Result<u32, String> {
+    use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
+    use windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId;
+    unsafe {
+        let hwnd = GetForegroundWindow();
+        if hwnd.is_invalid() {
+            return Err("no foreground window".into());
+        }
+        let mut pid: u32 = 0;
+        GetWindowThreadProcessId(hwnd, Some(&mut pid));
+        Ok(pid)
+    }
+}
+
+#[cfg(not(windows))]
+pub fn foreground_window_pid() -> Result<u32, String> {
+    Err("not implemented".into())
+}

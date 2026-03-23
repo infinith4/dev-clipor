@@ -60,7 +60,6 @@ function ClipboardItem({
       tabIndex={0}
       onClick={() => onPaste(entry.id)}
       onFocus={() => onSelect(entry.id)}
-      onBlur={handleMouseLeave}
       onContextMenu={(event) => {
         event.preventDefault();
         onContextMenu(event, entry);

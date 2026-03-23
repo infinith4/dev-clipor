@@ -54,7 +54,21 @@
       "Bash(npx vitest:*)",
       "Bash(echo \"$LOCALAPPDATA/Clipor/settings.json\")",
       "Read(//c/Users/andot/AppData/Local/Clipor/**)",
-      "Bash(sqlite3 \"$LOCALAPPDATA/Clipor/history.db\" \"SELECT count\\(*\\), sum\\(encrypted\\) FROM clipboard_entries;\")"
+      "Bash(sqlite3 \"$LOCALAPPDATA/Clipor/history.db\" \"SELECT count\\(*\\), sum\\(encrypted\\) FROM clipboard_entries;\")",
+      "Bash(taskkill /F /IM clipor.exe)",
+      "Bash(taskkill /F /IM node.exe /FI \"WINDOWTITLE eq *vite*\")",
+      "Bash(netstat -ano)",
+      "Bash(taskkill /F /PID 19968)",
+      "Bash(wmic process:*)",
+      "Bash(cmd.exe /c \"taskkill /F /PID 19968\")",
+      "Bash(cmd.exe /c \"netstat -ano | findstr :5173\")",
+      "Bash(powershell -Command \"Stop-Process -Id 19968 -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2; Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | Select-Object LocalPort,OwningProcess,State\")",
+      "Bash(cargo build:*)",
+      "Bash(tasklist)",
+      "Bash(taskkill //F //PID 46064)",
+      "Bash(taskkill //F //IM clipor.exe)",
+      "Bash(taskkill //F //PID 52216)",
+      "Bash(taskkill //F //IM node.exe)"
     ],
     "deny": [
       "Bash(rm -rf /)",

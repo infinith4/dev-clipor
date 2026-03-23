@@ -802,6 +802,8 @@ button.danger:hover {
   color: #222;
   white-space: pre-wrap;
   word-break: break-all;
+  overflow-y: auto;
+  max-height: calc(100vh - 50px);
 }
 
 .preview-panel-image {

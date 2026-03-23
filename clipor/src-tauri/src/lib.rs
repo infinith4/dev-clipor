@@ -93,53 +93,57 @@ pub fn run() {
                         return;
                     }
 
-                    let should_ignore = popup_shown_at
+                    let recently_shown = popup_shown_at
                         .lock()
                         .ok()
                         .and_then(|shown_at| *shown_at)
-                        .map(|shown_at| shown_at.elapsed() < Duration::from_millis(350))
+                        .map(|shown_at| shown_at.elapsed() < Duration::from_millis(800))
                         .unwrap_or(false);
 
-                    if !should_ignore {
-                        // Delay check to allow focus transitions
-                        let app = window.app_handle().clone();
-                        std::thread::spawn(move || {
-                            std::thread::sleep(Duration::from_millis(200));
-
-                            // Check if preview was recently shown (show_preview causes
-                            // a brief focus loss on main)
-                            let preview_recently_shown = app
-                                .try_state::<PreviewState>()
-                                .and_then(|ps| ps.shown_at.lock().ok().and_then(|t| *t))
-                                .map(|t| t.elapsed() < Duration::from_millis(500))
-                                .unwrap_or(false);
-                            if preview_recently_shown {
-                                // Re-focus main instead of hiding
-                                if let Some(mw) = app.get_webview_window("main") {
-                                    let _ = mw.set_focus();
-                                }
-                                return;
-                            }
-
-                            let main_focused = app
-                                .get_webview_window("main")
-                                .and_then(|mw| mw.is_focused().ok())
-                                .unwrap_or(false);
-                            let preview_focused = app
-                                .get_webview_window("preview")
-                                .and_then(|pw| pw.is_focused().ok())
-                                .unwrap_or(false);
-                            // Only hide if neither window has focus
-                            if !main_focused && !preview_focused {
-                                if let Some(mw) = app.get_webview_window("main") {
-                                    let _ = mw.hide();
-                                }
-                                if let Some(pw) = app.get_webview_window("preview") {
-                                    let _ = pw.hide();
-                                }
-                            }
-                        });
+                    if recently_shown {
+                        eprintln!("[blur] ignoring — popup recently shown");
+                        return;
                     }
+
+                    // Delay check to allow focus transitions
+                    let app = window.app_handle().clone();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(Duration::from_millis(300));
+
+                        // Check if preview was recently shown
+                        let preview_recently_shown = app
+                            .try_state::<PreviewState>()
+                            .and_then(|ps| ps.shown_at.lock().ok().and_then(|t| *t))
+                            .map(|t| t.elapsed() < Duration::from_millis(500))
+                            .unwrap_or(false);
+                        if preview_recently_shown {
+                            eprintln!("[blur-check] preview recently shown, re-focusing main");
+                            if let Some(mw) = app.get_webview_window("main") {
+                                let _ = mw.set_focus();
+                            }
+                            return;
+                        }
+
+                        // Check foreground window via Win32 API
+                        let our_pid = std::process::id();
+                        let fg_is_ours = crate::native::win32::foreground_window_pid()
+                            .map(|pid| pid == our_pid)
+                            .unwrap_or(false);
+                        eprintln!("[blur-check] fg_is_ours={}", fg_is_ours);
+
+                        if fg_is_ours {
+                            // Our app still owns the foreground — don't hide
+                            return;
+                        }
+
+                        eprintln!("[blur-check] hiding both windows");
+                        if let Some(mw) = app.get_webview_window("main") {
+                            let _ = mw.hide();
+                        }
+                        if let Some(pw) = app.get_webview_window("preview") {
+                            let _ = pw.hide();
+                        }
+                    });
                 }
 
                 // Preview window blur: no action needed.
@@ -171,8 +175,9 @@ pub fn run() {
 
             let _ = window.hide();
 
-            // Pre-create the preview window (hidden) so React loads immediately.
-            // This avoids a blank flash on the first hover.
+            // Create preview window at startup (hidden).
+            // WebviewWindowBuilder::build() hangs when called from a command handler,
+            // so we must create it here on the main thread.
             let _preview = WebviewWindowBuilder::new(app, "preview", WebviewUrl::default())
                 .title("Preview")
                 .inner_size(320.0, 400.0)
@@ -183,6 +188,7 @@ pub fn run() {
                 .skip_taskbar(true)
                 .focused(false)
                 .build()?;
+            let _ = _preview.hide();
 
             let tray_menu = MenuBuilder::new(app)
                 .text("show_history", "履歴を表示")

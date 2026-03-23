@@ -135,6 +135,7 @@ function PopupWindow({
   }, []);
 
   const handleHoverPreview = useCallback((payload: HoverPreviewPayload & { anchorRect: DOMRect }) => {
+    console.log("[handleHoverPreview] invoking show_preview");
     invoke("show_preview", {
       payload: {
         text: payload.text ?? null,
@@ -142,7 +143,9 @@ function PopupWindow({
         charCount: payload.charCount ?? null,
         copiedAt: payload.copiedAt ?? null,
       },
-    }).catch((e) => console.error("[show_preview]", e));
+    }).then(() => {
+      console.log("[handleHoverPreview] show_preview succeeded");
+    }).catch((e) => console.error("[show_preview] error:", e));
   }, []);
 
   const clearHoverPreview = useCallback(() => {

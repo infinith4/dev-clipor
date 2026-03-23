@@ -148,8 +148,12 @@ function MainApp() {
   // Show preview for a history entry by id
   const showHistoryPreview = useCallback((id: number) => {
     const entry = history.entries.find((e) => e.id === id);
-    if (!entry) return;
+    if (!entry) {
+      console.warn("[showHistoryPreview] entry not found for id:", id);
+      return;
+    }
     const isImage = entry.contentType === "image";
+    console.log("[showHistoryPreview] invoking show_preview for id:", id, "isImage:", isImage);
     invoke("show_preview", {
       payload: {
         text: isImage ? null : entry.text,
@@ -157,14 +161,24 @@ function MainApp() {
         charCount: entry.charCount,
         copiedAt: entry.copiedAt,
       },
-    }).catch((e) => console.error("[show_preview]", e));
-  }, [history.entries]);
+    }).then(() => {
+      console.log("[showHistoryPreview] show_preview succeeded");
+    }).catch((e) => {
+      const msg = typeof e === "string" ? e : e instanceof Error ? e.message : JSON.stringify(e);
+      console.error("[showHistoryPreview] show_preview FAILED:", msg);
+      setError(`preview error: ${msg}`);
+    });
+  }, [history.entries, setError]);
 
   // Show preview for a template entry by id
   const showTemplatePreview = useCallback((id: number) => {
     const tmpl = templates.templates.find((t) => t.id === id);
-    if (!tmpl) return;
+    if (!tmpl) {
+      console.warn("[showTemplatePreview] template not found for id:", id);
+      return;
+    }
     const isImage = tmpl.contentType === "image" && tmpl.imageData;
+    console.log("[showTemplatePreview] invoking show_preview for id:", id);
     invoke("show_preview", {
       payload: {
         text: isImage ? null : tmpl.text,
@@ -172,8 +186,27 @@ function MainApp() {
         charCount: null,
         copiedAt: null,
       },
-    }).catch((e) => console.error("[show_preview]", e));
-  }, [templates.templates]);
+    }).then(() => {
+      console.log("[showTemplatePreview] show_preview succeeded");
+    }).catch((e) => {
+      const msg = typeof e === "string" ? e : e instanceof Error ? e.message : JSON.stringify(e);
+      console.error("[showTemplatePreview] show_preview FAILED:", msg);
+      setError(`preview error: ${msg}`);
+    });
+  }, [templates.templates, setError]);
+
+  // Auto-show preview when selection changes
+  useEffect(() => {
+    console.log("[auto-preview] effect fired", { activeTab, selectedHistoryId, selectedTemplateId, locked, needsSetup });
+    if (locked || needsSetup) return;
+    if (activeTab === "history" && selectedHistoryId !== null) {
+      showHistoryPreview(selectedHistoryId);
+    } else if (activeTab === "templates" && selectedTemplateId !== null) {
+      showTemplatePreview(selectedTemplateId);
+    } else {
+      invoke("hide_preview").catch(() => {});
+    }
+  }, [activeTab, selectedHistoryId, selectedTemplateId, locked, needsSetup, showHistoryPreview, showTemplatePreview]);
 
   useEffect(() => {
     const unlistenPopupPromise = listen("hotkey://toggle-popup", async () => {
