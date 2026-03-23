@@ -77,10 +77,11 @@ function ClipboardItem({
           <p>{preview}</p>
         )}
       </div>
-      <footer className="clipboard-meta">
-        {entry.isPinned ? <span className="badge">Pin</span> : null}
-        {isImage ? <span>画像</span> : <span>{entry.charCount}文字</span>}
-      </footer>
+      {entry.isPinned ? (
+        <footer className="clipboard-meta">
+          <span className="badge">Pin</span>
+        </footer>
+      ) : null}
     </article>
   );
 }
