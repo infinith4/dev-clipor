@@ -160,4 +160,32 @@ describe("TemplateList", () => {
     });
   });
 
+  describe("context menu", () => {
+    it("calls onContextMenu with event and template on right-click", () => {
+      const onContextMenu = vi.fn();
+      const props = defaultProps({ onContextMenu });
+      render(<TemplateList {...props} />);
+      fireEvent.contextMenu(screen.getByRole("button"));
+      expect(onContextMenu).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({ id: 1, title: "Greeting" }),
+      );
+    });
+
+    it("prevents default on right-click when onContextMenu is provided", () => {
+      const onContextMenu = vi.fn();
+      const props = defaultProps({ onContextMenu });
+      render(<TemplateList {...props} />);
+      const prevented = fireEvent.contextMenu(screen.getByRole("button"));
+      expect(prevented).toBe(false);
+    });
+
+    it("does not set onContextMenu handler when prop is not provided", () => {
+      const props = defaultProps();
+      render(<TemplateList {...props} />);
+      const prevented = fireEvent.contextMenu(screen.getByRole("button"));
+      expect(prevented).toBe(true);
+    });
+  });
+
 });

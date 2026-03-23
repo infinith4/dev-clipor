@@ -87,6 +87,7 @@ function PopupWindow({
 }: PopupWindowProps) {
   const [editingTemplate, setEditingTemplate] = useState<TemplateEntry | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; entry: ClipboardEntry } | null>(null);
+  const [templateContextMenu, setTemplateContextMenu] = useState<{ x: number; y: number; template: TemplateEntry } | null>(null);
   const [editingEntry, setEditingEntry] = useState<ClipboardEntry | null>(null);
   const [editText, setEditText] = useState("");
   const visibleTemplates = useMemo(() => templates.templates, [templates.templates]);
@@ -121,6 +122,25 @@ function PopupWindow({
   const closeContextMenu = useCallback(() => {
     setContextMenu(null);
   }, []);
+
+  const handleTemplateContextMenu = useCallback((event: React.MouseEvent, template: TemplateEntry) => {
+    setTemplateContextMenu({ x: event.clientX, y: event.clientY, template });
+  }, []);
+
+  const closeTemplateContextMenu = useCallback(() => {
+    setTemplateContextMenu(null);
+  }, []);
+
+  const buildTemplateContextMenuItems = useCallback(
+    (template: TemplateEntry): MenuItem[] => [
+      {
+        label: "削除",
+        action: () => void templates.deleteTemplate(template.id),
+        danger: true,
+      },
+    ],
+    [templates],
+  );
 
   const buildContextMenuItems = useCallback(
     (entry: ClipboardEntry): MenuItem[] => [
@@ -313,8 +333,18 @@ function PopupWindow({
                 selectedTemplateId={templates.selectedTemplateId}
                 onSelect={templates.setSelectedTemplate}
                 onPaste={templates.pasteTemplate}
+                onContextMenu={handleTemplateContextMenu}
               />
             </div>
+
+            {templateContextMenu ? (
+              <ContextMenu
+                x={templateContextMenu.x}
+                y={templateContextMenu.y}
+                onClose={closeTemplateContextMenu}
+                items={buildTemplateContextMenuItems(templateContextMenu.template)}
+              />
+            ) : null}
             <TemplateEditor
               groups={templates.groups}
               editingTemplate={editingTemplate}

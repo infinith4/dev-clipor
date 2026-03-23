@@ -5,6 +5,7 @@ interface TemplateListProps {
   selectedTemplateId: number | null;
   onSelect: (template: TemplateEntry) => void;
   onPaste: (id: number) => void;
+  onContextMenu?: (event: React.MouseEvent, template: TemplateEntry) => void;
 }
 
 function TemplateItemRow({
@@ -12,11 +13,13 @@ function TemplateItemRow({
   isSelected,
   onSelect,
   onPaste,
+  onContextMenu,
 }: {
   template: TemplateEntry;
   isSelected: boolean;
   onSelect: (template: TemplateEntry) => void;
   onPaste: (id: number) => void;
+  onContextMenu?: (event: React.MouseEvent, template: TemplateEntry) => void;
 }) {
   const isImage = template.contentType === "image" && template.imageData;
   const preview = template.text.replace(/\r?\n/g, " ").slice(0, 60);
@@ -29,6 +32,10 @@ function TemplateItemRow({
       onClick={() => onPaste(template.id)}
       onFocus={() => onSelect(template)}
       onMouseEnter={() => onSelect(template)}
+      onContextMenu={onContextMenu ? (event) => {
+        event.preventDefault();
+        onContextMenu(event, template);
+      } : undefined}
     >
       <div className="template-header">
         <div>
@@ -54,6 +61,7 @@ function TemplateList({
   selectedTemplateId,
   onSelect,
   onPaste,
+  onContextMenu,
 }: TemplateListProps) {
   if (templates.length === 0) {
     return <div className="empty-state">定型文はまだありません。</div>;
@@ -68,6 +76,7 @@ function TemplateList({
           isSelected={selectedTemplateId === template.id}
           onSelect={onSelect}
           onPaste={onPaste}
+          onContextMenu={onContextMenu}
         />
       ))}
     </div>
