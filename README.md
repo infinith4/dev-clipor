@@ -21,11 +21,11 @@ Windows 向けのクリップボードマネージャーアプリケーション
 
 | レイヤー | 技術 |
 |---------|------|
-| フロントエンド | React 19 + TypeScript 6 + Vite 8 |
-| バックエンド | Rust + Tauri 2 |
-| データベース | SQLite (rusqlite, bundled) |
+| フロントエンド | React 19.2 + TypeScript 6.0 + Vite 8.0 |
+| バックエンド | Rust + Tauri 2.10 |
+| データベース | SQLite (rusqlite 0.39, bundled) |
 | 暗号化 | AES-256-GCM + PBKDF2 |
-| テスト | Vitest + Testing Library |
+| テスト | Vitest 4.1 + Testing Library 16.3 |
 
 ## 必要環境
 
