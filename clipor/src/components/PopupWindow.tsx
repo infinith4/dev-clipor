@@ -8,7 +8,7 @@ import SearchBar from "./SearchBar";
 import SettingsView from "./SettingsView";
 import TemplateEditor from "./TemplateEditor";
 import TemplateList from "./TemplateList";
-import type { AppSettings, ClipboardEntry, HoverPreviewPayload, PopupTab, TemplateEntry } from "../types";
+import type { AppSettings, ClipboardEntry, PopupTab, TemplateEntry } from "../types";
 
 interface PopupWindowProps {
   activeTab: PopupTab;
@@ -120,24 +120,6 @@ function PopupWindow({
 
   const closeContextMenu = useCallback(() => {
     setContextMenu(null);
-  }, []);
-
-  const handleHoverPreview = useCallback((payload: HoverPreviewPayload & { anchorRect: DOMRect }) => {
-    console.log("[handleHoverPreview] invoking show_preview");
-    invoke("show_preview", {
-      payload: {
-        text: payload.text ?? null,
-        imageData: payload.imageData ?? null,
-        charCount: payload.charCount ?? null,
-        copiedAt: payload.copiedAt ?? null,
-      },
-    }).then(() => {
-      console.log("[handleHoverPreview] show_preview succeeded");
-    }).catch((e) => console.error("[show_preview] error:", e));
-  }, []);
-
-  const clearHoverPreview = useCallback(() => {
-    invoke("hide_preview").catch(() => {});
   }, []);
 
   const buildContextMenuItems = useCallback(
@@ -254,8 +236,6 @@ function PopupWindow({
                   onSelect={history.setSelectedEntryId}
                   onPaste={history.pasteEntry}
                   onContextMenu={handleContextMenu}
-                  onHoverPreview={handleHoverPreview}
-                  onHoverPreviewEnd={clearHoverPreview}
                 />
               ))}
               {!history.loading && history.entries.length === 0 ? (
@@ -333,8 +313,6 @@ function PopupWindow({
                 selectedTemplateId={templates.selectedTemplateId}
                 onSelect={templates.setSelectedTemplate}
                 onPaste={templates.pasteTemplate}
-                onHoverPreview={handleHoverPreview}
-                onHoverPreviewEnd={clearHoverPreview}
               />
             </div>
             <TemplateEditor
