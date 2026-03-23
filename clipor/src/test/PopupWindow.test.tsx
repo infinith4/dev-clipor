@@ -136,8 +136,8 @@ describe("PopupWindow", () => {
     expect(screen.getByRole("button", { name: "Create" })).toBeInTheDocument();
   });
 
-  it("calls show_preview on hover over clipboard entry", async () => {
-    vi.useFakeTimers();
+  it("selects entry on hover (auto-preview triggers in App)", async () => {
+    const setSelectedEntryId = vi.fn();
 
     render(
       <PopupWindow
@@ -162,7 +162,7 @@ describe("PopupWindow", () => {
           search: "",
           selectedEntryId: null,
           setSearch: vi.fn(),
-          setSelectedEntryId: vi.fn(),
+          setSelectedEntryId,
           previousPage: vi.fn(),
           nextPage: vi.fn(),
           selectEntry: vi.fn(),
@@ -208,18 +208,9 @@ describe("PopupWindow", () => {
     const item = screen.getByText("first line second line").closest("article");
     expect(item).not.toBeNull();
 
-    await act(async () => {
-      fireEvent.mouseEnter(item!);
-      await vi.advanceTimersByTimeAsync(300);
-    });
+    fireEvent.mouseEnter(item!);
 
-    // Preview is now shown via invoke("show_preview") in a separate Tauri window
-    expect(invokeMock).toHaveBeenCalledWith("show_preview", expect.objectContaining({
-      payload: expect.objectContaining({
-        text: "first line\nsecond line",
-        charCount: 22,
-        copiedAt: "copied-at",
-      }),
-    }));
+    // Hover selects the entry; auto-preview (show_preview) is handled by App.tsx
+    expect(setSelectedEntryId).toHaveBeenCalledWith(1);
   });
 });
