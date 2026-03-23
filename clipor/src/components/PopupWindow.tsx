@@ -8,7 +8,7 @@ import SearchBar from "./SearchBar";
 import SettingsView from "./SettingsView";
 import TemplateEditor from "./TemplateEditor";
 import TemplateList from "./TemplateList";
-import type { ClipboardEntry, HoverPreviewPayload, PopupTab, TemplateEntry } from "../types";
+import type { AppSettings, ClipboardEntry, HoverPreviewPayload, PopupTab, TemplateEntry } from "../types";
 
 interface PopupWindowProps {
   activeTab: PopupTab;
@@ -66,20 +66,8 @@ interface PopupWindowProps {
     importTemplates: (json: string) => void;
   };
   settings: {
-    settings: {
-      maxHistoryItems: number;
-      pageSize: number;
-      hotkey: string;
-      launchOnStartup: boolean;
-      requirePassword: boolean;
-    };
-    saveSettings: (settings: {
-      maxHistoryItems: number;
-      pageSize: number;
-      hotkey: string;
-      launchOnStartup: boolean;
-      requirePassword: boolean;
-    }) => void;
+    settings: AppSettings;
+    saveSettings: (settings: AppSettings) => void;
     refresh: () => void;
   };
   onSelectTab: (tab: PopupTab) => void;
