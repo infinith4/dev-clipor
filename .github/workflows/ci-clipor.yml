@@ -13,6 +13,9 @@ on:
     paths:
       - 'clipor/**'
 
+permissions:
+  contents: write
+
 jobs:
   ci:
     runs-on: windows-latest
@@ -36,8 +39,86 @@ jobs:
 
       - run: npm ci
 
-      - name: Frontend tests
-        run: npm test
+      - name: Frontend tests with coverage
+        run: npm run test:coverage
+
+      - name: Generate coverage badges
+        shell: bash
+        run: |
+          # Read coverage-summary.json
+          SUMMARY="coverage/coverage-summary.json"
+          if [ ! -f "$SUMMARY" ]; then
+            echo "Coverage summary not found"
+            exit 0
+          fi
+
+          # Extract percentages
+          STATEMENTS=$(node -e "const s=require('./$SUMMARY');console.log(s.total.statements.pct)")
+          BRANCHES=$(node -e "const s=require('./$SUMMARY');console.log(s.total.branches.pct)")
+          FUNCTIONS=$(node -e "const s=require('./$SUMMARY');console.log(s.total.functions.pct)")
+
+          echo "C0 (Statements): ${STATEMENTS}%"
+          echo "C1 (Branches): ${BRANCHES}%"
+          echo "C2 (Functions): ${FUNCTIONS}%"
+
+          # Determine badge color based on percentage
+          badge_color() {
+            local pct=$1
+            if (( $(echo "$pct >= 80" | bc -l) )); then echo "brightgreen"
+            elif (( $(echo "$pct >= 60" | bc -l) )); then echo "yellow"
+            elif (( $(echo "$pct >= 40" | bc -l) )); then echo "orange"
+            else echo "red"
+            fi
+          }
+
+          C0_COLOR=$(badge_color "$STATEMENTS")
+          C1_COLOR=$(badge_color "$BRANCHES")
+          C2_COLOR=$(badge_color "$FUNCTIONS")
+
+          # Create badges directory
+          mkdir -p ../badges
+
+          # Generate badge JSON files (for shields.io endpoint)
+          cat > ../badges/c0-coverage.json <<EOF
+          { "schemaVersion": 1, "label": "C0 (statements)", "message": "${STATEMENTS}%", "color": "${C0_COLOR}" }
+          EOF
+          cat > ../badges/c1-coverage.json <<EOF
+          { "schemaVersion": 1, "label": "C1 (branches)", "message": "${BRANCHES}%", "color": "${C1_COLOR}" }
+          EOF
+          cat > ../badges/c2-coverage.json <<EOF
+          { "schemaVersion": 1, "label": "C2 (functions)", "message": "${FUNCTIONS}%", "color": "${C2_COLOR}" }
+          EOF
+
+      - name: Deploy coverage badges
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        shell: bash
+        working-directory: .
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create or switch to gh-pages-badges branch
+          git fetch origin gh-pages-badges || true
+          if git rev-parse --verify origin/gh-pages-badges >/dev/null 2>&1; then
+            git checkout gh-pages-badges
+          else
+            git checkout --orphan gh-pages-badges
+            git rm -rf . || true
+          fi
+
+          # Copy badge files
+          cp -f badges/*.json . 2>/dev/null || true
+
+          git add *.json
+          if git diff --cached --quiet; then
+            echo "No badge changes"
+          else
+            git commit -m "Update coverage badges"
+            git push origin gh-pages-badges
+          fi
+
+          # Switch back
+          git checkout -
 
       - name: Frontend build
         run: npm run build

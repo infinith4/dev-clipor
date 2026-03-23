@@ -1,5 +1,9 @@
 # Clipor
 
+![C0 (statements)](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/infinith4/dev-clipor/gh-pages-badges/c0-coverage.json)
+![C1 (branches)](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/infinith4/dev-clipor/gh-pages-badges/c1-coverage.json)
+![C2 (functions)](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/infinith4/dev-clipor/gh-pages-badges/c2-coverage.json)
+
 Windows 向けのクリップボードマネージャーアプリケーションです。クリップボードの履歴管理、テンプレート機能、パスワード保護によるセキュアな運用が可能です。
 
 ## 主な機能

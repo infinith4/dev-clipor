@@ -68,7 +68,9 @@
       "Bash(taskkill //F //PID 46064)",
       "Bash(taskkill //F //IM clipor.exe)",
       "Bash(taskkill //F //PID 52216)",
-      "Bash(taskkill //F //IM node.exe)"
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(find /c/Projects/github/infinith4/dev-clipor/clipor -maxdepth 2 -type f \\\\\\(-name vitest.config.* -o -name .nycrc* -o -name c8.config.* -o -name *.coverage.* \\\\\\))",
+      "Bash(npm install:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
