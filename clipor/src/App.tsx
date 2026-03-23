@@ -43,6 +43,7 @@ function MainApp() {
   const [setupError, setSetupError] = useState<string | null>(null);
   const [selectedHistoryId, setSelectedHistoryId] = useState<number | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
+  const [popupVisible, setPopupVisible] = useState(0);
   const popupWindowRef = useRef<Window | null>(null);
   const settings = useSettings(setError);
   const history = useClipboardHistory(settings.settings.pageSize, setError);
@@ -145,15 +146,19 @@ function MainApp() {
     );
   }, [templates.templates]);
 
+  // Get the viewport Y of the selected card element
+  const getSelectedCardY = useCallback((id: number): number | null => {
+    const el = document.querySelector(`.panel-card.selected`) as HTMLElement | null;
+    if (el) return el.getBoundingClientRect().top;
+    return null;
+  }, []);
+
   // Show preview for a history entry by id
   const showHistoryPreview = useCallback((id: number) => {
     const entry = history.entries.find((e) => e.id === id);
-    if (!entry) {
-      console.warn("[showHistoryPreview] entry not found for id:", id);
-      return;
-    }
+    if (!entry) return;
     const isImage = entry.contentType === "image";
-    console.log("[showHistoryPreview] invoking show_preview for id:", id, "isImage:", isImage);
+    const anchorY = getSelectedCardY(id);
     invoke("show_preview", {
       payload: {
         text: isImage ? null : entry.text,
@@ -161,24 +166,19 @@ function MainApp() {
         charCount: entry.charCount,
         copiedAt: entry.copiedAt,
       },
-    }).then(() => {
-      console.log("[showHistoryPreview] show_preview succeeded");
+      anchorY: anchorY != null ? Math.round(anchorY) : null,
     }).catch((e) => {
       const msg = typeof e === "string" ? e : e instanceof Error ? e.message : JSON.stringify(e);
-      console.error("[showHistoryPreview] show_preview FAILED:", msg);
       setError(`preview error: ${msg}`);
     });
-  }, [history.entries, setError]);
+  }, [history.entries, setError, getSelectedCardY]);
 
   // Show preview for a template entry by id
   const showTemplatePreview = useCallback((id: number) => {
     const tmpl = templates.templates.find((t) => t.id === id);
-    if (!tmpl) {
-      console.warn("[showTemplatePreview] template not found for id:", id);
-      return;
-    }
+    if (!tmpl) return;
     const isImage = tmpl.contentType === "image" && tmpl.imageData;
-    console.log("[showTemplatePreview] invoking show_preview for id:", id);
+    const anchorY = getSelectedCardY(tmpl.id);
     invoke("show_preview", {
       payload: {
         text: isImage ? null : tmpl.text,
@@ -186,14 +186,12 @@ function MainApp() {
         charCount: null,
         copiedAt: null,
       },
-    }).then(() => {
-      console.log("[showTemplatePreview] show_preview succeeded");
+      anchorY: anchorY != null ? Math.round(anchorY) : null,
     }).catch((e) => {
       const msg = typeof e === "string" ? e : e instanceof Error ? e.message : JSON.stringify(e);
-      console.error("[showTemplatePreview] show_preview FAILED:", msg);
       setError(`preview error: ${msg}`);
     });
-  }, [templates.templates, setError]);
+  }, [templates.templates, setError, getSelectedCardY]);
 
   // Auto-show preview when selection changes
   useEffect(() => {
@@ -206,7 +204,7 @@ function MainApp() {
     } else {
       invoke("hide_preview").catch(() => {});
     }
-  }, [activeTab, selectedHistoryId, selectedTemplateId, locked, needsSetup, showHistoryPreview, showTemplatePreview]);
+  }, [activeTab, selectedHistoryId, selectedTemplateId, locked, needsSetup, popupVisible, showHistoryPreview, showTemplatePreview]);
 
   useEffect(() => {
     const unlistenPopupPromise = listen("hotkey://toggle-popup", async () => {
@@ -216,6 +214,7 @@ function MainApp() {
       }
       await popupWindowRef.current.show();
       await popupWindowRef.current.setFocus();
+      setPopupVisible((v) => v + 1);
     });
     const unlistenTabPromise = listen<string>("ui://select-tab", (event) => {
       if (event.payload === "history" || event.payload === "templates" || event.payload === "settings") {

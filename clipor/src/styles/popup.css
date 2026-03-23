@@ -769,10 +769,13 @@ button.danger:hover {
 /* --- Preview panel (separate window) --- */
 .preview-panel {
   height: 100vh;
-  overflow: auto;
+  overflow: hidden;
   background: #ffffee;
   padding: 8px 10px;
   font-family: "Meiryo UI", "Segoe UI", "Yu Gothic UI", sans-serif;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .preview-panel-empty {
@@ -803,17 +806,19 @@ button.danger:hover {
   white-space: pre-wrap;
   word-break: break-all;
   overflow-y: auto;
-  max-height: calc(100vh - 50px);
+  flex: 1;
+  min-height: 0;
 }
 
 .preview-panel-image {
   max-width: 100%;
-  max-height: calc(100vh - 50px);
   width: 100%;
   object-fit: contain;
   border: 1px solid #cccc99;
   border-radius: 2px;
   background: #f0f0f0;
+  flex: 1;
+  min-height: 0;
 }
 
 /* --- No animation --- */

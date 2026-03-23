@@ -129,10 +129,39 @@ pub fn run() {
                         let fg_is_ours = crate::native::win32::foreground_window_pid()
                             .map(|pid| pid == our_pid)
                             .unwrap_or(false);
-                        eprintln!("[blur-check] fg_is_ours={}", fg_is_ours);
 
                         if fg_is_ours {
-                            // Our app still owns the foreground — don't hide
+                            return;
+                        }
+
+                        // Check if cursor is over the main or preview window
+                        // (user may be moving mouse between them)
+                        let cursor_over_our_window = (|| -> bool {
+                            let (cx, cy) = match crate::native::win32::cursor_position() {
+                                Ok(pos) => pos,
+                                Err(_) => return false,
+                            };
+                            for label in &["main", "preview"] {
+                                if let Some(w) = app.get_webview_window(label) {
+                                    if let (Ok(pos), Ok(size)) = (w.outer_position(), w.outer_size()) {
+                                        if cx >= pos.x
+                                            && cx <= pos.x + size.width as i32
+                                            && cy >= pos.y
+                                            && cy <= pos.y + size.height as i32
+                                        {
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                            false
+                        })();
+
+                        if cursor_over_our_window {
+                            // Cursor is still over our windows — re-focus main
+                            if let Some(mw) = app.get_webview_window("main") {
+                                let _ = mw.set_focus();
+                            }
                             return;
                         }
 
@@ -174,21 +203,6 @@ pub fn run() {
                 .build()?;
 
             let _ = window.hide();
-
-            // Create preview window at startup (hidden).
-            // WebviewWindowBuilder::build() hangs when called from a command handler,
-            // so we must create it here on the main thread.
-            let _preview = WebviewWindowBuilder::new(app, "preview", WebviewUrl::default())
-                .title("Preview")
-                .inner_size(320.0, 400.0)
-                .visible(false)
-                .decorations(false)
-                .transparent(false)
-                .always_on_top(true)
-                .skip_taskbar(true)
-                .focused(false)
-                .build()?;
-            let _ = _preview.hide();
 
             let tray_menu = MenuBuilder::new(app)
                 .text("show_history", "履歴を表示")
@@ -317,5 +331,22 @@ fn show_popup(app: &AppHandle, popup_shown_at: &Arc<Mutex<Option<Instant>>>) -> 
     let _ = window.unminimize();
     window.show().map_err(|error| error.to_string())?;
     window.set_focus().map_err(|error| error.to_string())?;
+
+    // Ensure preview window exists (create lazily on first popup show).
+    // Must be created here (main thread context) — WebviewWindowBuilder::build()
+    // deadlocks when called from a Tauri command handler thread.
+    if app.get_webview_window("preview").is_none() {
+        let _ = WebviewWindowBuilder::new(app, "preview", WebviewUrl::default())
+            .title("Preview")
+            .inner_size(320.0, 400.0)
+            .visible(false)
+            .decorations(false)
+            .transparent(false)
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .focused(false)
+            .build();
+    }
+
     Ok(())
 }
