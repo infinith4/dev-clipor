@@ -18,7 +18,7 @@ use tauri::{
 use crate::commands::clipboard::{
     delete_history_entry, get_history, paste_history_entry, set_clipboard_converted,
     set_clipboard_formatted, set_clipboard_text_converted, set_clipboard_text_formatted,
-    set_history_pinned, update_history_entry,
+    set_history_pinned, transform_and_paste, update_history_entry,
 };
 use crate::commands::preview::{get_preview_data, hide_preview, show_preview, PreviewState};
 use crate::commands::settings::{
@@ -271,6 +271,7 @@ pub fn run() {
             set_clipboard_converted,
             set_clipboard_text_formatted,
             set_clipboard_text_converted,
+            transform_and_paste,
             get_template_groups,
             get_templates,
             upsert_template,

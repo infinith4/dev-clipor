@@ -661,6 +661,26 @@ button.danger:hover {
   color: #fff;
 }
 
+.context-menu-parent {
+  position: relative;
+}
+
+.context-menu-item.has-children {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.submenu-arrow {
+  font-size: 8px;
+  opacity: 0.6;
+}
+
+.context-menu.submenu {
+  position: fixed;
+}
+
 /* --- Edit dialog overlay --- */
 .edit-overlay {
   position: fixed;

@@ -388,8 +388,8 @@ describe("PopupWindow", () => {
       expect(screen.getByText("編集")).toBeInTheDocument();
       expect(screen.getByText("削除")).toBeInTheDocument();
       expect(screen.getByText("定型文に登録")).toBeInTheDocument();
-      expect(screen.getByText("クリップボードにセット(整形)")).toBeInTheDocument();
-      expect(screen.getByText("クリップボードにセット(変換)")).toBeInTheDocument();
+      expect(screen.getByText("整形")).toBeInTheDocument();
+      expect(screen.getByText("変換")).toBeInTheDocument();
     });
 
     it("clicking 編集 opens the edit dialog", async () => {
@@ -413,16 +413,26 @@ describe("PopupWindow", () => {
       );
     });
 
-    it("clicking 整形 calls setClipboardFormatted", async () => {
-      const props = renderWithEntry();
-      await userEvent.click(screen.getByText("クリップボードにセット(整形)"));
-      expect(props.history.setClipboardFormatted).toHaveBeenCalledWith(42);
+    it("clicking 整形 submenu item calls transform_and_paste", async () => {
+      renderWithEntry();
+      const parent = screen.getByText("整形").closest(".context-menu-parent")!;
+      fireEvent.mouseEnter(parent);
+      await userEvent.click(screen.getByText("前後の空白を削除"));
+      expect(invokeMock).toHaveBeenCalledWith("transform_and_paste", {
+        text: "ctx text",
+        transformType: "trim",
+      });
     });
 
-    it("clicking 変換 calls setClipboardConverted", async () => {
-      const props = renderWithEntry();
-      await userEvent.click(screen.getByText("クリップボードにセット(変換)"));
-      expect(props.history.setClipboardConverted).toHaveBeenCalledWith(42);
+    it("clicking 変換 submenu item calls transform_and_paste", async () => {
+      renderWithEntry();
+      const parent = screen.getByText("変換").closest(".context-menu-parent")!;
+      fireEvent.mouseEnter(parent);
+      await userEvent.click(screen.getByText("全角→半角"));
+      expect(invokeMock).toHaveBeenCalledWith("transform_and_paste", {
+        text: "ctx text",
+        transformType: "fullwidth_to_halfwidth",
+      });
     });
   });
 
@@ -767,7 +777,7 @@ describe("PopupWindow", () => {
   /*  13. buildContextMenuItems returns correct array               */
   /* ============================================================== */
   describe("buildContextMenuItems", () => {
-    it("returns 5 menu items with correct labels", () => {
+    it("returns 5 menu items with correct labels (3 flat + 2 submenu parents)", () => {
       const entry = makeEntry({ id: 1, text: "test" });
       render(<PopupWindow {...makeProps({ history: { entries: [entry] } })} />);
       const article = screen.getByText("test").closest("article")!;
@@ -782,8 +792,10 @@ describe("PopupWindow", () => {
       expect(menuItems[1]).toHaveTextContent("削除");
       expect(menuItems[1]).toHaveClass("danger");
       expect(menuItems[2]).toHaveTextContent("定型文に登録");
-      expect(menuItems[3]).toHaveTextContent("クリップボードにセット(整形)");
-      expect(menuItems[4]).toHaveTextContent("クリップボードにセット(変換)");
+      expect(menuItems[3]).toHaveTextContent("整形");
+      expect(menuItems[3]).toHaveClass("has-children");
+      expect(menuItems[4]).toHaveTextContent("変換");
+      expect(menuItems[4]).toHaveClass("has-children");
     });
   });
 

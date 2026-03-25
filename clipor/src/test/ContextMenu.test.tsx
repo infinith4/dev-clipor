@@ -102,4 +102,64 @@ describe("ContextMenu", () => {
 
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  describe("submenu", () => {
+    function makeSubItems(): MenuItem[] {
+      return [
+        {
+          label: "整形",
+          children: [
+            { label: "前後の空白を削除", action: vi.fn() },
+            { label: "空行を削除", action: vi.fn() },
+          ],
+        },
+        { label: "Delete", action: vi.fn(), danger: true },
+      ];
+    }
+
+    it("renders parent item with arrow", () => {
+      render(<ContextMenu x={0} y={0} items={makeSubItems()} onClose={vi.fn()} />);
+      expect(screen.getByText("整形")).toBeInTheDocument();
+      expect(screen.getByText("▶")).toBeInTheDocument();
+    });
+
+    it("does not show submenu items initially", () => {
+      render(<ContextMenu x={0} y={0} items={makeSubItems()} onClose={vi.fn()} />);
+      expect(screen.queryByText("前後の空白を削除")).not.toBeInTheDocument();
+    });
+
+    it("shows submenu on mouse enter of parent", () => {
+      render(<ContextMenu x={0} y={0} items={makeSubItems()} onClose={vi.fn()} />);
+      const parent = screen.getByText("整形").closest(".context-menu-parent")!;
+      fireEvent.mouseEnter(parent);
+      expect(screen.getByText("前後の空白を削除")).toBeInTheDocument();
+      expect(screen.getByText("空行を削除")).toBeInTheDocument();
+    });
+
+    it("hides submenu on mouse leave of parent", () => {
+      render(<ContextMenu x={0} y={0} items={makeSubItems()} onClose={vi.fn()} />);
+      const parent = screen.getByText("整形").closest(".context-menu-parent")!;
+      fireEvent.mouseEnter(parent);
+      expect(screen.getByText("前後の空白を削除")).toBeInTheDocument();
+      fireEvent.mouseLeave(parent);
+      expect(screen.queryByText("前後の空白を削除")).not.toBeInTheDocument();
+    });
+
+    it("calls child action and onClose when submenu item is clicked", () => {
+      const items = makeSubItems();
+      const onClose = vi.fn();
+      render(<ContextMenu x={0} y={0} items={items} onClose={onClose} />);
+      const parent = screen.getByText("整形").closest(".context-menu-parent")!;
+      fireEvent.mouseEnter(parent);
+      fireEvent.click(screen.getByText("前後の空白を削除"));
+      expect(items[0].children![0].action).toHaveBeenCalledOnce();
+      expect(onClose).toHaveBeenCalledOnce();
+    });
+
+    it("renders flat items alongside submenu items", () => {
+      render(<ContextMenu x={0} y={0} items={makeSubItems()} onClose={vi.fn()} />);
+      expect(screen.getByText("Delete")).toBeInTheDocument();
+      expect(screen.getByText("Delete")).toHaveClass("danger");
+    });
+  });
 });

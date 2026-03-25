@@ -131,6 +131,36 @@ function PopupWindow({
     setTemplateContextMenu(null);
   }, []);
 
+  const buildTransformMenus = useCallback(
+    (text: string): MenuItem[] => [
+      {
+        label: "整形",
+        children: [
+          { label: "コメントを付加 (// )", action: () => void invoke("transform_and_paste", { text, transformType: "add_comment_prefix" }) },
+          { label: "引用符を付加 (> )", action: () => void invoke("transform_and_paste", { text, transformType: "add_quote_prefix" }) },
+          { label: "連番を付加 (1. 2. ...)", action: () => void invoke("transform_and_paste", { text, transformType: "add_numbering" }) },
+          { label: "各行を\"で囲む", action: () => void invoke("transform_and_paste", { text, transformType: "wrap_lines_in_quotes" }) },
+          { label: "前後の空白を削除", action: () => void invoke("transform_and_paste", { text, transformType: "trim" }) },
+          { label: "空行を削除", action: () => void invoke("transform_and_paste", { text, transformType: "remove_empty_lines" }) },
+          { label: "連続空行を1行に", action: () => void invoke("transform_and_paste", { text, transformType: "collapse_blank_lines" }) },
+          { label: "行末空白を削除", action: () => void invoke("transform_and_paste", { text, transformType: "trim_trailing" }) },
+          { label: "重複行を削除", action: () => void invoke("transform_and_paste", { text, transformType: "remove_duplicate_lines" }) },
+          { label: "HTMLタグを除去", action: () => void invoke("transform_and_paste", { text, transformType: "remove_html_tags" }) },
+        ],
+      },
+      {
+        label: "変換",
+        children: [
+          { label: "大文字→小文字", action: () => void invoke("transform_and_paste", { text, transformType: "to_lowercase" }) },
+          { label: "小文字→大文字", action: () => void invoke("transform_and_paste", { text, transformType: "to_uppercase" }) },
+          { label: "全角→半角", action: () => void invoke("transform_and_paste", { text, transformType: "fullwidth_to_halfwidth" }) },
+          { label: "半角→全角", action: () => void invoke("transform_and_paste", { text, transformType: "halfwidth_to_fullwidth" }) },
+        ],
+      },
+    ],
+    [],
+  );
+
   const buildTemplateContextMenuItems = useCallback(
     (template: TemplateEntry): MenuItem[] => [
       {
@@ -138,16 +168,9 @@ function PopupWindow({
         action: () => void templates.deleteTemplate(template.id),
         danger: true,
       },
-      {
-        label: "クリップボードにセット(整形)",
-        action: () => void invoke("set_clipboard_text_formatted", { text: template.text }),
-      },
-      {
-        label: "クリップボードにセット(変換)",
-        action: () => void invoke("set_clipboard_text_converted", { text: template.text }),
-      },
+      ...buildTransformMenus(template.text),
     ],
-    [templates],
+    [templates, buildTransformMenus],
   );
 
   const buildContextMenuItems = useCallback(
@@ -168,16 +191,9 @@ function PopupWindow({
         label: "定型文に登録",
         action: () => onRegisterAsTemplate(entry),
       },
-      {
-        label: "クリップボードにセット(整形)",
-        action: () => void history.setClipboardFormatted(entry.id),
-      },
-      {
-        label: "クリップボードにセット(変換)",
-        action: () => void history.setClipboardConverted(entry.id),
-      },
+      ...buildTransformMenus(entry.text),
     ],
-    [history, onRegisterAsTemplate],
+    [history, onRegisterAsTemplate, buildTransformMenus],
   );
 
   useEffect(() => {
