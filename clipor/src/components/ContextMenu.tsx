@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 export interface MenuItem {
   label: string;
@@ -20,11 +20,38 @@ function SubMenu({ items, parentRect, onClose }: {
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ left: parentRect.right, top: parentRect.top });
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const rect = el.getBoundingClientRect();
+
+    let left = parentRect.right;
+    let top = parentRect.top;
+
+    // If submenu overflows right, show on left side of parent
+    if (left + rect.width > vw) {
+      left = parentRect.left - rect.width;
+    }
+    // If still off-screen left, clamp to 0
+    if (left < 0) left = 0;
+
+    // If overflows bottom, shift up
+    if (top + rect.height > vh) {
+      top = vh - rect.height;
+    }
+    if (top < 0) top = 0;
+
+    setPos({ left, top });
+  }, [parentRect]);
 
   const style: React.CSSProperties = {
     position: "fixed",
-    left: parentRect.right,
-    top: parentRect.top,
+    left: pos.left,
+    top: pos.top,
     zIndex: 10000,
   };
 
@@ -51,6 +78,32 @@ function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [openSub, setOpenSub] = useState<string | null>(null);
   const [subRect, setSubRect] = useState<DOMRect | null>(null);
+  const [pos, setPos] = useState({ left: x, top: y });
+
+  useLayoutEffect(() => {
+    const el = menuRef.current;
+    if (!el) return;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const rect = el.getBoundingClientRect();
+
+    let left = x;
+    let top = y;
+
+    // If overflows right, shift left
+    if (left + rect.width > vw) {
+      left = vw - rect.width;
+    }
+    if (left < 0) left = 0;
+
+    // If overflows bottom, shift up
+    if (top + rect.height > vh) {
+      top = vh - rect.height;
+    }
+    if (top < 0) top = 0;
+
+    setPos({ left, top });
+  }, [x, y]);
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
@@ -74,8 +127,8 @@ function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
 
   const style: React.CSSProperties = {
     position: "fixed",
-    left: x,
-    top: y,
+    left: pos.left,
+    top: pos.top,
     zIndex: 9999,
   };
 
