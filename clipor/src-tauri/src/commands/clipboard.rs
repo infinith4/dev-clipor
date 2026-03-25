@@ -2,6 +2,9 @@ use tauri::{AppHandle, Manager, State};
 
 /// ウィンドウを閉じてCtrl+Vで貼り付ける共通処理
 fn hide_and_paste(app: &AppHandle, state: &State<'_, AppState>, text: &str) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("preview") {
+        let _ = window.hide();
+    }
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.hide();
     }
