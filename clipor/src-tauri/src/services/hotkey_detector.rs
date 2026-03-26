@@ -344,7 +344,7 @@ where
                 _ => {}
             }
         }
-        CallNextHookEx(HHOOK::default(), code, w_param, l_param)
+        CallNextHookEx(Some(HHOOK::default()), code, w_param, l_param)
     }
 
     thread::spawn(move || {
