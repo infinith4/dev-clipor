@@ -11,7 +11,6 @@ import { useTemplates } from "./hooks/useTemplates";
 import type { PopupTab } from "./types";
 
 const COMPACT_WINDOW_WIDTH = 230;
-const SETTINGS_WINDOW_WIDTH = 420;
 const WINDOW_HEIGHT = 720;
 
 // Detect if this is the preview window by checking the Tauri window label
@@ -337,12 +336,11 @@ function MainApp() {
         return;
       }
 
-      const width = activeTab === "settings" ? SETTINGS_WINDOW_WIDTH : COMPACT_WINDOW_WIDTH;
-      await popupWindowRef.current.setSize(new LogicalSize(width, WINDOW_HEIGHT));
+      await popupWindowRef.current.setSize(new LogicalSize(COMPACT_WINDOW_WIDTH, WINDOW_HEIGHT));
     };
 
     void resizeWindow();
-  }, [activeTab]);
+  }, []);
 
   if (needsSetup) {
     return (

@@ -16,6 +16,7 @@ const defaultSettings: AppSettings = {
   maxHistoryItems: 1000,
   pageSize: 20,
   hotkey: "Ctrl+Alt+M",
+  activationMode: "hotkey",
   launchOnStartup: false,
   blurDelayMs: 100,
   previewWidth: 320,
@@ -320,10 +321,10 @@ describe("PopupWindow", () => {
       expect(container.querySelector(".popup-shell.compact-shell")).toBeInTheDocument();
     });
 
-    it("does not apply compact classes for settings tab", () => {
+    it("applies compact classes for settings tab", () => {
       const { container } = render(<PopupWindow {...makeProps({ activeTab: "settings" })} />);
-      expect(container.querySelector(".compact-shell")).not.toBeInTheDocument();
-      expect(container.querySelector(".compact-panel")).not.toBeInTheDocument();
+      expect(container.querySelector(".popup-shell.compact-shell")).toBeInTheDocument();
+      expect(container.querySelector(".popup-panel.compact-panel")).toBeInTheDocument();
     });
   });
 

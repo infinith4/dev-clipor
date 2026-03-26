@@ -32,7 +32,7 @@ use crate::commands::template::{
 use crate::models::app_settings::AppSettings;
 use crate::services::clipboard_history_store::ClipboardHistoryStore;
 use crate::services::clipboard_monitor::spawn_monitor;
-use crate::services::hotkey_detector::spawn_hotkey_listener;
+use crate::services::hotkey_detector::{spawn_double_key_listener, spawn_hotkey_listener};
 use crate::services::paste_service::PasteService;
 use crate::services::settings_service::SettingsService;
 use crate::services::template_store::TemplateStore;
@@ -253,9 +253,16 @@ pub fn run() {
             );
 
             let app_handle = app.handle().clone();
-            let popup_shown_at = popup_shown_at.clone();
+            let popup_shown_at_for_hotkey = popup_shown_at.clone();
             spawn_hotkey_listener(settings_service.clone(), move || {
-                let _ = show_popup(&app_handle, &popup_shown_at);
+                let _ = show_popup(&app_handle, &popup_shown_at_for_hotkey);
+                let _ = app_handle.emit("hotkey://toggle-popup", ());
+            });
+
+            let app_handle = app.handle().clone();
+            let popup_shown_at_for_dbl = popup_shown_at.clone();
+            spawn_double_key_listener(settings_service.clone(), move || {
+                let _ = show_popup(&app_handle, &popup_shown_at_for_dbl);
                 let _ = app_handle.emit("hotkey://toggle-popup", ());
             });
 

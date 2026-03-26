@@ -14,6 +14,7 @@ const defaultSettings: AppSettings = {
   maxHistoryItems: 1000,
   pageSize: 20,
   hotkey: "Ctrl+Alt+Z",
+  activationMode: "hotkey",
   launchOnStartup: false,
   blurDelayMs: 100,
   previewWidth: 320,

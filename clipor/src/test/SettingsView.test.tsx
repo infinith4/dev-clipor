@@ -12,6 +12,7 @@ function defaultSettings(overrides?: Partial<AppSettings>): AppSettings {
     maxHistoryItems: 500,
     pageSize: 20,
     hotkey: "Ctrl+Alt+Z",
+    activationMode: "hotkey",
     launchOnStartup: false,
     blurDelayMs: 200,
     previewWidth: 300,

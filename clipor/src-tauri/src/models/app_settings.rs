@@ -4,6 +4,10 @@ fn default_hotkey() -> String {
     "Ctrl+Alt+Z".to_string()
 }
 
+fn default_activation_mode() -> String {
+    "hotkey".to_string()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(default, rename_all = "camelCase")]
 pub struct AppSettings {
@@ -11,6 +15,8 @@ pub struct AppSettings {
     pub page_size: usize,
     #[serde(default = "default_hotkey")]
     pub hotkey: String,
+    #[serde(default = "default_activation_mode")]
+    pub activation_mode: String,
     pub launch_on_startup: bool,
     pub blur_delay_ms: u64,
     pub preview_width: u32,
@@ -30,6 +36,7 @@ impl Default for AppSettings {
             max_history_items: 1000,
             page_size: 20,
             hotkey: default_hotkey(),
+            activation_mode: default_activation_mode(),
             launch_on_startup: false,
             blur_delay_ms: 100,
             preview_width: 320,

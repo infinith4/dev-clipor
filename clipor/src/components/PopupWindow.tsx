@@ -91,7 +91,7 @@ function PopupWindow({
   const [editingEntry, setEditingEntry] = useState<ClipboardEntry | null>(null);
   const [editText, setEditText] = useState("");
   const visibleTemplates = useMemo(() => templates.templates, [templates.templates]);
-  const isCompactLayout = activeTab === "history" || activeTab === "templates";
+  const isCompactLayout = true;
 
   const tabs: PopupTab[] = ["history", "templates", "settings"];
 

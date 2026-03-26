@@ -184,47 +184,59 @@ where
 
     thread::spawn(move || {
         let mut registered_hotkey = String::new();
+        let mut last_registered_mode = String::new();
 
         loop {
-            let desired_hotkey = settings_service
-                .load()
-                .ok()
-                .and_then(|settings| normalize_hotkey(&settings.hotkey).ok())
-                .unwrap_or_else(|| "Ctrl+Alt+Z".to_string());
+            let settings = settings_service.load().unwrap_or_default();
+            let mode = settings.activation_mode.clone();
 
-            if desired_hotkey != registered_hotkey {
+            let desired_hotkey = normalize_hotkey(&settings.hotkey)
+                .unwrap_or_else(|_| "Ctrl+Alt+Z".to_string());
+
+            // Unregister hotkey when switching away from hotkey mode
+            if mode != "hotkey" && !registered_hotkey.is_empty() {
                 unsafe {
                     let _ = UnregisterHotKey(None, HOTKEY_ID);
                 }
+                registered_hotkey.clear();
+            }
 
-                if let Ok(hotkey) = Hotkey::parse(&desired_hotkey) {
-                    let register_result = unsafe {
-                        RegisterHotKey(
-                            None,
-                            HOTKEY_ID,
-                            hotkey.windows_modifiers(),
-                            hotkey.windows_virtual_key(),
-                        )
-                    };
+            if mode == "hotkey" {
+                if desired_hotkey != registered_hotkey || last_registered_mode != mode {
+                    unsafe {
+                        let _ = UnregisterHotKey(None, HOTKEY_ID);
+                    }
 
-                    if register_result.is_ok() {
-                        registered_hotkey = desired_hotkey;
+                    if let Ok(hotkey) = Hotkey::parse(&desired_hotkey) {
+                        let register_result = unsafe {
+                            RegisterHotKey(
+                                None,
+                                HOTKEY_ID,
+                                hotkey.windows_modifiers(),
+                                hotkey.windows_virtual_key(),
+                            )
+                        };
+
+                        if register_result.is_ok() {
+                            registered_hotkey = desired_hotkey.clone();
+                        }
+                    }
+                }
+
+                let mut message = MSG::default();
+                loop {
+                    let has_message =
+                        unsafe { PeekMessageW(&mut message, None, WM_HOTKEY, WM_HOTKEY, PM_REMOVE) };
+                    if !has_message.as_bool() {
+                        break;
+                    }
+                    if message.message == WM_HOTKEY && message.wParam.0 == HOTKEY_ID as usize {
+                        callback();
                     }
                 }
             }
 
-            let mut message = MSG::default();
-            loop {
-                let has_message =
-                    unsafe { PeekMessageW(&mut message, None, WM_HOTKEY, WM_HOTKEY, PM_REMOVE) };
-                if !has_message.as_bool() {
-                    break;
-                }
-                if message.message == WM_HOTKEY && message.wParam.0 == HOTKEY_ID as usize {
-                    callback();
-                }
-            }
-
+            last_registered_mode = mode;
             thread::sleep(Duration::from_millis(50));
         }
     });
@@ -232,6 +244,142 @@ where
 
 #[cfg(not(windows))]
 pub fn spawn_hotkey_listener<F>(_settings_service: SettingsService, _callback: F)
+where
+    F: Fn() + Send + Sync + 'static,
+{
+}
+
+/// Spawns a low-level keyboard hook thread that detects double-tap of Ctrl or Alt.
+#[cfg(windows)]
+pub fn spawn_double_key_listener<F>(settings_service: SettingsService, callback: F)
+where
+    F: Fn() + Send + Sync + 'static,
+{
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::thread;
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+    use windows::Win32::Foundation::{LPARAM, LRESULT, WPARAM};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        CallNextHookEx, PeekMessageW, SetWindowsHookExW, HHOOK, KBDLLHOOKSTRUCT, MSG,
+        PM_REMOVE, WH_KEYBOARD_LL, WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP,
+    };
+
+    const VK_LCONTROL: u32 = 0xA2;
+    const VK_RCONTROL: u32 = 0xA3;
+    const VK_LMENU: u32 = 0xA4;
+    const VK_RMENU: u32 = 0xA5;
+
+    static LAST_KEY_UP_VK: AtomicU64 = AtomicU64::new(0);
+    static LAST_KEY_UP_TIME: AtomicU64 = AtomicU64::new(0);
+    static FIRED: AtomicU64 = AtomicU64::new(0);
+    static OTHER_KEY_PRESSED: AtomicU64 = AtomicU64::new(0);
+
+    fn now_ms() -> u64 {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or(Duration::ZERO)
+            .as_millis() as u64
+    }
+
+    fn is_ctrl(vk: u32) -> bool {
+        vk == VK_LCONTROL || vk == VK_RCONTROL
+    }
+
+    fn is_alt(vk: u32) -> bool {
+        vk == VK_LMENU || vk == VK_RMENU
+    }
+
+    fn is_modifier(vk: u32) -> bool {
+        is_ctrl(vk) || is_alt(vk)
+    }
+
+    LAST_KEY_UP_VK.store(0, Ordering::SeqCst);
+    LAST_KEY_UP_TIME.store(0, Ordering::SeqCst);
+    FIRED.store(0, Ordering::SeqCst);
+    OTHER_KEY_PRESSED.store(0, Ordering::SeqCst);
+
+    unsafe extern "system" fn hook_proc(code: i32, w_param: WPARAM, l_param: LPARAM) -> LRESULT {
+        if code >= 0 {
+            let kb = &*(l_param.0 as *const KBDLLHOOKSTRUCT);
+            let vk = kb.vkCode;
+            let msg = w_param.0 as u32;
+
+            match msg {
+                WM_KEYDOWN | WM_SYSKEYDOWN => {
+                    if !is_modifier(vk) {
+                        OTHER_KEY_PRESSED.store(1, Ordering::SeqCst);
+                    }
+                }
+                WM_KEYUP | WM_SYSKEYUP => {
+                    if is_modifier(vk) {
+                        let other_pressed = OTHER_KEY_PRESSED.load(Ordering::SeqCst);
+                        if other_pressed == 0 {
+                            let prev_vk = LAST_KEY_UP_VK.load(Ordering::SeqCst);
+                            let prev_time = LAST_KEY_UP_TIME.load(Ordering::SeqCst);
+                            let now = now_ms();
+
+                            let same_family = (is_ctrl(vk) && is_ctrl(prev_vk as u32))
+                                || (is_alt(vk) && is_alt(prev_vk as u32));
+
+                            if same_family && now.saturating_sub(prev_time) < 400 {
+                                if is_ctrl(vk) {
+                                    FIRED.store(1, Ordering::SeqCst);
+                                } else {
+                                    FIRED.store(2, Ordering::SeqCst);
+                                }
+                                LAST_KEY_UP_VK.store(0, Ordering::SeqCst);
+                                LAST_KEY_UP_TIME.store(0, Ordering::SeqCst);
+                            } else {
+                                LAST_KEY_UP_VK.store(vk as u64, Ordering::SeqCst);
+                                LAST_KEY_UP_TIME.store(now, Ordering::SeqCst);
+                            }
+                        } else {
+                            LAST_KEY_UP_VK.store(0, Ordering::SeqCst);
+                            LAST_KEY_UP_TIME.store(0, Ordering::SeqCst);
+                        }
+                        OTHER_KEY_PRESSED.store(0, Ordering::SeqCst);
+                    }
+                }
+                _ => {}
+            }
+        }
+        CallNextHookEx(HHOOK::default(), code, w_param, l_param)
+    }
+
+    thread::spawn(move || {
+        let _hook = unsafe {
+            SetWindowsHookExW(WH_KEYBOARD_LL, Some(hook_proc), None, 0)
+                .expect("failed to install keyboard hook")
+        };
+
+        let mut msg = MSG::default();
+        loop {
+            // Pump messages with PeekMessageW to dispatch hook callbacks
+            while unsafe { PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE) }.as_bool() {
+                // just dispatching is enough to keep the hook alive
+            }
+
+            let fired = FIRED.swap(0, Ordering::SeqCst);
+            if fired > 0 {
+                let mode = settings_service
+                    .load()
+                    .map(|s| s.activation_mode)
+                    .unwrap_or_default();
+                let should_fire = (fired == 1 && mode == "double-ctrl")
+                    || (fired == 2 && mode == "double-alt");
+                if should_fire {
+                    callback();
+                }
+            }
+
+            thread::sleep(Duration::from_millis(10));
+        }
+    });
+}
+
+#[cfg(not(windows))]
+pub fn spawn_double_key_listener<F>(_settings_service: SettingsService, _callback: F)
 where
     F: Fn() + Send + Sync + 'static,
 {

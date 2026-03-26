@@ -521,6 +521,32 @@ button.danger:hover {
   background: rgba(204, 0, 0, 0.06);
 }
 
+/* --- Radio / Fieldset --- */
+.activation-mode-fieldset {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 4px 6px;
+  margin: 0;
+  display: flex;
+  gap: 8px;
+}
+
+.activation-mode-fieldset legend {
+  font-size: 10px;
+  color: var(--muted);
+  padding: 0 2px;
+}
+
+.radio-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
+}
+
+.radio-row input {
+  width: auto;
+}
+
 /* --- Checkbox --- */
 .checkbox-row {
   display: flex;
@@ -609,6 +635,11 @@ button.danger:hover {
 .compact-panel .split-panel,
 .compact-panel .field-grid {
   grid-template-columns: 1fr;
+}
+
+.compact-panel .settings-panel {
+  overflow-y: auto;
+  flex: 1;
 }
 
 .compact-panel .pagination,

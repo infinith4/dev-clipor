@@ -52,10 +52,13 @@ export interface TemplateExportPayload {
   templates: TemplateEntry[];
 }
 
+export type ActivationMode = "hotkey" | "double-ctrl" | "double-alt";
+
 export interface AppSettings {
   maxHistoryItems: number;
   pageSize: number;
   hotkey: string;
+  activationMode: ActivationMode;
   launchOnStartup: boolean;
   blurDelayMs: number;
   previewWidth: number;

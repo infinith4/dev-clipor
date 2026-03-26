@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import type { AppSettings } from "../types";
+import type { ActivationMode, AppSettings } from "../types";
 
 interface SettingsViewProps {
   settings: AppSettings;
@@ -118,21 +118,51 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
           }
         />
       </label>
-      <label>
-        <span>Hotkey</span>
-        <input
-          type="text"
-          value={draft.hotkey}
-          placeholder="Ctrl+Alt+Z"
-          onChange={(event) =>
-            setDraft((current) => ({
-              ...current,
-              hotkey: event.target.value,
-            }))
-          }
-        />
-      </label>
-      <p className="help-text">例: Ctrl+Alt+Z, Ctrl+Shift+K, Alt+F2</p>
+      <fieldset className="activation-mode-fieldset">
+        <legend>Activation</legend>
+        {(
+          [
+            { value: "hotkey", label: "Hotkey" },
+            { value: "double-ctrl", label: "Ctrl x2" },
+            { value: "double-alt", label: "Alt x2" },
+          ] as const
+        ).map((option) => (
+          <label key={option.value} className="radio-row">
+            <input
+              type="radio"
+              name="activationMode"
+              value={option.value}
+              checked={draft.activationMode === option.value}
+              onChange={() =>
+                setDraft((current) => ({
+                  ...current,
+                  activationMode: option.value as ActivationMode,
+                }))
+              }
+            />
+            <span>{option.label}</span>
+          </label>
+        ))}
+      </fieldset>
+      {draft.activationMode === "hotkey" ? (
+        <>
+          <label>
+            <span>Hotkey</span>
+            <input
+              type="text"
+              value={draft.hotkey}
+              placeholder="Ctrl+Alt+Z"
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  hotkey: event.target.value,
+                }))
+              }
+            />
+          </label>
+          <p className="help-text">例: Ctrl+Alt+Z, Ctrl+Shift+K, Alt+F2</p>
+        </>
+      ) : null}
       <label>
         <span>Blur delay (ms)</span>
         <input
