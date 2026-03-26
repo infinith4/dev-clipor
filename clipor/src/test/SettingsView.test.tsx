@@ -59,7 +59,7 @@ describe("SettingsView", () => {
 
     it("renders hotkey input", () => {
       renderSettings({ hotkey: "Alt+F2" });
-      const input = screen.getByLabelText("Hotkey") as HTMLInputElement;
+      const input = screen.getByPlaceholderText("Ctrl+Alt+Z") as HTMLInputElement;
       expect(input.value).toBe("Alt+F2");
     });
 
@@ -111,7 +111,7 @@ describe("SettingsView", () => {
 
     it("updates hotkey", () => {
       renderSettings();
-      const input = screen.getByLabelText("Hotkey") as HTMLInputElement;
+      const input = screen.getByPlaceholderText("Ctrl+Alt+Z") as HTMLInputElement;
       fireEvent.change(input, { target: { value: "Ctrl+Shift+K" } });
       expect(input.value).toBe("Ctrl+Shift+K");
     });

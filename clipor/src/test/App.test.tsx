@@ -1243,19 +1243,19 @@ describe("App", () => {
       expect(call.height).toBe(720);
     });
 
-    it("resizes to settings width for settings tab", async () => {
+    it("does not resize again when switching to settings tab", async () => {
       render(await importApp());
-      setSizeMock.mockClear();
+      await waitFor(() => {
+        expect(setSizeMock).toHaveBeenCalled();
+      });
+      const callCount = setSizeMock.mock.calls.length;
 
       await act(async () => {
         fireEvent.click(screen.getByTestId("tab-settings"));
       });
 
-      await waitFor(() => {
-        expect(setSizeMock).toHaveBeenCalled();
-      });
-      const lastCall = setSizeMock.mock.calls[setSizeMock.mock.calls.length - 1][0] as { width: number; height: number };
-      expect(lastCall.width).toBe(420);
+      // resize effect only runs on mount, not on tab change
+      expect(setSizeMock.mock.calls.length).toBe(callCount);
     });
   });
 
