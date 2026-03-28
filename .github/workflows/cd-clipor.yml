@@ -187,3 +187,58 @@ jobs:
             --include "*.exe" \
             --endpoint-url "$ENDPOINT" \
             --no-progress
+
+  update_release_links:
+    needs: [build, release, upload_cloudflare_r2, prepare_release]
+    if: ${{ needs.prepare_release.outputs.should_release == 'true' }}
+    runs-on: ubuntu-latest
+    environment: prd
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Build release notes with Cloudflare R2 links
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ needs.prepare_release.outputs.tag }}
+          R2_PUBLIC_BASE_URL: ${{ vars.R2_PUBLIC_BASE_URL }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${RELEASE_TAG#v}"
+          BASE_URL="${R2_PUBLIC_BASE_URL%/}"
+
+          cat > release-body.md <<EOF
+          ## Clipor ${RELEASE_TAG}
+
+          ### Downloads
+          - **MSI**: Windows Installer (推奨)
+          - **NSIS**: セットアップ実行ファイル
+          - **EXE**: ポータブル実行ファイル
+          EOF
+
+          if [ -n "${BASE_URL}" ]; then
+            cat >> release-body.md <<EOF
+
+          ### Direct Downloads (Cloudflare R2)
+          - [MSI (en-US)](${BASE_URL}/${RELEASE_TAG}/Clipor_${VERSION}_x64_en-US.msi)
+          - [MSI (ja-JP)](${BASE_URL}/${RELEASE_TAG}/Clipor_${VERSION}_x64_ja-JP.msi)
+          - [NSIS Setup](${BASE_URL}/${RELEASE_TAG}/Clipor_${VERSION}_x64-setup.exe)
+          - [Portable EXE](${BASE_URL}/${RELEASE_TAG}/clipor.exe)
+          EOF
+          fi
+
+          cat >> release-body.md <<EOF
+
+          ### Changes
+          See [commit history](https://github.com/${{ github.repository }}/commits/${RELEASE_TAG}) for details.
+          EOF
+
+      - name: Update GitHub Release body
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare_release.outputs.tag }}
+          body_path: release-body.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
