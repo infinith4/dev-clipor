@@ -41,6 +41,9 @@ jobs:
       - name: Frontend tests
         run: npm test
 
+      - name: Sync app version from release tag
+        run: node scripts/sync-version.mjs ${{ inputs.tag }}
+
       - name: Build Tauri app
         run: npx tauri build
 
