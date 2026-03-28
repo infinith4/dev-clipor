@@ -1,5 +1,7 @@
 # Clipor
 
+[日本語](README.md) | [English](README.en.md)
+
 ![C0 (statements)](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/infinith4/dev-clipor/gh-pages-badges/c0-coverage.json)
 ![C1 (branches)](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/infinith4/dev-clipor/gh-pages-badges/c1-coverage.json)
 ![C2 (functions)](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/infinith4/dev-clipor/gh-pages-badges/c2-coverage.json)
