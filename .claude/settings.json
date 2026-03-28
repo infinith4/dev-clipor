@@ -76,7 +76,8 @@
       "Bash(node -e \"const p=require\\(''./package.json''\\); console.log\\(''react:'', p.dependencies.react\\); console.log\\(''typescript:'', p.devDependencies.typescript\\); console.log\\(''vite:'', p.devDependencies.vite\\); console.log\\(''vitest:'', p.devDependencies.vitest\\); console.log\\(''@testing-library/react:'', p.devDependencies[''@testing-library/react'']\\);\")",
       "Bash(find /workspaces/dev-clipor/src-tauri -type f -name *.rs)",
       "Bash(find /workspaces/dev-clipor/clipor/src-tauri -type f -name *.rs)",
-      "Bash(grep -r hotkey /workspaces/dev-clipor/clipor/src/test --include=*.ts*)"
+      "Bash(grep -r hotkey /workspaces/dev-clipor/clipor/src/test --include=*.ts*)",
+      "WebFetch(domain:autext.orizika.com)"
     ],
     "deny": [
       "Bash(rm -rf /)",
