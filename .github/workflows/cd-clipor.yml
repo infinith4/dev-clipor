@@ -145,6 +145,7 @@ jobs:
     needs: [build, release, prepare_release]
     if: ${{ needs.prepare_release.outputs.should_release == 'true' && vars.R2_BUCKET_NAME != '' }}
     runs-on: ubuntu-latest
+    environment: prd
 
     permissions:
       actions: read
