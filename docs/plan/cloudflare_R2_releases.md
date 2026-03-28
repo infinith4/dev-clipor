@@ -45,7 +45,7 @@ GitHub リポジトリの **Settings > Secrets and variables > Actions** に移�
 jobs:
   upload_cloudflare_r2:
     needs: [build, release, prepare_release]
-    if: ${{ needs.prepare_release.outputs.should_release == 'true' && vars.R2_BUCKET_NAME != '' }}
+    if: ${{ needs.prepare_release.outputs.should_release == 'true' }}
     runs-on: ubuntu-latest
     environment: prd
 
@@ -68,6 +68,11 @@ jobs:
           R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
           RELEASE_TAG: ${{ needs.prepare_release.outputs.tag }}
         run: |
+          if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ] || [ -z "${R2_ACCOUNT_ID:-}" ] || [ -z "${R2_BUCKET_NAME:-}" ]; then
+            echo "Cloudflare R2 environment is not fully configured. Skipping upload."
+            exit 0
+          fi
+
           DESTINATION="s3://${R2_BUCKET_NAME}/${RELEASE_TAG}/"
           ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
 

@@ -143,7 +143,7 @@ jobs:
 
   upload_cloudflare_r2:
     needs: [build, release, prepare_release]
-    if: ${{ needs.prepare_release.outputs.should_release == 'true' && vars.R2_BUCKET_NAME != '' }}
+    if: ${{ needs.prepare_release.outputs.should_release == 'true' }}
     runs-on: ubuntu-latest
     environment: prd
 
@@ -171,8 +171,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ] || [ -z "${R2_ACCOUNT_ID:-}" ]; then
-            echo "Cloudflare R2 credentials are not fully configured. Skipping upload."
+          if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ] || [ -z "${R2_ACCOUNT_ID:-}" ] || [ -z "${R2_BUCKET_NAME:-}" ]; then
+            echo "Cloudflare R2 environment is not fully configured. Skipping upload."
             exit 0
           fi
 
