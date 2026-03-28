@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
+import i18n from "../i18n";
 import ClipboardItem from "../components/ClipboardItem";
 import type { ClipboardEntry } from "../types";
 
@@ -42,6 +43,11 @@ function defaultProps(overrides?: Record<string, unknown>) {
 }
 
 describe("ClipboardItem", () => {
+  beforeEach(() => {
+    localStorage.setItem("clipor-lang", "ja");
+    void i18n.changeLanguage("ja");
+  });
+
   it("renders text entry with preview text", () => {
     render(<ClipboardItem {...defaultProps()} />);
 
@@ -73,7 +79,7 @@ describe("ClipboardItem", () => {
     );
 
     // Image entry with imageData renders an img element
-    expect(screen.getByAltText("clipboard image")).toBeInTheDocument();
+    expect(screen.getByAltText("クリップボード画像")).toBeInTheDocument();
   });
 
   it("renders [画像] text for image entry without imageData", () => {
@@ -92,7 +98,7 @@ describe("ClipboardItem", () => {
       <ClipboardItem {...defaultProps({ entry: makeImageEntry() })} />,
     );
 
-    const img = screen.getByAltText("clipboard image") as HTMLImageElement;
+    const img = screen.getByAltText("クリップボード画像") as HTMLImageElement;
     expect(img.src).toContain("data:image/png;base64,base64imagedata");
     expect(img).toHaveClass("clipboard-thumbnail");
   });
@@ -104,14 +110,26 @@ describe("ClipboardItem", () => {
       />,
     );
 
-    expect(screen.getByText("Pin")).toBeInTheDocument();
+    expect(screen.getByText(i18n.t("clipboard.pinned_badge"))).toBeInTheDocument();
     expect(document.querySelector(".badge")).toBeInTheDocument();
   });
 
   it("does not show Pin badge when entry is not pinned", () => {
     render(<ClipboardItem {...defaultProps()} />);
 
-    expect(screen.queryByText("Pin")).not.toBeInTheDocument();
+    expect(screen.queryByText(i18n.t("clipboard.pinned_badge"))).not.toBeInTheDocument();
+  });
+
+  it("renders English badge text after language switch", async () => {
+    await i18n.changeLanguage("en");
+
+    render(
+      <ClipboardItem
+        {...defaultProps({ entry: makeTextEntry({ isPinned: true }) })}
+      />,
+    );
+
+    expect(screen.getByText("Pinned")).toBeInTheDocument();
   });
 
   it("applies selected class when isSelected is true", () => {
@@ -195,6 +213,6 @@ describe("ClipboardItem", () => {
     render(<ClipboardItem {...defaultProps({ entry })} />);
 
     expect(screen.getByText("Hello world")).toBeInTheDocument();
-    expect(screen.queryByAltText("clipboard image")).not.toBeInTheDocument();
+    expect(screen.queryByAltText("クリップボード画像")).not.toBeInTheDocument();
   });
 });

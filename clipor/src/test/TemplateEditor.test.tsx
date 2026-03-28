@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
+import i18n from "../i18n";
 import TemplateEditor from "../components/TemplateEditor";
 import type { TemplateEntry, TemplateGroup } from "../types";
 
@@ -41,29 +42,34 @@ function defaultProps(overrides?: Partial<Parameters<typeof TemplateEditor>[0]>)
 }
 
 describe("TemplateEditor", () => {
+  beforeEach(() => {
+    localStorage.setItem("clipor-lang", "ja");
+    void i18n.changeLanguage("ja");
+  });
+
   describe("initial state (no editingTemplate)", () => {
     it("renders Create button", () => {
       render(<TemplateEditor {...defaultProps()} />);
-      expect(screen.getByText("Create")).toBeInTheDocument();
+      expect(screen.getByText("作成")).toBeInTheDocument();
     });
 
     it("renders empty title and text fields", () => {
       render(<TemplateEditor {...defaultProps()} />);
-      const titleInput = screen.getByLabelText("Title") as HTMLInputElement;
+      const titleInput = screen.getByLabelText("タイトル") as HTMLInputElement;
       expect(titleInput.value).toBe("");
-      const textarea = screen.getByLabelText("Template body") as HTMLTextAreaElement;
+      const textarea = screen.getByLabelText("テンプレート本文") as HTMLTextAreaElement;
       expect(textarea.value).toBe("");
     });
 
     it("selects first group by default", () => {
       render(<TemplateEditor {...defaultProps()} />);
-      const select = screen.getByLabelText("Group") as HTMLSelectElement;
+      const select = screen.getByLabelText("グループ") as HTMLSelectElement;
       expect(select.value).toBe("1");
     });
 
     it("selects 'new' when groups is empty", () => {
       render(<TemplateEditor {...defaultProps({ groups: [] })} />);
-      const select = screen.getByLabelText("Group") as HTMLSelectElement;
+      const select = screen.getByLabelText("グループ") as HTMLSelectElement;
       expect(select.value).toBe("new");
     });
   });
@@ -72,15 +78,15 @@ describe("TemplateEditor", () => {
     it("renders Update button", () => {
       const template = makeTemplate();
       render(<TemplateEditor {...defaultProps({ editingTemplate: template })} />);
-      expect(screen.getByText("Update")).toBeInTheDocument();
+      expect(screen.getByText("更新")).toBeInTheDocument();
     });
 
     it("populates fields from editingTemplate", () => {
       const template = makeTemplate({ title: "Test", text: "Body text", groupId: 2 });
       render(<TemplateEditor {...defaultProps({ editingTemplate: template })} />);
-      expect((screen.getByLabelText("Title") as HTMLInputElement).value).toBe("Test");
-      expect((screen.getByLabelText("Template body") as HTMLTextAreaElement).value).toBe("Body text");
-      expect((screen.getByLabelText("Group") as HTMLSelectElement).value).toBe("2");
+      expect((screen.getByLabelText("タイトル") as HTMLInputElement).value).toBe("Test");
+      expect((screen.getByLabelText("テンプレート本文") as HTMLTextAreaElement).value).toBe("Body text");
+      expect((screen.getByLabelText("グループ") as HTMLSelectElement).value).toBe("2");
     });
 
     it("sets contentType to image when editingTemplate is image", () => {
@@ -89,20 +95,20 @@ describe("TemplateEditor", () => {
         imageData: "base64data",
       });
       render(<TemplateEditor {...defaultProps({ editingTemplate: template })} />);
-      const typeSelect = screen.getByLabelText("Type") as HTMLSelectElement;
+      const typeSelect = screen.getByLabelText("種類") as HTMLSelectElement;
       expect(typeSelect.value).toBe("image");
       // Should show image preview
-      expect(screen.getByAltText("preview")).toBeInTheDocument();
+      expect(screen.getByAltText(i18n.t("preview_image.alt_text"))).toBeInTheDocument();
     });
 
     it("clears form when editingTemplate becomes null", () => {
       const template = makeTemplate({ title: "Test", text: "Body" });
       const props = defaultProps({ editingTemplate: template });
       const { rerender } = render(<TemplateEditor {...props} />);
-      expect((screen.getByLabelText("Title") as HTMLInputElement).value).toBe("Test");
+      expect((screen.getByLabelText("タイトル") as HTMLInputElement).value).toBe("Test");
 
       rerender(<TemplateEditor {...defaultProps({ editingTemplate: null })} />);
-      expect((screen.getByLabelText("Title") as HTMLInputElement).value).toBe("");
+      expect((screen.getByLabelText("タイトル") as HTMLInputElement).value).toBe("");
     });
   });
 
@@ -110,30 +116,30 @@ describe("TemplateEditor", () => {
     it("does not call onSave when title is empty", () => {
       const props = defaultProps();
       render(<TemplateEditor {...props} />);
-      fireEvent.change(screen.getByLabelText("Template body"), {
+      fireEvent.change(screen.getByLabelText("テンプレート本文"), {
         target: { value: "Some body" },
       });
-      fireEvent.click(screen.getByText("Create"));
+      fireEvent.click(screen.getByText("作成"));
       expect(props.onSave).not.toHaveBeenCalled();
     });
 
     it("does not call onSave when text is empty for text type", () => {
       const props = defaultProps();
       render(<TemplateEditor {...props} />);
-      fireEvent.change(screen.getByLabelText("Title"), {
+      fireEvent.change(screen.getByLabelText("タイトル"), {
         target: { value: "Title" },
       });
-      fireEvent.click(screen.getByText("Create"));
+      fireEvent.click(screen.getByText("作成"));
       expect(props.onSave).not.toHaveBeenCalled();
     });
 
     it("calls onSave with correct payload for new template with existing group", () => {
       const props = defaultProps();
       render(<TemplateEditor {...props} />);
-      fireEvent.change(screen.getByLabelText("Title"), { target: { value: "My Title" } });
-      fireEvent.change(screen.getByLabelText("Template body"), { target: { value: "My Body" } });
-      fireEvent.change(screen.getByLabelText("Group"), { target: { value: "2" } });
-      fireEvent.click(screen.getByText("Create"));
+      fireEvent.change(screen.getByLabelText("タイトル"), { target: { value: "My Title" } });
+      fireEvent.change(screen.getByLabelText("テンプレート本文"), { target: { value: "My Body" } });
+      fireEvent.change(screen.getByLabelText("グループ"), { target: { value: "2" } });
+      fireEvent.click(screen.getByText("作成"));
       expect(props.onSave).toHaveBeenCalledWith({
         id: undefined,
         title: "My Title",
@@ -148,11 +154,11 @@ describe("TemplateEditor", () => {
     it("calls onSave with newGroupName when group is 'new'", () => {
       const props = defaultProps();
       render(<TemplateEditor {...props} />);
-      fireEvent.change(screen.getByLabelText("Title"), { target: { value: "T" } });
-      fireEvent.change(screen.getByLabelText("Template body"), { target: { value: "B" } });
-      fireEvent.change(screen.getByLabelText("Group"), { target: { value: "new" } });
-      fireEvent.change(screen.getByLabelText("New group name"), { target: { value: "NewGrp" } });
-      fireEvent.click(screen.getByText("Create"));
+      fireEvent.change(screen.getByLabelText("タイトル"), { target: { value: "T" } });
+      fireEvent.change(screen.getByLabelText("テンプレート本文"), { target: { value: "B" } });
+      fireEvent.change(screen.getByLabelText("グループ"), { target: { value: "new" } });
+      fireEvent.change(screen.getByLabelText("新規グループ名"), { target: { value: "NewGrp" } });
+      fireEvent.click(screen.getByText("作成"));
       expect(props.onSave).toHaveBeenCalledWith(
         expect.objectContaining({
           groupId: undefined,
@@ -165,7 +171,7 @@ describe("TemplateEditor", () => {
       const template = makeTemplate({ id: 42 });
       const props = defaultProps({ editingTemplate: template });
       render(<TemplateEditor {...props} />);
-      fireEvent.click(screen.getByText("Update"));
+      fireEvent.click(screen.getByText("更新"));
       expect(props.onSave).toHaveBeenCalledWith(
         expect.objectContaining({ id: 42 }),
       );
@@ -174,9 +180,9 @@ describe("TemplateEditor", () => {
     it("does not call onSave when contentType is image but no imageData", () => {
       const props = defaultProps();
       render(<TemplateEditor {...props} />);
-      fireEvent.change(screen.getByLabelText("Title"), { target: { value: "T" } });
-      fireEvent.change(screen.getByLabelText("Type"), { target: { value: "image" } });
-      fireEvent.click(screen.getByText("Create"));
+      fireEvent.change(screen.getByLabelText("タイトル"), { target: { value: "T" } });
+      fireEvent.change(screen.getByLabelText("種類"), { target: { value: "image" } });
+      fireEvent.click(screen.getByText("作成"));
       expect(props.onSave).not.toHaveBeenCalled();
     });
 
@@ -188,7 +194,7 @@ describe("TemplateEditor", () => {
       });
       const props = defaultProps({ editingTemplate: template });
       render(<TemplateEditor {...props} />);
-      fireEvent.click(screen.getByText("Update"));
+      fireEvent.click(screen.getByText("更新"));
       expect(props.onSave).toHaveBeenCalledWith(
         expect.objectContaining({
           text: "[画像]",
@@ -203,7 +209,7 @@ describe("TemplateEditor", () => {
     it("calls onCancel", () => {
       const props = defaultProps();
       render(<TemplateEditor {...props} />);
-      fireEvent.click(screen.getByText("Clear"));
+      fireEvent.click(screen.getByText("クリア"));
       expect(props.onCancel).toHaveBeenCalled();
     });
   });
@@ -211,22 +217,22 @@ describe("TemplateEditor", () => {
   describe("new group name field", () => {
     it("shows new group name input when group is 'new'", () => {
       render(<TemplateEditor {...defaultProps()} />);
-      fireEvent.change(screen.getByLabelText("Group"), { target: { value: "new" } });
-      expect(screen.getByLabelText("New group name")).toBeInTheDocument();
+      fireEvent.change(screen.getByLabelText("グループ"), { target: { value: "new" } });
+      expect(screen.getByLabelText("新規グループ名")).toBeInTheDocument();
     });
 
     it("hides new group name input when group is not 'new'", () => {
       render(<TemplateEditor {...defaultProps()} />);
-      expect(screen.queryByLabelText("New group name")).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("新規グループ名")).not.toBeInTheDocument();
     });
   });
 
   describe("contentType toggle", () => {
     it("switches to image mode", () => {
       render(<TemplateEditor {...defaultProps()} />);
-      fireEvent.change(screen.getByLabelText("Type"), { target: { value: "image" } });
-      expect(screen.getByText("Select image file")).toBeInTheDocument();
-      expect(screen.queryByLabelText("Template body")).not.toBeInTheDocument();
+      fireEvent.change(screen.getByLabelText("種類"), { target: { value: "image" } });
+      expect(screen.getByText("画像ファイルを選択")).toBeInTheDocument();
+      expect(screen.queryByLabelText("テンプレート本文")).not.toBeInTheDocument();
     });
 
     it("switches back to text mode and clears imageData", () => {
@@ -239,10 +245,10 @@ describe("TemplateEditor", () => {
         <TemplateEditor {...defaultProps({ editingTemplate: template })} />,
       );
       // Change type back to text
-      fireEvent.change(screen.getByLabelText("Type"), { target: { value: "text" } });
-      expect(screen.getByLabelText("Template body")).toBeInTheDocument();
+      fireEvent.change(screen.getByLabelText("種類"), { target: { value: "text" } });
+      expect(screen.getByLabelText("テンプレート本文")).toBeInTheDocument();
       // text "[画像]" should be cleared
-      expect((screen.getByLabelText("Template body") as HTMLTextAreaElement).value).toBe("");
+      expect((screen.getByLabelText("テンプレート本文") as HTMLTextAreaElement).value).toBe("");
     });
 
     it("does not clear text when switching to text if text is not [画像]", () => {
@@ -252,8 +258,8 @@ describe("TemplateEditor", () => {
         text: "custom text",
       });
       render(<TemplateEditor {...defaultProps({ editingTemplate: template })} />);
-      fireEvent.change(screen.getByLabelText("Type"), { target: { value: "text" } });
-      expect((screen.getByLabelText("Template body") as HTMLTextAreaElement).value).toBe(
+      fireEvent.change(screen.getByLabelText("種類"), { target: { value: "text" } });
+      expect((screen.getByLabelText("テンプレート本文") as HTMLTextAreaElement).value).toBe(
         "custom text",
       );
     });
@@ -267,29 +273,29 @@ describe("TemplateEditor", () => {
 
     it("does nothing when no file is selected", () => {
       render(<TemplateEditor {...defaultProps()} />);
-      fireEvent.change(screen.getByLabelText("Type"), { target: { value: "image" } });
+      fireEvent.change(screen.getByLabelText("種類"), { target: { value: "image" } });
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       fireEvent.change(fileInput, { target: { files: [] } });
       // Should still show "Select image file"
-      expect(screen.getByText("Select image file")).toBeInTheDocument();
+      expect(screen.getByText("画像ファイルを選択")).toBeInTheDocument();
     });
 
     it("rejects non-image file", () => {
       render(<TemplateEditor {...defaultProps()} />);
-      fireEvent.change(screen.getByLabelText("Type"), { target: { value: "image" } });
+      fireEvent.change(screen.getByLabelText("種類"), { target: { value: "image" } });
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       const textFile = createFile("test.txt", 100, "text/plain");
       fireEvent.change(fileInput, { target: { files: [textFile] } });
-      expect(screen.getByText("Select image file")).toBeInTheDocument();
+      expect(screen.getByText("画像ファイルを選択")).toBeInTheDocument();
     });
 
     it("rejects oversized file (>2MB)", () => {
       render(<TemplateEditor {...defaultProps()} />);
-      fireEvent.change(screen.getByLabelText("Type"), { target: { value: "image" } });
+      fireEvent.change(screen.getByLabelText("種類"), { target: { value: "image" } });
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       const bigFile = createFile("big.png", 3 * 1024 * 1024, "image/png");
       fireEvent.change(fileInput, { target: { files: [bigFile] } });
-      expect(screen.getByText("Select image file")).toBeInTheDocument();
+      expect(screen.getByText("画像ファイルを選択")).toBeInTheDocument();
     });
 
     it("accepts valid image file and reads it", async () => {
@@ -311,8 +317,8 @@ describe("TemplateEditor", () => {
       } as unknown as typeof FileReader;
 
       render(<TemplateEditor {...defaultProps()} />);
-      fireEvent.change(screen.getByLabelText("Title"), { target: { value: "" } });
-      fireEvent.change(screen.getByLabelText("Type"), { target: { value: "image" } });
+      fireEvent.change(screen.getByLabelText("タイトル"), { target: { value: "" } });
+      fireEvent.change(screen.getByLabelText("種類"), { target: { value: "image" } });
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       const imageFile = createFile("photo.png", 100, "image/png");
 
@@ -323,9 +329,9 @@ describe("TemplateEditor", () => {
       });
 
       // Should show preview image
-      expect(screen.getByAltText("preview")).toBeInTheDocument();
+      expect(screen.getByAltText(i18n.t("preview_image.alt_text"))).toBeInTheDocument();
       // Title should be set to filename without extension
-      expect((screen.getByLabelText("Title") as HTMLInputElement).value).toBe("photo");
+      expect((screen.getByLabelText("タイトル") as HTMLInputElement).value).toBe("photo");
 
       globalThis.FileReader = OriginalFileReader;
     });
@@ -342,8 +348,8 @@ describe("TemplateEditor", () => {
       } as unknown as typeof FileReader;
 
       render(<TemplateEditor {...defaultProps()} />);
-      fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Existing" } });
-      fireEvent.change(screen.getByLabelText("Type"), { target: { value: "image" } });
+      fireEvent.change(screen.getByLabelText("タイトル"), { target: { value: "Existing" } });
+      fireEvent.change(screen.getByLabelText("種類"), { target: { value: "image" } });
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       const imageFile = createFile("photo.png", 100, "image/png");
 
@@ -352,7 +358,7 @@ describe("TemplateEditor", () => {
         capturedOnload?.();
       });
 
-      expect((screen.getByLabelText("Title") as HTMLInputElement).value).toBe("Existing");
+      expect((screen.getByLabelText("タイトル") as HTMLInputElement).value).toBe("Existing");
 
       globalThis.FileReader = OriginalFileReader;
     });
@@ -369,10 +375,10 @@ describe("TemplateEditor", () => {
       } as unknown as typeof FileReader;
 
       render(<TemplateEditor {...defaultProps()} />);
-      fireEvent.change(screen.getByLabelText("Title"), { target: { value: "" } });
+      fireEvent.change(screen.getByLabelText("タイトル"), { target: { value: "" } });
       // Set text before switching to image
-      fireEvent.change(screen.getByLabelText("Template body"), { target: { value: "my text" } });
-      fireEvent.change(screen.getByLabelText("Type"), { target: { value: "image" } });
+      fireEvent.change(screen.getByLabelText("テンプレート本文"), { target: { value: "my text" } });
+      fireEvent.change(screen.getByLabelText("種類"), { target: { value: "image" } });
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       const imageFile = createFile("photo.png", 100, "image/png");
 
@@ -384,8 +390,8 @@ describe("TemplateEditor", () => {
       // text should remain as "my text", not "[画像]"
       // We can't directly check it since text field is hidden in image mode,
       // but we can verify by switching back to text
-      fireEvent.change(screen.getByLabelText("Type"), { target: { value: "text" } });
-      expect((screen.getByLabelText("Template body") as HTMLTextAreaElement).value).toBe("my text");
+      fireEvent.change(screen.getByLabelText("種類"), { target: { value: "text" } });
+      expect((screen.getByLabelText("テンプレート本文") as HTMLTextAreaElement).value).toBe("my text");
 
       globalThis.FileReader = OriginalFileReader;
     });
@@ -402,7 +408,7 @@ describe("TemplateEditor", () => {
       } as unknown as typeof FileReader;
 
       render(<TemplateEditor {...defaultProps()} />);
-      fireEvent.change(screen.getByLabelText("Type"), { target: { value: "image" } });
+      fireEvent.change(screen.getByLabelText("種類"), { target: { value: "image" } });
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       const imageFile = createFile("photo.png", 100, "image/png");
 
@@ -412,7 +418,7 @@ describe("TemplateEditor", () => {
       });
 
       // Should still show "Select image file" since base64 is empty
-      expect(screen.getByText("Select image file")).toBeInTheDocument();
+      expect(screen.getByText("画像ファイルを選択")).toBeInTheDocument();
 
       globalThis.FileReader = OriginalFileReader;
     });
@@ -422,8 +428,8 @@ describe("TemplateEditor", () => {
     it("shows Change and Remove buttons when imageData exists", () => {
       const template = makeTemplate({ contentType: "image", imageData: "base64" });
       render(<TemplateEditor {...defaultProps({ editingTemplate: template })} />);
-      expect(screen.getByText("Change")).toBeInTheDocument();
-      expect(screen.getByText("Remove")).toBeInTheDocument();
+      expect(screen.getByText("変更")).toBeInTheDocument();
+      expect(screen.getByText("削除")).toBeInTheDocument();
     });
 
     it("Remove clears image and sets type to text", () => {
@@ -433,9 +439,9 @@ describe("TemplateEditor", () => {
         text: "[画像]",
       });
       render(<TemplateEditor {...defaultProps({ editingTemplate: template })} />);
-      fireEvent.click(screen.getByText("Remove"));
-      expect(screen.getByLabelText("Template body")).toBeInTheDocument();
-      expect((screen.getByLabelText("Template body") as HTMLTextAreaElement).value).toBe("");
+      fireEvent.click(screen.getByText("削除"));
+      expect(screen.getByLabelText("テンプレート本文")).toBeInTheDocument();
+      expect((screen.getByLabelText("テンプレート本文") as HTMLTextAreaElement).value).toBe("");
     });
 
     it("Remove does not clear text if it is not [画像]", () => {
@@ -445,9 +451,9 @@ describe("TemplateEditor", () => {
         text: "custom",
       });
       render(<TemplateEditor {...defaultProps({ editingTemplate: template })} />);
-      fireEvent.click(screen.getByText("Remove"));
+      fireEvent.click(screen.getByText("削除"));
       // Text should remain
-      expect((screen.getByLabelText("Template body") as HTMLTextAreaElement).value).toBe("custom");
+      expect((screen.getByLabelText("テンプレート本文") as HTMLTextAreaElement).value).toBe("custom");
     });
 
     it("Change button triggers file input click", () => {
@@ -455,16 +461,16 @@ describe("TemplateEditor", () => {
       render(<TemplateEditor {...defaultProps({ editingTemplate: template })} />);
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       const clickSpy = vi.spyOn(fileInput, "click");
-      fireEvent.click(screen.getByText("Change"));
+      fireEvent.click(screen.getByText("変更"));
       expect(clickSpy).toHaveBeenCalled();
     });
 
     it("Select image file button triggers file input click", () => {
       render(<TemplateEditor {...defaultProps()} />);
-      fireEvent.change(screen.getByLabelText("Type"), { target: { value: "image" } });
+      fireEvent.change(screen.getByLabelText("種類"), { target: { value: "image" } });
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       const clickSpy = vi.spyOn(fileInput, "click");
-      fireEvent.click(screen.getByText("Select image file"));
+      fireEvent.click(screen.getByText("画像ファイルを選択"));
       expect(clickSpy).toHaveBeenCalled();
     });
   });
@@ -473,7 +479,7 @@ describe("TemplateEditor", () => {
     it("calls onExport when Export JSON is clicked", () => {
       const props = defaultProps();
       render(<TemplateEditor {...props} />);
-      fireEvent.click(screen.getByText("Export JSON"));
+      fireEvent.click(screen.getByText("エクスポート"));
       expect(props.onExport).toHaveBeenCalled();
     });
   });
@@ -481,14 +487,14 @@ describe("TemplateEditor", () => {
   describe("import dialog", () => {
     it("opens import dialog when Import JSON is clicked", () => {
       render(<TemplateEditor {...defaultProps()} />);
-      fireEvent.click(screen.getByText("Import JSON"));
-      expect(screen.getByText("Import template JSON")).toBeInTheDocument();
+      fireEvent.click(screen.getByText("インポート"));
+      expect(screen.getByText("テンプレート JSON インポート")).toBeInTheDocument();
     });
 
     it("import button is disabled when textarea is empty", () => {
       render(<TemplateEditor {...defaultProps()} />);
-      fireEvent.click(screen.getByText("Import JSON"));
-      const importBtn = screen.getAllByText("Import").find(
+      fireEvent.click(screen.getByText("インポート"));
+      const importBtn = screen.getAllByText("インポート実行").find(
         (el) => el.tagName === "BUTTON" && el.closest(".edit-dialog-actions"),
       ) as HTMLButtonElement;
       expect(importBtn.disabled).toBe(true);
@@ -497,26 +503,26 @@ describe("TemplateEditor", () => {
     it("calls onImport with trimmed JSON when submitted", () => {
       const props = defaultProps();
       render(<TemplateEditor {...props} />);
-      fireEvent.click(screen.getByText("Import JSON"));
+      fireEvent.click(screen.getByText("インポート"));
       const textarea = screen.getByPlaceholderText('{"groups":[...],"templates":[...]}');
       fireEvent.change(textarea, { target: { value: '  {"groups":[]}  ' } });
-      const importBtn = screen.getAllByText("Import").find(
+      const importBtn = screen.getAllByText("インポート実行").find(
         (el) => el.tagName === "BUTTON" && el.closest(".edit-dialog-actions"),
       ) as HTMLButtonElement;
       fireEvent.click(importBtn);
       expect(props.onImport).toHaveBeenCalledWith('{"groups":[]}');
       // Dialog should be closed
-      expect(screen.queryByText("Import template JSON")).not.toBeInTheDocument();
+      expect(screen.queryByText("テンプレート JSON インポート")).not.toBeInTheDocument();
     });
 
     it("does not call onImport when json is whitespace only (button disabled)", () => {
       const props = defaultProps();
       render(<TemplateEditor {...props} />);
-      fireEvent.click(screen.getByText("Import JSON"));
+      fireEvent.click(screen.getByText("インポート"));
       const textarea = screen.getByPlaceholderText('{"groups":[...],"templates":[...]}');
       fireEvent.change(textarea, { target: { value: "   " } });
       // Button is still disabled due to !importJson.trim()
-      const importBtn = screen.getAllByText("Import").find(
+      const importBtn = screen.getAllByText("インポート実行").find(
         (el) => el.tagName === "BUTTON" && el.closest(".edit-dialog-actions"),
       ) as HTMLButtonElement;
       expect(importBtn.disabled).toBe(true);
@@ -525,29 +531,29 @@ describe("TemplateEditor", () => {
 
     it("closes dialog when cancel is clicked", () => {
       render(<TemplateEditor {...defaultProps()} />);
-      fireEvent.click(screen.getByText("Import JSON"));
-      expect(screen.getByText("Import template JSON")).toBeInTheDocument();
-      const cancelBtn = screen.getAllByText("Cancel").find(
+      fireEvent.click(screen.getByText("インポート"));
+      expect(screen.getByText("テンプレート JSON インポート")).toBeInTheDocument();
+      const cancelBtn = screen.getAllByText("キャンセル").find(
         (el) => el.tagName === "BUTTON" && el.closest(".edit-dialog-actions"),
       ) as HTMLButtonElement;
       fireEvent.click(cancelBtn);
-      expect(screen.queryByText("Import template JSON")).not.toBeInTheDocument();
+      expect(screen.queryByText("テンプレート JSON インポート")).not.toBeInTheDocument();
     });
 
     it("closes dialog when overlay is clicked", () => {
       render(<TemplateEditor {...defaultProps()} />);
-      fireEvent.click(screen.getByText("Import JSON"));
+      fireEvent.click(screen.getByText("インポート"));
       const overlay = document.querySelector(".edit-overlay")!;
       fireEvent.click(overlay);
-      expect(screen.queryByText("Import template JSON")).not.toBeInTheDocument();
+      expect(screen.queryByText("テンプレート JSON インポート")).not.toBeInTheDocument();
     });
 
     it("does not close dialog when dialog body is clicked", () => {
       render(<TemplateEditor {...defaultProps()} />);
-      fireEvent.click(screen.getByText("Import JSON"));
+      fireEvent.click(screen.getByText("インポート"));
       const dialog = document.querySelector(".edit-dialog")!;
       fireEvent.click(dialog);
-      expect(screen.getByText("Import template JSON")).toBeInTheDocument();
+      expect(screen.getByText("テンプレート JSON インポート")).toBeInTheDocument();
     });
   });
 });

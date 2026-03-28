@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import i18n from "../i18n";
 import type { TemplateEntry, TemplateExportPayload, TemplateGroup } from "../types";
 
 type SetError = (message: string | null) => void;
@@ -33,7 +34,7 @@ export function useTemplates(setError: SetError) {
       setTemplates(templateResult);
       setError(null);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "定型文の取得に失敗しました。");
+      setError(error instanceof Error ? error.message : i18n.t("errors.templates_fetch"));
     }
   }, [search, selectedGroupId, setError]);
 
@@ -48,7 +49,7 @@ export function useTemplates(setError: SetError) {
         await invoke("paste_template", { id });
         setError(null);
       } catch (error) {
-        setError(error instanceof Error ? error.message : "定型文の貼り付けに失敗しました。");
+        setError(error instanceof Error ? error.message : i18n.t("errors.templates_paste"));
       }
     },
     [setError],
@@ -68,7 +69,7 @@ export function useTemplates(setError: SetError) {
         });
         await refresh();
       } catch (error) {
-        setError(error instanceof Error ? error.message : "定型文の保存に失敗しました。");
+        setError(error instanceof Error ? error.message : i18n.t("errors.templates_save"));
       }
     },
     [refresh, setError],
@@ -80,7 +81,7 @@ export function useTemplates(setError: SetError) {
         await invoke("delete_template", { id });
         await refresh();
       } catch (error) {
-        setError(error instanceof Error ? error.message : "定型文の削除に失敗しました。");
+        setError(error instanceof Error ? error.message : i18n.t("errors.templates_delete"));
       }
     },
     [refresh, setError],
@@ -94,7 +95,7 @@ export function useTemplates(setError: SetError) {
       setError(null);
       return json;
     } catch (error) {
-      setError(error instanceof Error ? error.message : "定型文のエクスポートに失敗しました。");
+      setError(error instanceof Error ? error.message : i18n.t("errors.templates_export"));
       return null;
     }
   }, [setError]);
@@ -103,7 +104,7 @@ export function useTemplates(setError: SetError) {
     async (json: string) => {
       const MAX_IMPORT_SIZE = 1024 * 1024; // 1MB
       if (json.length > MAX_IMPORT_SIZE) {
-        setError(`インポートデータが大きすぎます（上限: ${MAX_IMPORT_SIZE / 1024}KB）。`);
+        setError(i18n.t("errors.templates_import_too_large", { sizeKb: MAX_IMPORT_SIZE / 1024 }));
         return;
       }
 
@@ -111,7 +112,7 @@ export function useTemplates(setError: SetError) {
       try {
         parsed = JSON.parse(json);
       } catch {
-        setError("無効なJSON形式です。正しいJSON文字列を入力してください。");
+        setError(i18n.t("errors.templates_import_invalid_json"));
         return;
       }
 
@@ -121,7 +122,7 @@ export function useTemplates(setError: SetError) {
         !Array.isArray((parsed as Record<string, unknown>).groups) ||
         !Array.isArray((parsed as Record<string, unknown>).templates)
       ) {
-        setError("インポートデータの形式が正しくありません。groups と templates が必要です。");
+        setError(i18n.t("errors.templates_import_invalid_format"));
         return;
       }
 
@@ -129,7 +130,7 @@ export function useTemplates(setError: SetError) {
         await invoke("import_templates", { json });
         await refresh();
       } catch (error) {
-        setError(error instanceof Error ? error.message : "定型文のインポートに失敗しました。");
+        setError(error instanceof Error ? error.message : i18n.t("errors.templates_import"));
       }
     },
     [refresh, setError],

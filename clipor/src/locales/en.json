@@ -71,7 +71,8 @@
     "auth_failed": "Authentication failed."
   },
   "app": {
-    "window_init_failed": "Failed to initialize window."
+    "window_init_failed": "Failed to initialize window.",
+    "preview_failed": "Failed to show preview: {{message}}"
   },
   "settings": {
     "label_history_limit": "History limit",
@@ -151,7 +152,31 @@
   "error_banner": {
     "close_button": "Close"
   },
+  "errors": {
+    "history_fetch": "Failed to load history.",
+    "history_paste": "Failed to paste history item.",
+    "history_pin_update": "Failed to update pin state.",
+    "history_update": "Failed to update history item.",
+    "history_delete": "Failed to delete history item.",
+    "clipboard_format": "Failed to format clipboard item.",
+    "clipboard_convert": "Failed to convert clipboard item.",
+    "settings_fetch": "Failed to load settings.",
+    "settings_save": "Failed to save settings.",
+    "templates_fetch": "Failed to load templates.",
+    "templates_paste": "Failed to paste template.",
+    "templates_save": "Failed to save template.",
+    "templates_delete": "Failed to delete template.",
+    "templates_export": "Failed to export templates.",
+    "templates_import": "Failed to import templates.",
+    "templates_import_too_large": "Import data is too large (limit: {{sizeKb}}KB).",
+    "templates_import_invalid_json": "Invalid JSON. Enter a valid JSON string.",
+    "templates_import_invalid_format": "Invalid import data format. Both groups and templates are required."
+  },
   "clipboard": {
-    "image_alt_text": "clipboard image"
+    "image_alt_text": "clipboard image",
+    "pinned_badge": "Pinned"
+  },
+  "preview_image": {
+    "alt_text": "preview image"
   }
 }

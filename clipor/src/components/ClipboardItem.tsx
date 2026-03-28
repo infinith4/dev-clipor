@@ -46,7 +46,7 @@ function ClipboardItem({
       </div>
       {entry.isPinned ? (
         <footer className="clipboard-meta">
-          <span className="badge">Pin</span>
+          <span className="badge">{t("clipboard.pinned_badge")}</span>
         </footer>
       ) : null}
     </article>

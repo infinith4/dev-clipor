@@ -1,4 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
+import i18n from "../i18n";
 import { useClipboardHistory } from "../hooks/useClipboardHistory";
 import type { ClipboardEntry, ClipboardHistoryPage } from "../types";
 
@@ -36,6 +37,8 @@ describe("useClipboardHistory", () => {
     vi.clearAllMocks();
     setError = vi.fn<(message: string | null) => void>();
     invokeMock.mockResolvedValue(undefined);
+    localStorage.setItem("clipor-lang", "ja");
+    void i18n.changeLanguage("ja");
   });
 
   const setup = (pageSize = 10) => {
@@ -84,7 +87,7 @@ describe("useClipboardHistory", () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(setError).toHaveBeenCalledWith("履歴の取得に失敗しました。");
+    expect(setError).toHaveBeenCalledWith(i18n.t("errors.history_fetch"));
   });
 
   it("updates pageSize when initialPageSize changes", async () => {
@@ -280,7 +283,7 @@ describe("useClipboardHistory", () => {
         await result.current.selectEntry(1);
       });
 
-      expect(setError).toHaveBeenCalledWith("履歴の貼り付けに失敗しました。");
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.history_paste"));
     });
   });
 
@@ -350,7 +353,7 @@ describe("useClipboardHistory", () => {
         await result.current.togglePinned(makeEntry());
       });
 
-      expect(setError).toHaveBeenCalledWith("ピン留め更新に失敗しました。");
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.history_pin_update"));
     });
   });
 
@@ -400,7 +403,7 @@ describe("useClipboardHistory", () => {
         await result.current.updateEntry(1, "x");
       });
 
-      expect(setError).toHaveBeenCalledWith("履歴の更新に失敗しました。");
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.history_update"));
     });
   });
 
@@ -491,7 +494,7 @@ describe("useClipboardHistory", () => {
         await result.current.deleteEntry(1);
       });
 
-      expect(setError).toHaveBeenCalledWith("履歴の削除に失敗しました。");
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.history_delete"));
     });
   });
 
@@ -541,7 +544,7 @@ describe("useClipboardHistory", () => {
         await result.current.setClipboardFormatted(1);
       });
 
-      expect(setError).toHaveBeenCalledWith("整形に失敗しました。");
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.clipboard_format"));
     });
   });
 
@@ -591,7 +594,7 @@ describe("useClipboardHistory", () => {
         await result.current.setClipboardConverted(1);
       });
 
-      expect(setError).toHaveBeenCalledWith("変換に失敗しました。");
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.clipboard_convert"));
     });
   });
 

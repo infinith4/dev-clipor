@@ -53,7 +53,7 @@ function PreviewPanel() {
       {data.imageData ? (
         <img
           src={`data:image/png;base64,${data.imageData}`}
-          alt="preview"
+          alt={t("preview_image.alt_text")}
           className="preview-panel-image"
         />
       ) : data.text ? (

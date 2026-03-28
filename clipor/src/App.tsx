@@ -87,7 +87,7 @@ function MainApp() {
     } catch (e) {
       setSetupError(e instanceof Error ? e.message : t("setup.password_failed"));
     }
-  }, [setupPassword, setupConfirm, settings, history, templates]);
+  }, [setupPassword, setupConfirm, settings, history, templates, t]);
 
   const handleUnlock = useCallback(async () => {
     console.log("[unlock] attempting with password length:", lockPassword.length);
@@ -107,7 +107,7 @@ function MainApp() {
       console.error("[unlock] error:", e);
       setLockError(e instanceof Error ? e.message : t("unlock.auth_failed"));
     }
-  }, [lockPassword, history, templates]);
+  }, [lockPassword, history, templates, t]);
 
   useEffect(() => {
     try {
@@ -170,9 +170,9 @@ function MainApp() {
       anchorY: anchorY != null ? Math.round(anchorY) : null,
     }).catch((e) => {
       const msg = typeof e === "string" ? e : e instanceof Error ? e.message : JSON.stringify(e);
-      setError(`preview error: ${msg}`);
+      setError(t("app.preview_failed", { message: msg }));
     });
-  }, [history.entries, setError, getSelectedCardY]);
+  }, [history.entries, setError, getSelectedCardY, t]);
 
   // Show preview for a template entry by id
   const showTemplatePreview = useCallback((id: number) => {
@@ -190,9 +190,9 @@ function MainApp() {
       anchorY: anchorY != null ? Math.round(anchorY) : null,
     }).catch((e) => {
       const msg = typeof e === "string" ? e : e instanceof Error ? e.message : JSON.stringify(e);
-      setError(`preview error: ${msg}`);
+      setError(t("app.preview_failed", { message: msg }));
     });
-  }, [templates.templates, setError, getSelectedCardY]);
+  }, [templates.templates, setError, getSelectedCardY, t]);
 
   // Auto-show preview when selection changes
   useEffect(() => {

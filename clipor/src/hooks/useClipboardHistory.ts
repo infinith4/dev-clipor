@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import i18n from "../i18n";
 import type { ClipboardEntry, ClipboardHistoryPage } from "../types";
 
 type SetError = (message: string | null) => void;
@@ -28,7 +29,7 @@ export function useClipboardHistory(initialPageSize: number, setError: SetError)
       setTotal(result.total);
       setError(null);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "履歴の取得に失敗しました。");
+      setError(error instanceof Error ? error.message : i18n.t("errors.history_fetch"));
     } finally {
       setLoading(false);
     }
@@ -45,7 +46,7 @@ export function useClipboardHistory(initialPageSize: number, setError: SetError)
         await invoke("paste_history_entry", { id });
         setError(null);
       } catch (error) {
-        setError(error instanceof Error ? error.message : "履歴の貼り付けに失敗しました。");
+        setError(error instanceof Error ? error.message : i18n.t("errors.history_paste"));
       }
     },
     [setError],
@@ -57,7 +58,7 @@ export function useClipboardHistory(initialPageSize: number, setError: SetError)
         await invoke("set_history_pinned", { id: entry.id, pinned: !entry.isPinned });
         await refresh();
       } catch (error) {
-        setError(error instanceof Error ? error.message : "ピン留め更新に失敗しました。");
+        setError(error instanceof Error ? error.message : i18n.t("errors.history_pin_update"));
       }
     },
     [refresh, setError],
@@ -69,7 +70,7 @@ export function useClipboardHistory(initialPageSize: number, setError: SetError)
         await invoke("update_history_entry", { id, text });
         await refresh();
       } catch (error) {
-        setError(error instanceof Error ? error.message : "履歴の更新に失敗しました。");
+        setError(error instanceof Error ? error.message : i18n.t("errors.history_update"));
       }
     },
     [refresh, setError],
@@ -85,7 +86,7 @@ export function useClipboardHistory(initialPageSize: number, setError: SetError)
         }
         await refresh();
       } catch (error) {
-        setError(error instanceof Error ? error.message : "履歴の削除に失敗しました。");
+        setError(error instanceof Error ? error.message : i18n.t("errors.history_delete"));
       }
     },
     [entries.length, page, refresh, setError],
@@ -96,7 +97,7 @@ export function useClipboardHistory(initialPageSize: number, setError: SetError)
       try {
         await invoke("set_clipboard_formatted", { id });
       } catch (error) {
-        setError(error instanceof Error ? error.message : "整形に失敗しました。");
+        setError(error instanceof Error ? error.message : i18n.t("errors.clipboard_format"));
       }
     },
     [setError],
@@ -107,7 +108,7 @@ export function useClipboardHistory(initialPageSize: number, setError: SetError)
       try {
         await invoke("set_clipboard_converted", { id });
       } catch (error) {
-        setError(error instanceof Error ? error.message : "変換に失敗しました。");
+        setError(error instanceof Error ? error.message : i18n.t("errors.clipboard_convert"));
       }
     },
     [setError],

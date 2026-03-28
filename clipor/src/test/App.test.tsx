@@ -1,4 +1,5 @@
 import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
+import i18n from "../i18n";
 import type { ClipboardEntry, TemplateEntry } from "../types";
 
 /* ------------------------------------------------------------------ */
@@ -295,6 +296,8 @@ function resetAllMocks() {
   vi.clearAllMocks();
   invokeMock.mockResolvedValue(undefined);
   listenMock.mockImplementation(() => Promise.resolve(() => {}));
+  localStorage.setItem("clipor-lang", "ja");
+  void i18n.changeLanguage("ja");
 }
 
 /* ================================================================== */
@@ -332,13 +335,13 @@ describe("App", () => {
 
     it("renders setup form when setupSkipped is false", async () => {
       render(await importApp());
-      expect(screen.getByText("Set password & start")).toBeInTheDocument();
-      expect(screen.getByText("Skip (no protection)")).toBeInTheDocument();
+      expect(screen.getByText("パスワードを設定して開始")).toBeInTheDocument();
+      expect(screen.getByText("スキップ（保護なし）")).toBeInTheDocument();
     });
 
     it("shows error when password is empty", async () => {
       render(await importApp());
-      const form = screen.getByText("Set password & start").closest("form")!;
+      const form = screen.getByText("パスワードを設定して開始").closest("form")!;
       fireEvent.submit(form);
       await waitFor(() => {
         expect(screen.getByText("パスワードを入力してください。")).toBeInTheDocument();
@@ -352,7 +355,7 @@ describe("App", () => {
       fireEvent.change(passwordInputs[0], { target: { value: "abc123" } });
       fireEvent.change(passwordInputs[1], { target: { value: "different" } });
 
-      fireEvent.submit(screen.getByText("Set password & start").closest("form")!);
+      fireEvent.submit(screen.getByText("パスワードを設定して開始").closest("form")!);
 
       await waitFor(() => {
         expect(screen.getByText("パスワードが一致しません。")).toBeInTheDocument();
@@ -367,7 +370,7 @@ describe("App", () => {
       fireEvent.change(passwordInputs[0], { target: { value: "pass123" } });
       fireEvent.change(passwordInputs[1], { target: { value: "pass123" } });
 
-      fireEvent.submit(screen.getByText("Set password & start").closest("form")!);
+      fireEvent.submit(screen.getByText("パスワードを設定して開始").closest("form")!);
 
       await waitFor(() => {
         expect(invokeMock).toHaveBeenCalledWith("set_password", { password: "pass123" });
@@ -388,7 +391,7 @@ describe("App", () => {
       fireEvent.change(passwordInputs[0], { target: { value: "pass123" } });
       fireEvent.change(passwordInputs[1], { target: { value: "pass123" } });
 
-      fireEvent.submit(screen.getByText("Set password & start").closest("form")!);
+      fireEvent.submit(screen.getByText("パスワードを設定して開始").closest("form")!);
 
       await waitFor(() => {
         expect(screen.getByText("backend error")).toBeInTheDocument();
@@ -406,7 +409,7 @@ describe("App", () => {
       fireEvent.change(passwordInputs[0], { target: { value: "pass123" } });
       fireEvent.change(passwordInputs[1], { target: { value: "pass123" } });
 
-      fireEvent.submit(screen.getByText("Set password & start").closest("form")!);
+      fireEvent.submit(screen.getByText("パスワードを設定して開始").closest("form")!);
 
       await waitFor(() => {
         expect(screen.getByText("パスワード設定に失敗しました。")).toBeInTheDocument();
@@ -416,7 +419,7 @@ describe("App", () => {
     it("skips setup when skip button clicked", async () => {
       render(await importApp());
 
-      fireEvent.click(screen.getByText("Skip (no protection)"));
+      fireEvent.click(screen.getByText("スキップ（保護なし）"));
 
       expect(skipSetupMock).toHaveBeenCalled();
       // After skip, should show main popup
@@ -438,7 +441,7 @@ describe("App", () => {
 
     it("renders lock screen", async () => {
       render(await importApp());
-      expect(screen.getByText("Unlock")).toBeInTheDocument();
+      expect(screen.getByText("ロック解除")).toBeInTheDocument();
     });
 
     it("unlocks successfully on correct password", async () => {
@@ -450,7 +453,7 @@ describe("App", () => {
 
       const passwordInput = document.querySelector('input[type="password"]')!;
       fireEvent.change(passwordInput, { target: { value: "correct" } });
-      fireEvent.submit(screen.getByText("Unlock").closest("form")!);
+      fireEvent.submit(screen.getByText("ロック解除").closest("form")!);
 
       await waitFor(() => {
         expect(invokeMock).toHaveBeenCalledWith("verify_password", { password: "correct" });
@@ -469,7 +472,7 @@ describe("App", () => {
 
       const passwordInput = document.querySelector('input[type="password"]')!;
       fireEvent.change(passwordInput, { target: { value: "wrong" } });
-      fireEvent.submit(screen.getByText("Unlock").closest("form")!);
+      fireEvent.submit(screen.getByText("ロック解除").closest("form")!);
 
       await waitFor(() => {
         expect(screen.getByText("パスワードが正しくありません。")).toBeInTheDocument();
@@ -485,7 +488,7 @@ describe("App", () => {
 
       const passwordInput = document.querySelector('input[type="password"]')!;
       fireEvent.change(passwordInput, { target: { value: "test" } });
-      fireEvent.submit(screen.getByText("Unlock").closest("form")!);
+      fireEvent.submit(screen.getByText("ロック解除").closest("form")!);
 
       await waitFor(() => {
         expect(screen.getByText("auth failed")).toBeInTheDocument();
@@ -501,7 +504,7 @@ describe("App", () => {
 
       const passwordInput = document.querySelector('input[type="password"]')!;
       fireEvent.change(passwordInput, { target: { value: "test" } });
-      fireEvent.submit(screen.getByText("Unlock").closest("form")!);
+      fireEvent.submit(screen.getByText("ロック解除").closest("form")!);
 
       await waitFor(() => {
         expect(screen.getByText("認証に失敗しました。")).toBeInTheDocument();
@@ -511,7 +514,7 @@ describe("App", () => {
     it("does not hide popup on Escape when locked", async () => {
       render(await importApp());
       await waitFor(() => {
-        expect(screen.getByText("Unlock")).toBeInTheDocument();
+        expect(screen.getByText("ロック解除")).toBeInTheDocument();
       });
       hideMock.mockClear();
       invokeMock.mockClear();
@@ -956,7 +959,7 @@ describe("App", () => {
 
       await waitFor(() => {
         const errAttr = screen.getByTestId("popup-window").getAttribute("data-error");
-        expect(errAttr).toContain("preview error:");
+        expect(errAttr).toContain("プレビューの表示に失敗しました:");
         expect(errAttr).toContain("42");
       });
     });
@@ -1121,7 +1124,9 @@ describe("App", () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId("popup-window").getAttribute("data-error")).toContain("preview error:");
+        expect(screen.getByTestId("popup-window").getAttribute("data-error")).toContain(
+          "プレビューの表示に失敗しました:",
+        );
       });
     });
   });
@@ -1387,7 +1392,7 @@ describe("App", () => {
   it("sets locked state when requirePassword is true on mount", async () => {
     settingsState.requirePassword = true;
     render(await importApp());
-    expect(screen.getByText("Unlock")).toBeInTheDocument();
+    expect(screen.getByText("ロック解除")).toBeInTheDocument();
   });
 
   /* ---------------------------------------------------------------- */
@@ -1557,7 +1562,7 @@ describe("App", () => {
     render(await importApp());
 
     await waitFor(() => {
-      expect(screen.getByText("Set password & start")).toBeInTheDocument();
+      expect(screen.getByText("パスワードを設定して開始")).toBeInTheDocument();
     });
 
     hideMock.mockClear();

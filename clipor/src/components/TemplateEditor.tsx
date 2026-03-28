@@ -81,7 +81,7 @@ function TemplateEditor({
     reader.readAsDataURL(file);
     // Reset input so the same file can be selected again
     event.target.value = "";
-  }, [title, text]);
+  }, [t, title, text]);
 
   useEffect(() => {
     if (editingTemplate) {
@@ -190,7 +190,7 @@ function TemplateEditor({
             <div className="image-preview-container">
               <img
                 src={`data:image/png;base64,${imageData}`}
-                alt="preview"
+                alt={t("preview_image.alt_text")}
                 className="template-image-preview"
               />
               <div className="row-actions">

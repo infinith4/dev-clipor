@@ -1,4 +1,5 @@
 import { render, screen, waitFor, act } from "@testing-library/react";
+import i18n from "../i18n";
 import PreviewPanel from "../components/PreviewPanel";
 
 const { invokeMock, listenMock } = vi.hoisted(() => ({
@@ -21,6 +22,8 @@ describe("PreviewPanel", () => {
     unlistenFn = vi.fn();
     listenMock.mockResolvedValue(unlistenFn);
     invokeMock.mockResolvedValue(null);
+    localStorage.setItem("clipor-lang", "ja");
+    void i18n.changeLanguage("ja");
   });
 
   afterEach(() => {
@@ -66,10 +69,10 @@ describe("PreviewPanel", () => {
     render(<PreviewPanel />);
 
     await waitFor(() => {
-      expect(screen.getByAltText("preview")).toBeInTheDocument();
+      expect(screen.getByAltText(i18n.t("preview_image.alt_text"))).toBeInTheDocument();
     });
 
-    const img = screen.getByAltText("preview") as HTMLImageElement;
+    const img = screen.getByAltText(i18n.t("preview_image.alt_text")) as HTMLImageElement;
     expect(img.src).toContain("data:image/png;base64,abc123base64");
   });
 

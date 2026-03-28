@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import SettingsView from "../components/SettingsView";
+import i18n from "../i18n";
 import type { AppSettings } from "../types";
 
 const mockInvoke = vi.hoisted(() => vi.fn());
@@ -41,19 +42,21 @@ function renderSettings(overrides?: Partial<AppSettings>, propOverrides?: Record
 
 beforeEach(() => {
   mockInvoke.mockReset();
+  localStorage.setItem("clipor-lang", "ja");
+  void i18n.changeLanguage("ja");
 });
 
 describe("SettingsView", () => {
   describe("form inputs render with correct values", () => {
     it("renders maxHistoryItems input", () => {
       renderSettings({ maxHistoryItems: 1000 });
-      const input = screen.getByLabelText("History limit") as HTMLInputElement;
+      const input = screen.getByLabelText("履歴保持数") as HTMLInputElement;
       expect(input.value).toBe("1000");
     });
 
     it("renders pageSize input", () => {
       renderSettings({ pageSize: 50 });
-      const input = screen.getByLabelText("Page size") as HTMLInputElement;
+      const input = screen.getByLabelText("ページサイズ") as HTMLInputElement;
       expect(input.value).toBe("50");
     });
 
@@ -65,19 +68,19 @@ describe("SettingsView", () => {
 
     it("renders blurDelayMs input", () => {
       renderSettings({ blurDelayMs: 500 });
-      const input = screen.getByLabelText("Blur delay (ms)") as HTMLInputElement;
+      const input = screen.getByLabelText("フォーカス移動遅延 (ms)") as HTMLInputElement;
       expect(input.value).toBe("500");
     });
 
     it("renders launchOnStartup checkbox", () => {
       renderSettings({ launchOnStartup: true });
-      const checkbox = screen.getByLabelText("Launch on Windows startup") as HTMLInputElement;
+      const checkbox = screen.getByLabelText("Windows 起動時に自動起動") as HTMLInputElement;
       expect(checkbox.checked).toBe(true);
     });
 
     it("renders preview size inputs", () => {
       renderSettings({ previewWidth: 350, previewHeight: 450 });
-      const label = screen.getByText("Preview size (W x H)");
+      const label = screen.getByText("プレビューサイズ (W x H)");
       const container = label.closest("label")!;
       const inputs = container.querySelectorAll("input[type='number']");
       expect((inputs[0] as HTMLInputElement).value).toBe("350");
@@ -86,7 +89,7 @@ describe("SettingsView", () => {
 
     it("renders image preview size inputs", () => {
       renderSettings({ previewImageWidth: 700, previewImageHeight: 800 });
-      const label = screen.getByText("Image preview size (W x H)");
+      const label = screen.getByText("画像プレビューサイズ (W x H)");
       const container = label.closest("label")!;
       const inputs = container.querySelectorAll("input[type='number']");
       expect((inputs[0] as HTMLInputElement).value).toBe("700");
@@ -97,14 +100,14 @@ describe("SettingsView", () => {
   describe("form input changes", () => {
     it("updates maxHistoryItems", () => {
       renderSettings();
-      const input = screen.getByLabelText("History limit") as HTMLInputElement;
+      const input = screen.getByLabelText("履歴保持数") as HTMLInputElement;
       fireEvent.change(input, { target: { value: "2000" } });
       expect(input.value).toBe("2000");
     });
 
     it("updates pageSize", () => {
       renderSettings();
-      const input = screen.getByLabelText("Page size") as HTMLInputElement;
+      const input = screen.getByLabelText("ページサイズ") as HTMLInputElement;
       fireEvent.change(input, { target: { value: "30" } });
       expect(input.value).toBe("30");
     });
@@ -118,14 +121,14 @@ describe("SettingsView", () => {
 
     it("updates blurDelayMs", () => {
       renderSettings();
-      const input = screen.getByLabelText("Blur delay (ms)") as HTMLInputElement;
+      const input = screen.getByLabelText("フォーカス移動遅延 (ms)") as HTMLInputElement;
       fireEvent.change(input, { target: { value: "100" } });
       expect(input.value).toBe("100");
     });
 
     it("updates previewWidth", () => {
       renderSettings();
-      const label = screen.getByText("Preview size (W x H)");
+      const label = screen.getByText("プレビューサイズ (W x H)");
       const container = label.closest("label")!;
       const inputs = container.querySelectorAll("input[type='number']");
       fireEvent.change(inputs[0], { target: { value: "400" } });
@@ -134,7 +137,7 @@ describe("SettingsView", () => {
 
     it("updates previewHeight", () => {
       renderSettings();
-      const label = screen.getByText("Preview size (W x H)");
+      const label = screen.getByText("プレビューサイズ (W x H)");
       const container = label.closest("label")!;
       const inputs = container.querySelectorAll("input[type='number']");
       fireEvent.change(inputs[1], { target: { value: "500" } });
@@ -143,7 +146,7 @@ describe("SettingsView", () => {
 
     it("updates previewImageWidth", () => {
       renderSettings();
-      const label = screen.getByText("Image preview size (W x H)");
+      const label = screen.getByText("画像プレビューサイズ (W x H)");
       const container = label.closest("label")!;
       const inputs = container.querySelectorAll("input[type='number']");
       fireEvent.change(inputs[0], { target: { value: "800" } });
@@ -152,7 +155,7 @@ describe("SettingsView", () => {
 
     it("updates previewImageHeight", () => {
       renderSettings();
-      const label = screen.getByText("Image preview size (W x H)");
+      const label = screen.getByText("画像プレビューサイズ (W x H)");
       const container = label.closest("label")!;
       const inputs = container.querySelectorAll("input[type='number']");
       fireEvent.change(inputs[1], { target: { value: "900" } });
@@ -161,7 +164,7 @@ describe("SettingsView", () => {
 
     it("toggles launchOnStartup", () => {
       renderSettings({ launchOnStartup: false });
-      const checkbox = screen.getByLabelText("Launch on Windows startup") as HTMLInputElement;
+      const checkbox = screen.getByLabelText("Windows 起動時に自動起動") as HTMLInputElement;
       fireEvent.click(checkbox);
       expect(checkbox.checked).toBe(true);
     });
@@ -170,9 +173,9 @@ describe("SettingsView", () => {
   describe("form submission", () => {
     it("calls onSave with updated draft on submit", () => {
       const { onSave } = renderSettings();
-      const input = screen.getByLabelText("History limit") as HTMLInputElement;
+      const input = screen.getByLabelText("履歴保持数") as HTMLInputElement;
       fireEvent.change(input, { target: { value: "2000" } });
-      fireEvent.click(screen.getByText("Save settings"));
+      fireEvent.click(screen.getByText("設定を保存"));
       expect(onSave).toHaveBeenCalledWith(
         expect.objectContaining({ maxHistoryItems: 2000 }),
       );
@@ -187,7 +190,7 @@ describe("SettingsView", () => {
       const { rerender } = render(
         <SettingsView settings={settings1} onSave={onSave} onPasswordChanged={onPasswordChanged} />,
       );
-      const input = screen.getByLabelText("History limit") as HTMLInputElement;
+      const input = screen.getByLabelText("履歴保持数") as HTMLInputElement;
       expect(input.value).toBe("100");
 
       const settings2 = defaultSettings({ maxHistoryItems: 999 });
@@ -201,31 +204,31 @@ describe("SettingsView", () => {
   describe("password flow when requirePassword=false", () => {
     it("shows Set password button", () => {
       renderSettings({ requirePassword: false });
-      expect(screen.getByText("Set password")).toBeInTheDocument();
+      expect(screen.getByText("パスワードを設定")).toBeInTheDocument();
     });
 
     it("does not show Current password field", () => {
       renderSettings({ requirePassword: false });
-      expect(screen.queryByLabelText("Current password")).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("現在のパスワード")).not.toBeInTheDocument();
     });
 
     it("shows error when new password is empty", async () => {
       renderSettings({ requirePassword: false });
       await act(async () => {
-        fireEvent.click(screen.getByText("Set password"));
+        fireEvent.click(screen.getByText("パスワードを設定"));
       });
       expect(screen.getByText("パスワードを入力してください。")).toBeInTheDocument();
     });
 
     it("shows error when passwords do not match", async () => {
       renderSettings({ requirePassword: false });
-      const inputs = screen.getAllByLabelText(/password/i) as HTMLInputElement[];
+      const inputs = screen.getAllByLabelText(/パスワード/) as HTMLInputElement[];
       // New password
       fireEvent.change(inputs[0], { target: { value: "abc123" } });
       // Confirm password
       fireEvent.change(inputs[1], { target: { value: "different" } });
       await act(async () => {
-        fireEvent.click(screen.getByText("Set password"));
+        fireEvent.click(screen.getByText("パスワードを設定"));
       });
       expect(screen.getByText("パスワードが一致しません。")).toBeInTheDocument();
     });
@@ -233,11 +236,11 @@ describe("SettingsView", () => {
     it("sets password successfully", async () => {
       mockInvoke.mockResolvedValueOnce(undefined);
       const { onPasswordChanged } = renderSettings({ requirePassword: false });
-      const inputs = screen.getAllByLabelText(/password/i) as HTMLInputElement[];
+      const inputs = screen.getAllByLabelText(/パスワード/) as HTMLInputElement[];
       fireEvent.change(inputs[0], { target: { value: "abc123" } });
       fireEvent.change(inputs[1], { target: { value: "abc123" } });
       await act(async () => {
-        fireEvent.click(screen.getByText("Set password"));
+        fireEvent.click(screen.getByText("パスワードを設定"));
       });
       expect(mockInvoke).toHaveBeenCalledWith("set_password", { password: "abc123" });
       expect(screen.getByText("パスワードを設定しました。DB 内の履歴と定型文を暗号化しました。")).toBeInTheDocument();
@@ -250,11 +253,11 @@ describe("SettingsView", () => {
     it("shows error when invoke fails with Error", async () => {
       mockInvoke.mockRejectedValueOnce(new Error("backend error"));
       renderSettings({ requirePassword: false });
-      const inputs = screen.getAllByLabelText(/password/i) as HTMLInputElement[];
+      const inputs = screen.getAllByLabelText(/パスワード/) as HTMLInputElement[];
       fireEvent.change(inputs[0], { target: { value: "abc123" } });
       fireEvent.change(inputs[1], { target: { value: "abc123" } });
       await act(async () => {
-        fireEvent.click(screen.getByText("Set password"));
+        fireEvent.click(screen.getByText("パスワードを設定"));
       });
       expect(screen.getByText("backend error")).toBeInTheDocument();
     });
@@ -262,11 +265,11 @@ describe("SettingsView", () => {
     it("shows generic error when invoke fails with non-Error", async () => {
       mockInvoke.mockRejectedValueOnce("string error");
       renderSettings({ requirePassword: false });
-      const inputs = screen.getAllByLabelText(/password/i) as HTMLInputElement[];
+      const inputs = screen.getAllByLabelText(/パスワード/) as HTMLInputElement[];
       fireEvent.change(inputs[0], { target: { value: "abc123" } });
       fireEvent.change(inputs[1], { target: { value: "abc123" } });
       await act(async () => {
-        fireEvent.click(screen.getByText("Set password"));
+        fireEvent.click(screen.getByText("パスワードを設定"));
       });
       expect(screen.getByText("パスワード設定に失敗しました。")).toBeInTheDocument();
     });
@@ -275,24 +278,24 @@ describe("SettingsView", () => {
   describe("password flow when requirePassword=true", () => {
     it("shows Change password and Remove password buttons", () => {
       renderSettings({ requirePassword: true });
-      expect(screen.getByText("Change password")).toBeInTheDocument();
-      expect(screen.getByText("Remove password")).toBeInTheDocument();
+      expect(screen.getByText("パスワードを変更")).toBeInTheDocument();
+      expect(screen.getByText("パスワードを解除")).toBeInTheDocument();
     });
 
     it("shows Current password field", () => {
       renderSettings({ requirePassword: true });
-      expect(screen.getByLabelText("Current password")).toBeInTheDocument();
+      expect(screen.getByLabelText("現在のパスワード")).toBeInTheDocument();
     });
 
     it("shows error when current password is empty on change", async () => {
       renderSettings({ requirePassword: true });
-      const inputs = screen.getAllByLabelText(/password/i) as HTMLInputElement[];
+      const inputs = screen.getAllByLabelText(/パスワード/) as HTMLInputElement[];
       // New password
       fireEvent.change(inputs[1], { target: { value: "new123" } });
       // Confirm
       fireEvent.change(inputs[2], { target: { value: "new123" } });
       await act(async () => {
-        fireEvent.click(screen.getByText("Change password"));
+        fireEvent.click(screen.getByText("パスワードを変更"));
       });
       expect(screen.getByText("現在のパスワードを入力してください。")).toBeInTheDocument();
     });
@@ -300,12 +303,12 @@ describe("SettingsView", () => {
     it("shows error when current password is wrong", async () => {
       mockInvoke.mockResolvedValueOnce(false);
       renderSettings({ requirePassword: true });
-      const inputs = screen.getAllByLabelText(/password/i) as HTMLInputElement[];
+      const inputs = screen.getAllByLabelText(/パスワード/) as HTMLInputElement[];
       fireEvent.change(inputs[0], { target: { value: "wrong" } });
       fireEvent.change(inputs[1], { target: { value: "new123" } });
       fireEvent.change(inputs[2], { target: { value: "new123" } });
       await act(async () => {
-        fireEvent.click(screen.getByText("Change password"));
+        fireEvent.click(screen.getByText("パスワードを変更"));
       });
       expect(mockInvoke).toHaveBeenCalledWith("verify_password", { password: "wrong" });
       expect(screen.getByText("現在のパスワードが正しくありません。")).toBeInTheDocument();
@@ -316,12 +319,12 @@ describe("SettingsView", () => {
         .mockResolvedValueOnce(true) // verify_password
         .mockResolvedValueOnce(undefined); // set_password
       const { onPasswordChanged } = renderSettings({ requirePassword: true });
-      const inputs = screen.getAllByLabelText(/password/i) as HTMLInputElement[];
+      const inputs = screen.getAllByLabelText(/パスワード/) as HTMLInputElement[];
       fireEvent.change(inputs[0], { target: { value: "old123" } });
       fireEvent.change(inputs[1], { target: { value: "new123" } });
       fireEvent.change(inputs[2], { target: { value: "new123" } });
       await act(async () => {
-        fireEvent.click(screen.getByText("Change password"));
+        fireEvent.click(screen.getByText("パスワードを変更"));
       });
       expect(mockInvoke).toHaveBeenCalledWith("verify_password", { password: "old123" });
       expect(mockInvoke).toHaveBeenCalledWith("set_password", { password: "new123" });
@@ -335,23 +338,23 @@ describe("SettingsView", () => {
 
     it("shows error when new password is empty on change", async () => {
       renderSettings({ requirePassword: true });
-      const inputs = screen.getAllByLabelText(/password/i) as HTMLInputElement[];
+      const inputs = screen.getAllByLabelText(/パスワード/) as HTMLInputElement[];
       fireEvent.change(inputs[0], { target: { value: "old123" } });
       // Leave new and confirm empty
       await act(async () => {
-        fireEvent.click(screen.getByText("Change password"));
+        fireEvent.click(screen.getByText("パスワードを変更"));
       });
       expect(screen.getByText("パスワードを入力してください。")).toBeInTheDocument();
     });
 
     it("shows mismatch error when passwords differ on change", async () => {
       renderSettings({ requirePassword: true });
-      const inputs = screen.getAllByLabelText(/password/i) as HTMLInputElement[];
+      const inputs = screen.getAllByLabelText(/パスワード/) as HTMLInputElement[];
       fireEvent.change(inputs[0], { target: { value: "old123" } });
       fireEvent.change(inputs[1], { target: { value: "new123" } });
       fireEvent.change(inputs[2], { target: { value: "different" } });
       await act(async () => {
-        fireEvent.click(screen.getByText("Change password"));
+        fireEvent.click(screen.getByText("パスワードを変更"));
       });
       expect(screen.getByText("パスワードが一致しません。")).toBeInTheDocument();
     });
@@ -360,7 +363,7 @@ describe("SettingsView", () => {
       it("shows error when current password is empty", async () => {
         renderSettings({ requirePassword: true });
         await act(async () => {
-          fireEvent.click(screen.getByText("Remove password"));
+          fireEvent.click(screen.getByText("パスワードを解除"));
         });
         expect(screen.getByText("現在のパスワードを入力してください。")).toBeInTheDocument();
       });
@@ -368,10 +371,10 @@ describe("SettingsView", () => {
       it("removes password successfully", async () => {
         mockInvoke.mockResolvedValueOnce(undefined);
         const { onPasswordChanged } = renderSettings({ requirePassword: true });
-        const currentPwInput = screen.getByLabelText("Current password") as HTMLInputElement;
+        const currentPwInput = screen.getByLabelText("現在のパスワード") as HTMLInputElement;
         fireEvent.change(currentPwInput, { target: { value: "old123" } });
         await act(async () => {
-          fireEvent.click(screen.getByText("Remove password"));
+          fireEvent.click(screen.getByText("パスワードを解除"));
         });
         expect(mockInvoke).toHaveBeenCalledWith("remove_password", { currentPassword: "old123" });
         expect(screen.getByText("パスワードを解除しました。DB 内の履歴と定型文を復号しました。")).toBeInTheDocument();
@@ -382,10 +385,10 @@ describe("SettingsView", () => {
       it("shows error when remove invoke fails with Error", async () => {
         mockInvoke.mockRejectedValueOnce(new Error("remove fail"));
         renderSettings({ requirePassword: true });
-        const currentPwInput = screen.getByLabelText("Current password") as HTMLInputElement;
+        const currentPwInput = screen.getByLabelText("現在のパスワード") as HTMLInputElement;
         fireEvent.change(currentPwInput, { target: { value: "old123" } });
         await act(async () => {
-          fireEvent.click(screen.getByText("Remove password"));
+          fireEvent.click(screen.getByText("パスワードを解除"));
         });
         expect(screen.getByText("remove fail")).toBeInTheDocument();
       });
@@ -393,10 +396,10 @@ describe("SettingsView", () => {
       it("shows generic error when remove invoke fails with non-Error", async () => {
         mockInvoke.mockRejectedValueOnce("string error");
         renderSettings({ requirePassword: true });
-        const currentPwInput = screen.getByLabelText("Current password") as HTMLInputElement;
+        const currentPwInput = screen.getByLabelText("現在のパスワード") as HTMLInputElement;
         fireEvent.change(currentPwInput, { target: { value: "old123" } });
         await act(async () => {
-          fireEvent.click(screen.getByText("Remove password"));
+          fireEvent.click(screen.getByText("パスワードを解除"));
         });
         expect(screen.getByText("パスワード解除に失敗しました。")).toBeInTheDocument();
       });
@@ -406,17 +409,29 @@ describe("SettingsView", () => {
   describe("language switching", () => {
     it("renders language select with current language", () => {
       renderSettings();
-      const select = screen.getByLabelText("Language") as HTMLSelectElement;
+      const select = screen.getByLabelText("言語") as HTMLSelectElement;
       expect(select).toBeInTheDocument();
     });
 
     it("changes language and saves to localStorage", () => {
       const setItemSpy = vi.spyOn(Storage.prototype, "setItem");
       renderSettings();
-      const select = screen.getByLabelText("Language") as HTMLSelectElement;
+      const select = screen.getByLabelText("言語") as HTMLSelectElement;
       fireEvent.change(select, { target: { value: "en" } });
       expect(setItemSpy).toHaveBeenCalledWith("clipor-lang", "en");
       setItemSpy.mockRestore();
+    });
+
+    it("rerenders labels in English after switching language", async () => {
+      renderSettings();
+      const select = screen.getByLabelText("言語") as HTMLSelectElement;
+
+      fireEvent.change(select, { target: { value: "en" } });
+
+      await waitFor(() => {
+        expect(screen.getByLabelText("Language")).toBeInTheDocument();
+      });
+      expect(screen.getByText("Save settings")).toBeInTheDocument();
     });
   });
 
@@ -438,7 +453,7 @@ describe("SettingsView", () => {
 
     it("switches activation mode via radio buttons", () => {
       renderSettings({ activationMode: "hotkey" });
-      const doubleCtrlRadio = screen.getByLabelText("Double-press Ctrl") as HTMLInputElement;
+      const doubleCtrlRadio = screen.getByLabelText("Ctrl x2") as HTMLInputElement;
       fireEvent.click(doubleCtrlRadio);
       expect(doubleCtrlRadio.checked).toBe(true);
       // Hotkey input should now be hidden
@@ -448,7 +463,7 @@ describe("SettingsView", () => {
     it("shows hotkey input again when switching back to hotkey mode", () => {
       renderSettings({ activationMode: "double-ctrl" });
       expect(screen.queryByPlaceholderText("Ctrl+Alt+Z")).not.toBeInTheDocument();
-      const hotkeyRadio = screen.getByLabelText("Hotkey") as HTMLInputElement;
+      const hotkeyRadio = screen.getByLabelText("ホットキー") as HTMLInputElement;
       fireEvent.click(hotkeyRadio);
       expect(screen.getByPlaceholderText("Ctrl+Alt+Z")).toBeInTheDocument();
     });
@@ -457,7 +472,7 @@ describe("SettingsView", () => {
   describe("form submit prevents default", () => {
     it("calls onSave and prevents form submission", () => {
       const { onSave } = renderSettings();
-      const form = screen.getByText("Save settings").closest("form")!;
+      const form = screen.getByText("設定を保存").closest("form")!;
       const submitEvent = new Event("submit", { bubbles: true, cancelable: true });
       const preventDefaultSpy = vi.spyOn(submitEvent, "preventDefault");
       form.dispatchEvent(submitEvent);
@@ -479,16 +494,16 @@ describe("SettingsView", () => {
       renderSettings({ requirePassword: false });
       // Trigger an error first
       await act(async () => {
-        fireEvent.click(screen.getByText("Set password"));
+        fireEvent.click(screen.getByText("パスワードを設定"));
       });
       expect(screen.getByText("パスワードを入力してください。")).toBeInTheDocument();
 
       // Now fill in passwords and trigger again - the old error clears
-      const inputs = screen.getAllByLabelText(/password/i) as HTMLInputElement[];
+      const inputs = screen.getAllByLabelText(/パスワード/) as HTMLInputElement[];
       fireEvent.change(inputs[0], { target: { value: "abc" } });
       fireEvent.change(inputs[1], { target: { value: "different" } });
       await act(async () => {
-        fireEvent.click(screen.getByText("Set password"));
+        fireEvent.click(screen.getByText("パスワードを設定"));
       });
       // Old error gone, new error shown
       expect(screen.queryByText("パスワードを入力してください。")).not.toBeInTheDocument();

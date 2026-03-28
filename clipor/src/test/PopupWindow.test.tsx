@@ -301,7 +301,7 @@ describe("PopupWindow", () => {
     it("calls onDismissError when Close button is clicked", async () => {
       const onDismissError = vi.fn();
       render(<PopupWindow {...makeProps({ error: "oops", onDismissError })} />);
-      await userEvent.click(screen.getByRole("button", { name: "Close" }));
+      await userEvent.click(screen.getByRole("button", { name: "閉じる" }));
       expect(onDismissError).toHaveBeenCalledTimes(1);
     });
   });
@@ -334,7 +334,7 @@ describe("PopupWindow", () => {
   describe("history tab", () => {
     it("shows loading state", () => {
       render(<PopupWindow {...makeProps({ history: { loading: true } })} />);
-      expect(screen.getByText("Loading...")).toBeInTheDocument();
+      expect(screen.getByText("読み込み中...")).toBeInTheDocument();
     });
 
     it("shows empty state when no entries and not loading", () => {
@@ -547,7 +547,7 @@ describe("PopupWindow", () => {
 
     it("renders TemplateEditor with Create button when no editingTemplate", () => {
       render(<PopupWindow {...makeProps({ activeTab: "templates" })} />);
-      expect(screen.getByRole("button", { name: "Create" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "作成" })).toBeInTheDocument();
     });
 
     it("TemplateEditor onSave calls saveTemplate and clears editingTemplate", async () => {
@@ -566,10 +566,10 @@ describe("PopupWindow", () => {
         />,
       );
       // editingTemplate should be auto-set, so Update button should appear
-      expect(screen.getByRole("button", { name: "Update" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "更新" })).toBeInTheDocument();
 
       // Click Update to trigger onSave
-      await userEvent.click(screen.getByRole("button", { name: "Update" }));
+      await userEvent.click(screen.getByRole("button", { name: "更新" }));
       expect(saveTemplate).toHaveBeenCalled();
     });
 
@@ -586,10 +586,10 @@ describe("PopupWindow", () => {
           })}
         />,
       );
-      expect(screen.getByRole("button", { name: "Update" })).toBeInTheDocument();
-      await userEvent.click(screen.getByRole("button", { name: "Clear" }));
+      expect(screen.getByRole("button", { name: "更新" })).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "クリア" }));
       // After clearing, should show Create instead of Update
-      expect(screen.getByRole("button", { name: "Create" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "作成" })).toBeInTheDocument();
     });
 
     it("TemplateEditor onExport calls exportTemplates", async () => {
@@ -602,7 +602,7 @@ describe("PopupWindow", () => {
           })}
         />,
       );
-      await userEvent.click(screen.getByRole("button", { name: "Export JSON" }));
+      await userEvent.click(screen.getByRole("button", { name: "エクスポート" }));
       expect(exportTemplates).toHaveBeenCalled();
     });
 
@@ -616,11 +616,11 @@ describe("PopupWindow", () => {
           })}
         />,
       );
-      await userEvent.click(screen.getByRole("button", { name: "Import JSON" }));
+      await userEvent.click(screen.getByRole("button", { name: "インポート" }));
       // Import dialog should appear
       const dialog = screen.getByPlaceholderText('{"groups":[...],"templates":[...]}');
       await userEvent.type(dialog, '{{"test":1}}');
-      await userEvent.click(screen.getByRole("button", { name: "Import" }));
+      await userEvent.click(screen.getByRole("button", { name: "インポート実行" }));
       expect(importTemplates).toHaveBeenCalled();
     });
   });
@@ -640,7 +640,7 @@ describe("PopupWindow", () => {
         />,
       );
       // No editing -> shows Create
-      expect(screen.getByRole("button", { name: "Create" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "作成" })).toBeInTheDocument();
 
       // Now select a template
       rerender(
@@ -652,7 +652,7 @@ describe("PopupWindow", () => {
         />,
       );
       // Should now show Update
-      expect(screen.getByRole("button", { name: "Update" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "更新" })).toBeInTheDocument();
     });
 
     it("clears editingTemplate when selectedTemplateId becomes null", () => {
@@ -665,7 +665,7 @@ describe("PopupWindow", () => {
           })}
         />,
       );
-      expect(screen.getByRole("button", { name: "Update" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "更新" })).toBeInTheDocument();
 
       rerender(
         <PopupWindow
@@ -675,7 +675,7 @@ describe("PopupWindow", () => {
           })}
         />,
       );
-      expect(screen.getByRole("button", { name: "Create" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "作成" })).toBeInTheDocument();
     });
 
     it("clears editingTemplate when tab changes to non-templates", () => {
@@ -688,7 +688,7 @@ describe("PopupWindow", () => {
           })}
         />,
       );
-      expect(screen.getByRole("button", { name: "Update" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "更新" })).toBeInTheDocument();
 
       // Switch to history
       rerender(
@@ -718,7 +718,7 @@ describe("PopupWindow", () => {
           })}
         />,
       );
-      expect(screen.getByRole("button", { name: "Create" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "作成" })).toBeInTheDocument();
     });
 
     it("sets editingTemplate to null when template not found in list", () => {
@@ -732,7 +732,7 @@ describe("PopupWindow", () => {
         />,
       );
       // selectedTemplateId=999 does not match any template -> null
-      expect(screen.getByRole("button", { name: "Create" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "作成" })).toBeInTheDocument();
     });
   });
 
@@ -895,16 +895,16 @@ describe("PopupWindow", () => {
     }
 
     const transformCases = [
-      { label: "コメント接頭辞追加", type: "add_comment_prefix" },
-      { label: "引用接頭辞追加", type: "add_quote_prefix" },
-      { label: "行番号追加", type: "add_numbering" },
-      { label: "行を引用符で囲む", type: "wrap_lines_in_quotes" },
+      { label: "コメントを付加 (// )", type: "add_comment_prefix" },
+      { label: "引用符を付加 (> )", type: "add_quote_prefix" },
+      { label: "連番を付加 (1. 2. ...)", type: "add_numbering" },
+      { label: "各行を\"で囲む", type: "wrap_lines_in_quotes" },
       { label: "前後の空白を削除", type: "trim" },
       { label: "空行を削除", type: "remove_empty_lines" },
       { label: "連続空行を1行に", type: "collapse_blank_lines" },
-      { label: "末尾の空白を削除", type: "trim_trailing" },
+      { label: "行末空白を削除", type: "trim_trailing" },
       { label: "重複行を削除", type: "remove_duplicate_lines" },
-      { label: "HTMLタグを削除", type: "remove_html_tags" },
+      { label: "HTMLタグを除去", type: "remove_html_tags" },
     ] as const;
 
     for (const { label, type } of transformCases) {
@@ -933,8 +933,8 @@ describe("PopupWindow", () => {
     }
 
     const convertCases = [
-      { label: "小文字に変換", type: "to_lowercase" },
-      { label: "大文字に変換", type: "to_uppercase" },
+      { label: "大文字→小文字", type: "to_lowercase" },
+      { label: "小文字→大文字", type: "to_uppercase" },
       { label: "全角→半角", type: "fullwidth_to_halfwidth" },
       { label: "半角→全角", type: "halfwidth_to_fullwidth" },
     ] as const;
@@ -1079,9 +1079,9 @@ describe("PopupWindow", () => {
           })}
         />,
       );
-      expect(screen.getByText("すべてのグループ")).toBeInTheDocument();
-      expect(screen.getByText("Work")).toBeInTheDocument();
-      expect(screen.getByText("Personal")).toBeInTheDocument();
+      expect(screen.getByText("全グループ")).toBeInTheDocument();
+      expect(screen.getAllByText("Work").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("Personal").length).toBeGreaterThanOrEqual(1);
     });
 
     it("calls setSelectedGroupId when a group is selected", () => {
@@ -1097,7 +1097,7 @@ describe("PopupWindow", () => {
           })}
         />,
       );
-      const select = screen.getByDisplayValue("すべてのグループ") as HTMLSelectElement;
+      const select = screen.getByDisplayValue("全グループ") as HTMLSelectElement;
       fireEvent.change(select, { target: { value: "1" } });
       expect(setSelectedGroupId).toHaveBeenCalledWith(1);
     });
@@ -1115,7 +1115,8 @@ describe("PopupWindow", () => {
           })}
         />,
       );
-      const select = screen.getByDisplayValue("Work") as HTMLSelectElement;
+      const filterRow = document.querySelector(".filter-row")!;
+      const select = filterRow.querySelector("select") as HTMLSelectElement;
       fireEvent.change(select, { target: { value: "" } });
       expect(setSelectedGroupId).toHaveBeenCalledWith(null);
     });
@@ -1139,7 +1140,7 @@ describe("PopupWindow", () => {
       // Fill in the template editor form
       const titleInput = screen.getByLabelText("タイトル") as HTMLInputElement;
       fireEvent.change(titleInput, { target: { value: "Test Title" } });
-      const textarea = screen.getByPlaceholderText("{{name}} 形式で変数を使用できます");
+      const textarea = screen.getByPlaceholderText("{{date}} や {{clipboard}} を利用できます。");
       fireEvent.change(textarea, { target: { value: "Test Body" } });
 
       await userEvent.click(screen.getByText("作成"));

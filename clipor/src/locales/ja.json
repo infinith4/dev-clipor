@@ -71,7 +71,8 @@
     "auth_failed": "認証に失敗しました。"
   },
   "app": {
-    "window_init_failed": "ウィンドウの初期化に失敗しました。"
+    "window_init_failed": "ウィンドウの初期化に失敗しました。",
+    "preview_failed": "プレビューの表示に失敗しました: {{message}}"
   },
   "settings": {
     "label_history_limit": "履歴保持数",
@@ -151,7 +152,31 @@
   "error_banner": {
     "close_button": "閉じる"
   },
+  "errors": {
+    "history_fetch": "履歴の取得に失敗しました。",
+    "history_paste": "履歴の貼り付けに失敗しました。",
+    "history_pin_update": "ピン留め更新に失敗しました。",
+    "history_update": "履歴の更新に失敗しました。",
+    "history_delete": "履歴の削除に失敗しました。",
+    "clipboard_format": "整形に失敗しました。",
+    "clipboard_convert": "変換に失敗しました。",
+    "settings_fetch": "設定の取得に失敗しました。",
+    "settings_save": "設定の保存に失敗しました。",
+    "templates_fetch": "定型文の取得に失敗しました。",
+    "templates_paste": "定型文の貼り付けに失敗しました。",
+    "templates_save": "定型文の保存に失敗しました。",
+    "templates_delete": "定型文の削除に失敗しました。",
+    "templates_export": "定型文のエクスポートに失敗しました。",
+    "templates_import": "定型文のインポートに失敗しました。",
+    "templates_import_too_large": "インポートデータが大きすぎます（上限: {{sizeKb}}KB）。",
+    "templates_import_invalid_json": "無効なJSON形式です。正しいJSON文字列を入力してください。",
+    "templates_import_invalid_format": "インポートデータの形式が正しくありません。groups と templates が必要です。"
+  },
   "clipboard": {
-    "image_alt_text": "クリップボード画像"
+    "image_alt_text": "クリップボード画像",
+    "pinned_badge": "ピン留め"
+  },
+  "preview_image": {
+    "alt_text": "プレビュー画像"
   }
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import i18n from "../i18n";
 import type { AppSettings } from "../types";
 
 type SetError = (message: string | null) => void;
@@ -28,7 +29,7 @@ export function useSettings(setError: SetError) {
       setSettings(result);
       setError(null);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "設定の取得に失敗しました。");
+      setError(error instanceof Error ? error.message : i18n.t("errors.settings_fetch"));
     }
   }, [setError]);
 
@@ -43,7 +44,7 @@ export function useSettings(setError: SetError) {
         setSettings(result);
         setError(null);
       } catch (error) {
-        setError(error instanceof Error ? error.message : "設定の保存に失敗しました。");
+        setError(error instanceof Error ? error.message : i18n.t("errors.settings_save"));
       }
     },
     [setError],

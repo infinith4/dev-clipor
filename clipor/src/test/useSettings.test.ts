@@ -1,4 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
+import i18n from "../i18n";
 import { useSettings } from "../hooks/useSettings";
 import type { AppSettings } from "../types";
 
@@ -38,6 +39,8 @@ describe("useSettings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setError = vi.fn<(message: string | null) => void>();
+    localStorage.setItem("clipor-lang", "ja");
+    void i18n.changeLanguage("ja");
   });
 
   it("loads settings on mount via get_settings", async () => {
@@ -75,7 +78,7 @@ describe("useSettings", () => {
     renderHook(() => useSettings(setError));
 
     await vi.waitFor(() => {
-      expect(setError).toHaveBeenCalledWith("設定の取得に失敗しました。");
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.settings_fetch"));
     });
   });
 
@@ -156,7 +159,7 @@ describe("useSettings", () => {
         await result.current.saveSettings(customSettings);
       });
 
-      expect(setError).toHaveBeenCalledWith("設定の保存に失敗しました。");
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.settings_save"));
     });
   });
 

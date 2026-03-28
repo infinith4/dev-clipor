@@ -1,4 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
+import i18n from "../i18n";
 import { useTemplates } from "../hooks/useTemplates";
 import type { TemplateEntry, TemplateGroup, TemplateExportPayload } from "../types";
 
@@ -38,6 +39,8 @@ describe("useTemplates", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setError = vi.fn<(message: string | null) => void>();
+    localStorage.setItem("clipor-lang", "ja");
+    void i18n.changeLanguage("ja");
     // Default: both calls resolve to empty arrays
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "get_template_groups") return Promise.resolve([]);
@@ -94,7 +97,7 @@ describe("useTemplates", () => {
     setup();
 
     await vi.waitFor(() => {
-      expect(setError).toHaveBeenCalledWith("定型文の取得に失敗しました。");
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.templates_fetch"));
     });
   });
 
@@ -218,7 +221,7 @@ describe("useTemplates", () => {
         await result.current.pasteTemplate(1);
       });
 
-      expect(setError).toHaveBeenCalledWith("定型文の貼り付けに失敗しました。");
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.templates_paste"));
     });
   });
 
@@ -299,7 +302,7 @@ describe("useTemplates", () => {
         await result.current.saveTemplate({ title: "T", text: "B" });
       });
 
-      expect(setError).toHaveBeenCalledWith("定型文の保存に失敗しました。");
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.templates_save"));
     });
   });
 
@@ -341,7 +344,7 @@ describe("useTemplates", () => {
         await result.current.deleteTemplate(1);
       });
 
-      expect(setError).toHaveBeenCalledWith("定型文の削除に失敗しました。");
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.templates_delete"));
     });
   });
 
@@ -426,7 +429,7 @@ describe("useTemplates", () => {
         jsonResult = await result.current.exportTemplates();
       });
 
-      expect(setError).toHaveBeenCalledWith("定型文のエクスポートに失敗しました。");
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.templates_export"));
       expect(jsonResult).toBeNull();
     });
   });
@@ -443,7 +446,9 @@ describe("useTemplates", () => {
         await result.current.importTemplates(bigJson);
       });
 
-      expect(setError).toHaveBeenCalledWith("インポートデータが大きすぎます（上限: 1024KB）。");
+      expect(setError).toHaveBeenCalledWith(
+        i18n.t("errors.templates_import_too_large", { sizeKb: 1024 }),
+      );
       expect(invokeMock).not.toHaveBeenCalledWith("import_templates", expect.anything());
     });
 
@@ -456,9 +461,7 @@ describe("useTemplates", () => {
         await result.current.importTemplates("{not valid json");
       });
 
-      expect(setError).toHaveBeenCalledWith(
-        "無効なJSON形式です。正しいJSON文字列を入力してください。",
-      );
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.templates_import_invalid_json"));
     });
 
     it("sets error when parsed json has wrong format (missing groups)", async () => {
@@ -470,9 +473,7 @@ describe("useTemplates", () => {
         await result.current.importTemplates(JSON.stringify({ templates: [] }));
       });
 
-      expect(setError).toHaveBeenCalledWith(
-        "インポートデータの形式が正しくありません。groups と templates が必要です。",
-      );
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.templates_import_invalid_format"));
     });
 
     it("sets error when parsed json has wrong format (missing templates)", async () => {
@@ -484,9 +485,7 @@ describe("useTemplates", () => {
         await result.current.importTemplates(JSON.stringify({ groups: [] }));
       });
 
-      expect(setError).toHaveBeenCalledWith(
-        "インポートデータの形式が正しくありません。groups と templates が必要です。",
-      );
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.templates_import_invalid_format"));
     });
 
     it("sets error when parsed json is null", async () => {
@@ -498,9 +497,7 @@ describe("useTemplates", () => {
         await result.current.importTemplates("null");
       });
 
-      expect(setError).toHaveBeenCalledWith(
-        "インポートデータの形式が正しくありません。groups と templates が必要です。",
-      );
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.templates_import_invalid_format"));
     });
 
     it("sets error when parsed json is an array (not object with groups/templates)", async () => {
@@ -512,9 +509,7 @@ describe("useTemplates", () => {
         await result.current.importTemplates("[]");
       });
 
-      expect(setError).toHaveBeenCalledWith(
-        "インポートデータの形式が正しくありません。groups と templates が必要です。",
-      );
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.templates_import_invalid_format"));
     });
 
     it("sets error when groups is not an array", async () => {
@@ -528,9 +523,7 @@ describe("useTemplates", () => {
         );
       });
 
-      expect(setError).toHaveBeenCalledWith(
-        "インポートデータの形式が正しくありません。groups と templates が必要です。",
-      );
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.templates_import_invalid_format"));
     });
 
     it("sets error when templates is not an array", async () => {
@@ -544,9 +537,7 @@ describe("useTemplates", () => {
         );
       });
 
-      expect(setError).toHaveBeenCalledWith(
-        "インポートデータの形式が正しくありません。groups と templates が必要です。",
-      );
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.templates_import_invalid_format"));
     });
 
     it("calls import_templates and refreshes on valid json", async () => {
@@ -602,7 +593,7 @@ describe("useTemplates", () => {
         await result.current.importTemplates(validJson);
       });
 
-      expect(setError).toHaveBeenCalledWith("定型文のインポートに失敗しました。");
+      expect(setError).toHaveBeenCalledWith(i18n.t("errors.templates_import"));
     });
   });
 

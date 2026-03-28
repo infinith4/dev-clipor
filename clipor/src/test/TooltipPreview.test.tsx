@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import i18n from "../i18n";
 import TooltipPreview from "../components/TooltipPreview";
 
 function makeAnchorRect(overrides?: Partial<DOMRect>): DOMRect {
@@ -18,6 +19,8 @@ function makeAnchorRect(overrides?: Partial<DOMRect>): DOMRect {
 
 describe("TooltipPreview", () => {
   beforeEach(() => {
+    localStorage.setItem("clipor-lang", "ja");
+    void i18n.changeLanguage("ja");
     // Mock getBoundingClientRect on the tooltip div
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
       x: 0,
@@ -75,7 +78,7 @@ describe("TooltipPreview", () => {
       <TooltipPreview imageData="base64data" anchorRect={makeAnchorRect()} />,
     );
 
-    const img = screen.getByAltText("preview") as HTMLImageElement;
+    const img = screen.getByAltText(i18n.t("preview_image.alt_text")) as HTMLImageElement;
     expect(img.src).toContain("data:image/png;base64,base64data");
     expect(img).toHaveClass("tooltip-preview-image");
   });
@@ -85,7 +88,7 @@ describe("TooltipPreview", () => {
       <TooltipPreview text="text" imageData="imgdata" anchorRect={makeAnchorRect()} />,
     );
 
-    expect(screen.getByAltText("preview")).toBeInTheDocument();
+    expect(screen.getByAltText(i18n.t("preview_image.alt_text"))).toBeInTheDocument();
     expect(document.querySelector(".tooltip-preview-text")).not.toBeInTheDocument();
   });
 

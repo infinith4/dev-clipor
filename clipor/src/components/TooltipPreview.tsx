@@ -75,7 +75,7 @@ function TooltipPreview({
       {imageData ? (
         <img
           src={`data:image/png;base64,${imageData}`}
-          alt="preview"
+          alt={t("preview_image.alt_text")}
           className="tooltip-preview-image"
         />
       ) : (
