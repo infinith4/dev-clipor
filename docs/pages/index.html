@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clipor - Smart Clipboard Manager for Windows</title>
+  <meta name="description" content="Clipor is a lightweight, fast clipboard manager for Windows built with Rust and Tauri. Manage clipboard history, templates, and more.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container nav-content">
+      <a href="#" class="logo">
+        <img class="logo-icon" src="clipor.svg" alt="Clipor icon">
+        Clipor
+      </a>
+      <div class="nav-links">
+        <a href="#features" data-en="Features" data-ja="機能">Features</a>
+        <a href="#tech" data-en="Tech Stack" data-ja="技術">Tech Stack</a>
+        <a href="#install" data-en="Install" data-ja="導入">Install</a>
+        <a href="https://github.com/infinith4/dev-clipor" target="_blank" rel="noopener">GitHub</a>
+        <button class="lang-toggle" id="langToggle" aria-label="Toggle language">
+          <span class="lang-label" id="langLabel">JP</span>
+        </button>
+      </div>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container hero-content">
+      <div class="hero-icon">
+        <img src="clipor.svg" alt="Clipor" class="hero-icon-img">
+      </div>
+      <h1 class="hero-title">
+        <span data-en="Your clipboard," data-ja="クリップボードを、">Your clipboard,</span><br>
+        <span class="gradient-text" data-en="supercharged." data-ja="もっとスマートに。">supercharged.</span>
+      </h1>
+      <div class="hero-screenshot">
+        <img src="01-01_en.png" alt="Clipor screenshot" class="screenshot-img lang-en">
+        <img src="01-01_ja.png" alt="Clipor スクリーンショット" class="screenshot-img lang-ja" hidden>
+      </div>
+      <div class="hero-actions">
+        <a href="https://github.com/infinith4/dev-clipor/releases" class="btn btn-primary" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span data-en="Download" data-ja="ダウンロード">Download</span>
+        </a>
+        <a href="https://github.com/infinith4/dev-clipor" class="btn btn-secondary" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          <span data-en="View Source" data-ja="ソースを見る">View Source</span>
+        </a>
+      </div>
+      <p class="hero-description" data-en="Clipor is a blazing-fast, lightweight clipboard manager for Windows. Built with Rust and Tauri for native performance with minimal resource usage." data-ja="Clipor は Windows 向けの高速・軽量なクリップボードマネージャーです。Rust と Tauri で構築され、ネイティブなパフォーマンスと最小限のリソース消費を実現します。">
+        Clipor is a blazing-fast, lightweight clipboard manager for Windows. Built with Rust and Tauri for native performance with minimal resource usage.
+      </p>
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-value">1,000+</span>
+          <span class="stat-label" data-en="History Items" data-ja="履歴保存数">History Items</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-value" data-en="3 Hotkey Modes" data-ja="3つのホットキー">3 Hotkey Modes</span>
+          <span class="stat-label" data-en="Custom Hotkey / Double Ctrl / Double Alt" data-ja="任意のホットキー / Ctrl×2 / Alt×2">Custom Hotkey / Double Ctrl / Double Alt</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-value">AES-256</span>
+          <span class="stat-label" data-en="Encryption" data-ja="暗号化">Encryption</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="container">
+      <h2 class="section-title" data-en="Everything you need" data-ja="必要な機能をすべて">Everything you need</h2>
+      <p class="section-subtitle" data-en="A powerful clipboard manager that stays out of your way until you need it." data-ja="必要なときだけ現れる、パワフルなクリップボードマネージャー。">A powerful clipboard manager that stays out of your way until you need it.</p>
+
+      <div class="features-grid">
+        <!-- Feature 1: Clipboard History -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3 data-en="Clipboard History" data-ja="クリップボード履歴">Clipboard History</h3>
+          <p data-en="Automatically records everything you copy. Search, filter, and browse up to 1,000 entries with full-text search." data-ja="コピーした内容を自動的に記録。最大 1,000 件の履歴を検索・フィルタリングできます。">Automatically records everything you copy. Search, filter, and browse up to 1,000 entries with full-text search.</p>
+        </div>
+
+        <!-- Feature 2: Pin Entries -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+          </div>
+          <h3 data-en="Pin Favorites" data-ja="ピン留め">Pin Favorites</h3>
+          <p data-en="Pin frequently used entries to keep them at the top. Pinned items are protected from automatic cleanup." data-ja="よく使うエントリをピン留めして常にトップに表示。自動削除からも保護されます。">Pin frequently used entries to keep them at the top. Pinned items are protected from automatic cleanup.</p>
+        </div>
+
+        <!-- Feature 3: Templates -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <h3 data-en="Smart Templates" data-ja="スマートテンプレート">Smart Templates</h3>
+          <p data-en="Save reusable text snippets with dynamic variables like {{date}}, {{time}}, and {{clipboard}}. Organize into groups." data-ja="{{date}}、{{time}}、{{clipboard}} などの動的変数を含む再利用可能なテンプレートを保存。グループで整理できます。">Save reusable text snippets with dynamic variables like {{date}}, {{time}}, and {{clipboard}}. Organize into groups.</p>
+        </div>
+
+        <!-- Feature 4: Encryption -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h3 data-en="Password Protection" data-ja="パスワード保護">Password Protection</h3>
+          <p data-en="Encrypt your clipboard history with AES-256-GCM. PBKDF2 key derivation ensures your data stays secure." data-ja="AES-256-GCM でクリップボード履歴を暗号化。PBKDF2 鍵導出でデータを安全に保護します。">Encrypt your clipboard history with AES-256-GCM. PBKDF2 key derivation ensures your data stays secure.</p>
+        </div>
+
+        <!-- Feature 5: Global Hotkey -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></svg>
+          </div>
+          <h3 data-en="Global Hotkey" data-ja="グローバルホットキー">Global Hotkey</h3>
+          <p data-en="Press Ctrl+Alt+Z to instantly access your clipboard history from any application. Fully customizable." data-ja="Ctrl+Alt+Z でどのアプリからでもクリップボード履歴に即座にアクセス。キーの変更も可能です。">Press Ctrl+Alt+Z to instantly access your clipboard history from any application. Fully customizable.</p>
+        </div>
+
+        <!-- Feature 6: Text Transform -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+          </div>
+          <h3 data-en="Text Transform" data-ja="テキスト変換">Text Transform</h3>
+          <p data-en="Convert between full-width and half-width characters, trim whitespace, and normalize text on the fly." data-ja="全角・半角変換、空白トリム、テキスト正規化をワンクリックで実行できます。">Convert between full-width and half-width characters, trim whitespace, and normalize text on the fly.</p>
+        </div>
+
+        <!-- Feature 7: Image Support -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <h3 data-en="Image Support" data-ja="画像対応">Image Support</h3>
+          <p data-en="Copies images too. View thumbnails in your clipboard history and paste them whenever you need." data-ja="画像のコピーにも対応。クリップボード履歴でサムネイルを確認し、いつでも貼り付けできます。">Copies images too. View thumbnails in your clipboard history and paste them whenever you need.</p>
+        </div>
+
+        <!-- Feature 8: Hover Preview -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <h3 data-en="Hover Preview" data-ja="ホバープレビュー">Hover Preview</h3>
+          <p data-en="Hover over any entry to see a full preview tooltip. No need to click or open a separate window." data-ja="エントリにマウスを乗せるだけで全文プレビューを表示。クリックや別ウィンドウは不要です。">Hover over any entry to see a full preview tooltip. No need to click or open a separate window.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tech Stack Section -->
+  <section class="tech" id="tech">
+    <div class="container">
+      <h2 class="section-title" data-en="Built with modern tech" data-ja="モダンな技術で構築">Built with modern tech</h2>
+      <p class="section-subtitle" data-en="Combining the best of Rust's performance with React's developer experience." data-ja="Rust のパフォーマンスと React の開発体験を融合。">Combining the best of Rust's performance with React's developer experience.</p>
+
+      <div class="tech-grid">
+        <div class="tech-card">
+          <div class="tech-label" data-en="Backend" data-ja="バックエンド">Backend</div>
+          <div class="tech-name">Rust + Tauri 2</div>
+          <p class="tech-desc" data-en="Native Windows performance with a tiny footprint. No Electron, no bloat." data-ja="ネイティブな Windows パフォーマンスを最小フットプリントで。Electron 不要。">Native Windows performance with a tiny footprint. No Electron, no bloat.</p>
+        </div>
+        <div class="tech-card">
+          <div class="tech-label" data-en="Frontend" data-ja="フロントエンド">Frontend</div>
+          <div class="tech-name">React + TypeScript</div>
+          <p class="tech-desc" data-en="Type-safe UI with React 19 and Vite for instant hot module replacement." data-ja="React 19 と Vite による型安全な UI。即座のホットリロード対応。">Type-safe UI with React 19 and Vite for instant hot module replacement.</p>
+        </div>
+        <div class="tech-card">
+          <div class="tech-label" data-en="Database" data-ja="データベース">Database</div>
+          <div class="tech-name">SQLite</div>
+          <p class="tech-desc" data-en="Embedded database with rusqlite. Zero configuration, zero external dependencies." data-ja="rusqlite による組み込みデータベース。設定不要、外部依存ゼロ。">Embedded database with rusqlite. Zero configuration, zero external dependencies.</p>
+        </div>
+        <div class="tech-card">
+          <div class="tech-label" data-en="Security" data-ja="セキュリティ">Security</div>
+          <div class="tech-name">AES-256-GCM</div>
+          <p class="tech-desc" data-en="Military-grade encryption with PBKDF2 key derivation. Your data stays local and secure." data-ja="PBKDF2 鍵導出による強力な暗号化。データはローカルに安全に保存。">Military-grade encryption with PBKDF2 key derivation. Your data stays local and secure.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="how-it-works">
+    <div class="container">
+      <h2 class="section-title" data-en="Get started in seconds" data-ja="すぐに使い始められます">Get started in seconds</h2>
+      <p class="section-subtitle" data-en="Clipor runs quietly in your system tray, ready when you need it." data-ja="Clipor はシステムトレイで静かに動作し、いつでも呼び出せます。">Clipor runs quietly in your system tray, ready when you need it.</p>
+
+      <div class="steps-grid">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3 data-en="Install" data-ja="インストール">Install</h3>
+          <p data-en="Download the MSI or NSIS installer and run it. Clipor launches automatically." data-ja="MSI または NSIS インストーラーをダウンロードして実行。Clipor が自動起動します。">Download the MSI or NSIS installer and run it. Clipor launches automatically.</p>
+        </div>
+        <div class="step-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3 data-en="Copy anything" data-ja="なんでもコピー">Copy anything</h3>
+          <p data-en="Use your computer as normal. Clipor silently records your clipboard in the background." data-ja="普段通りにコンピュータを使うだけ。Clipor がバックグラウンドで履歴を記録します。">Use your computer as normal. Clipor silently records your clipboard in the background.</p>
+        </div>
+        <div class="step-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3 data-en="Recall instantly" data-ja="即座に呼び出し">Recall instantly</h3>
+          <p data-en="Press Ctrl+Alt+Z to open the popup. Select any entry to paste it." data-ja="Ctrl+Alt+Z でポップアップを開き、エントリを選択して貼り付け。">Press Ctrl+Alt+Z to open the popup. Select any entry to paste it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install Section -->
+  <section class="install" id="install">
+    <div class="container">
+      <h2 class="section-title" data-en="Installation" data-ja="インストール方法">Installation</h2>
+
+      <div class="install-options">
+        <div class="install-card">
+          <h3 data-en="Download Installer" data-ja="インストーラーをダウンロード">Download Installer</h3>
+          <p data-en="Grab the latest release from GitHub. Available as MSI and NSIS installer." data-ja="GitHub から最新リリースをダウンロード。MSI および NSIS インストーラーを提供。">Grab the latest release from GitHub. Available as MSI and NSIS installer.</p>
+          <a href="https://github.com/infinith4/dev-clipor/releases" class="btn btn-primary" target="_blank" rel="noopener">
+            <span data-en="Latest Release" data-ja="最新リリース">Latest Release</span>
+          </a>
+        </div>
+
+        <div class="install-card">
+          <h3 data-en="Build from Source" data-ja="ソースからビルド">Build from Source</h3>
+          <p data-en="Clone the repo and build it yourself. Requires Node.js 24+ and Rust stable." data-ja="リポジトリをクローンしてビルド。Node.js 24 以上と Rust stable が必要です。">Clone the repo and build it yourself. Requires Node.js 24+ and Rust stable.</p>
+          <div class="code-block">
+            <code>git clone https://github.com/infinith4/dev-clipor.git
+cd dev-clipor/clipor
+npm install
+npm run tauri build</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta">
+    <div class="container">
+      <h2 data-en="Ready to supercharge your clipboard?" data-ja="クリップボードをもっと便利に使いませんか？">Ready to supercharge your clipboard?</h2>
+      <p data-en="Free, open-source, and built for power users." data-ja="無料・オープンソース、パワーユーザーのために。">Free, open-source, and built for power users.</p>
+      <a href="https://github.com/infinith4/dev-clipor/releases" class="btn btn-primary btn-lg" target="_blank" rel="noopener">
+        <span data-en="Download Clipor" data-ja="Clipor をダウンロード">Download Clipor</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-left">
+        <span class="footer-logo">
+          <img class="logo-icon" src="clipor.svg" alt="Clipor icon">
+          Clipor
+        </span>
+        <span class="footer-copy">&copy; 2026 Clipor. MIT License.</span>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/infinith4/dev-clipor" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/infinith4/dev-clipor/releases" target="_blank" rel="noopener" data-en="Releases" data-ja="リリース">Releases</a>
+        <a href="https://github.com/infinith4/dev-clipor/issues" target="_blank" rel="noopener" data-en="Issues" data-ja="課題">Issues</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Mobile Menu Overlay -->
+  <div class="mobile-menu-overlay" id="mobileMenuOverlay">
+    <div class="mobile-menu">
+      <a href="#features" data-en="Features" data-ja="機能">Features</a>
+      <a href="#tech" data-en="Tech Stack" data-ja="技術">Tech Stack</a>
+      <a href="#install" data-en="Install" data-ja="導入">Install</a>
+      <a href="https://github.com/infinith4/dev-clipor" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+
+  <script>
+    // Language Toggle
+    const langToggle = document.getElementById('langToggle');
+    const langLabel = document.getElementById('langLabel');
+    let currentLang = localStorage.getItem('clipor-lang') || 'en';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('clipor-lang', lang);
+      document.documentElement.lang = lang;
+      langLabel.textContent = lang === 'en' ? 'JP' : 'EN';
+
+      document.querySelectorAll('[data-en][data-ja]').forEach(el => {
+        el.textContent = el.getAttribute(`data-${lang}`);
+      });
+
+      // Toggle screenshots by language
+      document.querySelectorAll('.lang-en').forEach(el => {
+        el.hidden = lang !== 'en';
+      });
+      document.querySelectorAll('.lang-ja').forEach(el => {
+        el.hidden = lang !== 'ja';
+      });
+    }
+
+    langToggle.addEventListener('click', () => {
+      setLanguage(currentLang === 'en' ? 'ja' : 'en');
+    });
+
+    // Initialize language
+    setLanguage(currentLang);
+
+    // Mobile Menu
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileMenuOverlay.classList.toggle('active');
+    });
+
+    mobileMenuOverlay.addEventListener('click', (e) => {
+      if (e.target === mobileMenuOverlay || e.target.tagName === 'A') {
+        mobileMenuOverlay.classList.remove('active');
+      }
+    });
+
+    // Smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Navbar scroll effect
+    const navbar = document.querySelector('.navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 20);
+    });
+  </script>
+</body>
+</html>
