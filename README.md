@@ -132,4 +132,4 @@ clipor/
 
 ## ライセンス
 
-Private
+MIT
