@@ -5,7 +5,7 @@ on:
     branches:
       - main
     tags:
-      - 'clipor-v*'
+      - 'v*'
     paths:
       - 'clipor/**'
       - '.github/workflows/ci-clipor.yml'

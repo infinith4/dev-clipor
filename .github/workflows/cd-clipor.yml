@@ -74,7 +74,7 @@ jobs:
               echo "CI did not succeed, skipping release"
               exit 1
             fi
-            if [[ ! "${{ github.event.workflow_run.head_branch }}" == clipor-v* ]]; then
+            if [[ ! "${{ github.event.workflow_run.head_branch }}" == v* ]]; then
               echo "Not a release tag, skipping"
               exit 1
             fi

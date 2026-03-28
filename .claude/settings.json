@@ -84,7 +84,8 @@
       "Bash(find /workspaces/dev-clipor/clipor/src -type f -name *.tsx -o -name *.ts -o -name *.jsx -o -name *.js)",
       "Bash(node -e \":*)",
       "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx vitest run src/test/Pagination.test.tsx --reporter=verbose)",
-      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")"
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(npx eslint:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",

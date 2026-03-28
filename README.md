@@ -77,7 +77,7 @@ npm run tauri build
 
 ### CI/CD
 
-GitHub Actions によるビルド・リリースが設定されています。`clipor-v*` 形式のタグをプッシュすると、Windows 環境でビルドが実行され、GitHub Releases にインストーラーが公開されます。
+GitHub Actions によるビルド・リリースが設定されています。`v*` 形式のタグをプッシュすると、Windows 環境でビルドが実行され、GitHub Releases にインストーラーが公開されます。
 
 ## データ保存先
 
