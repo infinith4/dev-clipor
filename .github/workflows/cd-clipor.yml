@@ -141,33 +141,48 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  sign:
+  upload_cloudflare_r2:
     needs: [build, release, prepare_release]
-    if: ${{ vars.SIGNPATH_ENABLED == 'true' && github.event_name == 'workflow_dispatch' && needs.build.outputs.artifact_id != '' }}
+    if: ${{ needs.prepare_release.outputs.should_release == 'true' && vars.R2_BUCKET_NAME != '' }}
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write
-      id-token: write
       actions: read
 
     steps:
-      - name: Submit signing request to SignPath
-        uses: signpath/github-action-submit-signing-request@v1
+      - name: Download build artifacts
+        uses: actions/download-artifact@v5
         with:
-          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
-          organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
-          project-slug: 'clipor'
-          signing-policy-slug: 'release-signing'
-          artifact-configuration-slug: 'windows-installer'
-          github-artifact-id: '${{ needs.build.outputs.artifact_id }}'
-          wait-for-completion: true
-          output-artifact-directory: 'signed-artifacts'
+          name: clipor-build
+          path: artifacts
+          run-id: ${{ needs.prepare_release.outputs.artifact_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload signed artifacts to release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.prepare_release.outputs.tag }}
-          files: signed-artifacts/*
+      - name: Upload EXE and MSI to Cloudflare R2
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
+          RELEASE_TAG: ${{ needs.prepare_release.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ] || [ -z "${R2_ACCOUNT_ID:-}" ]; then
+            echo "Cloudflare R2 credentials are not fully configured. Skipping upload."
+            exit 0
+          fi
+
+          DESTINATION="s3://${R2_BUCKET_NAME}/${RELEASE_TAG}/"
+          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+
+          echo "Uploading release binaries to ${DESTINATION}"
+          aws s3 cp artifacts/ "$DESTINATION" \
+            --recursive \
+            --exclude "*" \
+            --include "*.msi" \
+            --include "*.exe" \
+            --endpoint-url "$ENDPOINT" \
+            --no-progress
