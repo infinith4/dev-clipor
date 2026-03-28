@@ -79,23 +79,6 @@ npm run tauri build
 
 GitHub Actions によるビルド・リリースが設定されています。`clipor-v*` 形式のタグをプッシュすると、Windows 環境でビルドが実行され、GitHub Releases にインストーラーが公開されます。
 
-### コード署名 (SignPath)
-
-Windows SmartScreen 警告を回避するため、[SignPath Foundation](https://signpath.org/) によるコード署名に対応しています。
-
-**セットアップ手順:**
-
-1. SignPath に OSS プロジェクトとして申請
-2. 承認後、SignPath ダッシュボードで以下を作成:
-   - Artifact Configuration（MSI / NSIS EXE 対象）
-   - Signing Policy（`release-signing`）
-   - Trusted Build System として GitHub Actions を登録
-3. GitHub リポジトリの Secrets に以下を設定:
-   - `SIGNPATH_API_TOKEN` — SignPath API トークン
-   - `SIGNPATH_ORGANIZATION_ID` — SignPath 組織 ID
-
-署名が有効な場合、CI/CD パイプラインは「ビルド → SignPath に署名リクエスト → 署名済みファイルをリリースにアップロード」の流れで自動実行されます。Secrets が未設定の場合は署名ステップがスキップされ、未署名のままリリースされます。
-
 ## データ保存先
 
 - **クリップボード履歴**: `%LOCALAPPDATA%\Clipor\history.db` (SQLite)

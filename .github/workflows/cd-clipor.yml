@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (e.g. clipor-v0.2.0)'
+        description: 'Release tag (e.g. v0.2.0)'
         required: true
 
 jobs:
