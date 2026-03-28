@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { TemplateEntry } from "../types";
 
 interface TemplateListProps {
@@ -63,8 +64,9 @@ function TemplateList({
   onPaste,
   onContextMenu,
 }: TemplateListProps) {
+  const { t } = useTranslation();
   if (templates.length === 0) {
-    return <div className="empty-state">定型文はまだありません。</div>;
+    return <div className="empty-state">{t("empty_state.no_templates")}</div>;
   }
 
   return (

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { ClipboardEntry } from "../types";
 
 interface ClipboardItemProps {
@@ -15,8 +16,9 @@ function ClipboardItem({
   onPaste,
   onContextMenu,
 }: ClipboardItemProps) {
+  const { t } = useTranslation();
   const isImage = entry.contentType === "image";
-  const preview = isImage ? "[画像]" : entry.text.replace(/\r?\n/g, " ").slice(0, 80);
+  const preview = isImage ? t("content.image_placeholder") : entry.text.replace(/\r?\n/g, " ").slice(0, 80);
 
   return (
     <article
@@ -35,7 +37,7 @@ function ClipboardItem({
         {isImage && entry.imageData ? (
           <img
             src={`data:image/png;base64,${entry.imageData}`}
-            alt="clipboard image"
+            alt={t("clipboard.image_alt_text")}
             className="clipboard-thumbnail"
           />
         ) : (

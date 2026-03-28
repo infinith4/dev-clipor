@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
@@ -31,6 +32,7 @@ function App() {
 }
 
 function MainApp() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<PopupTab>("history");
   const [error, setError] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
@@ -67,11 +69,11 @@ function MainApp() {
   const handleSetupPassword = useCallback(async () => {
     setSetupError(null);
     if (!setupPassword) {
-      setSetupError("パスワードを入力してください。");
+      setSetupError(t("setup.password_required"));
       return;
     }
     if (setupPassword !== setupConfirm) {
-      setSetupError("パスワードが一致しません。");
+      setSetupError(t("setup.password_mismatch"));
       return;
     }
     try {
@@ -83,7 +85,7 @@ function MainApp() {
       await settings.refresh();
       await Promise.all([history.refresh(), templates.refresh()]);
     } catch (e) {
-      setSetupError(e instanceof Error ? e.message : "パスワード設定に失敗しました。");
+      setSetupError(e instanceof Error ? e.message : t("setup.password_failed"));
     }
   }, [setupPassword, setupConfirm, settings, history, templates]);
 
@@ -99,11 +101,11 @@ function MainApp() {
         await Promise.all([history.refresh(), templates.refresh()]);
         console.log("[unlock] success, data refreshed");
       } else {
-        setLockError("パスワードが正しくありません。");
+        setLockError(t("unlock.password_incorrect"));
       }
     } catch (e) {
       console.error("[unlock] error:", e);
-      setLockError(e instanceof Error ? e.message : "認証に失敗しました。");
+      setLockError(e instanceof Error ? e.message : t("unlock.auth_failed"));
     }
   }, [lockPassword, history, templates]);
 
@@ -114,7 +116,7 @@ function MainApp() {
       setError(
         windowError instanceof Error
           ? windowError.message
-          : "ウィンドウの初期化に失敗しました。",
+          : t("app.window_init_failed"),
       );
     }
   }, []);
@@ -348,7 +350,7 @@ function MainApp() {
         <div className="startup-card">
           <h1>Clipor</h1>
           <p style={{ fontSize: "11px", color: "var(--muted)", marginBottom: "8px" }}>
-            クリップボード履歴を保護するため、パスワードを設定してください。
+            {t("setup.description")}
           </p>
           <form
             onSubmit={(e) => {
@@ -358,7 +360,7 @@ function MainApp() {
             style={{ display: "flex", flexDirection: "column", gap: "6px" }}
           >
             <label>
-              <span>New password</span>
+              <span>{t("setup.label_new_password")}</span>
               <input
                 type="password"
                 value={setupPassword}
@@ -367,7 +369,7 @@ function MainApp() {
               />
             </label>
             <label>
-              <span>Confirm password</span>
+              <span>{t("setup.label_confirm_password")}</span>
               <input
                 type="password"
                 value={setupConfirm}
@@ -377,7 +379,7 @@ function MainApp() {
             {setupError ? (
               <p style={{ color: "var(--danger)", fontSize: "11px" }}>{setupError}</p>
             ) : null}
-            <button type="submit">Set password &amp; start</button>
+            <button type="submit">{t("setup.button_set_and_start")}</button>
             <button
               type="button"
               style={{ opacity: 0.7 }}
@@ -386,7 +388,7 @@ function MainApp() {
                 settings.skipSetup();
               }}
             >
-              Skip (no protection)
+              {t("setup.button_skip")}
             </button>
           </form>
         </div>
@@ -407,7 +409,7 @@ function MainApp() {
             style={{ display: "flex", flexDirection: "column", gap: "6px" }}
           >
             <label>
-              <span>Password</span>
+              <span>{t("unlock.label_password")}</span>
               <input
                 type="password"
                 value={lockPassword}
@@ -418,7 +420,7 @@ function MainApp() {
             {lockError ? (
               <p style={{ color: "var(--danger)", fontSize: "11px" }}>{lockError}</p>
             ) : null}
-            <button type="submit">Unlock</button>
+            <button type="submit">{t("unlock.button_unlock")}</button>
           </form>
         </div>
       </div>
@@ -443,14 +445,14 @@ function MainApp() {
       onRegisterAsTemplate={(entry) => {
         const isImage = entry.contentType === "image";
         const title = isImage
-          ? "[画像]"
+          ? t("content.image_placeholder")
           : entry.text.replace(/\r?\n/g, " ").slice(0, 30);
         templates.saveTemplate({
           title,
-          text: isImage ? "[画像]" : entry.text,
+          text: isImage ? t("content.image_placeholder") : entry.text,
           contentType: entry.contentType,
           imageData: entry.imageData ?? undefined,
-          newGroupName: "履歴から登録",
+          newGroupName: t("template.group_name_from_history"),
         });
         setActiveTab("templates");
       }}

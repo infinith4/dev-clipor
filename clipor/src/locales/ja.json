@@ -1,0 +1,157 @@
+{
+  "tab": {
+    "history": "履歴",
+    "templates": "定型文",
+    "settings": "設定"
+  },
+  "search": {
+    "placeholder_history": "履歴を検索",
+    "placeholder_templates": "定型文を検索"
+  },
+  "content": {
+    "image_placeholder": "[画像]"
+  },
+  "empty_state": {
+    "no_history": "クリップボード履歴はまだありません。",
+    "no_templates": "定型文はまだありません。"
+  },
+  "loading": {
+    "message": "読み込み中..."
+  },
+  "context_menu": {
+    "transform_label": "整形",
+    "convert_label": "変換",
+    "delete": "削除",
+    "edit": "編集",
+    "register_as_template": "定型文に登録"
+  },
+  "transform": {
+    "add_comment_prefix": "コメントを付加 (// )",
+    "add_quote_prefix": "引用符を付加 (> )",
+    "add_numbering": "連番を付加 (1. 2. ...)",
+    "wrap_lines_in_quotes": "各行を\"で囲む",
+    "trim": "前後の空白を削除",
+    "remove_empty_lines": "空行を削除",
+    "collapse_blank_lines": "連続空行を1行に",
+    "trim_trailing": "行末空白を削除",
+    "remove_duplicate_lines": "重複行を削除",
+    "remove_html_tags": "HTMLタグを除去"
+  },
+  "convert": {
+    "to_lowercase": "大文字→小文字",
+    "to_uppercase": "小文字→大文字",
+    "fullwidth_to_halfwidth": "全角→半角",
+    "halfwidth_to_fullwidth": "半角→全角"
+  },
+  "edit_dialog": {
+    "header": "編集",
+    "button_save": "保存",
+    "button_cancel": "キャンセル"
+  },
+  "template_filter": {
+    "all_groups": "全グループ"
+  },
+  "template": {
+    "group_name_from_history": "履歴から登録"
+  },
+  "setup": {
+    "description": "クリップボード履歴を保護するため、パスワードを設定してください。",
+    "label_new_password": "新しいパスワード",
+    "label_confirm_password": "パスワード確認",
+    "button_set_and_start": "パスワードを設定して開始",
+    "button_skip": "スキップ（保護なし）",
+    "password_required": "パスワードを入力してください。",
+    "password_mismatch": "パスワードが一致しません。",
+    "password_failed": "パスワード設定に失敗しました。"
+  },
+  "unlock": {
+    "label_password": "パスワード",
+    "button_unlock": "ロック解除",
+    "password_incorrect": "パスワードが正しくありません。",
+    "auth_failed": "認証に失敗しました。"
+  },
+  "app": {
+    "window_init_failed": "ウィンドウの初期化に失敗しました。"
+  },
+  "settings": {
+    "label_history_limit": "履歴保持数",
+    "label_page_size": "ページサイズ",
+    "label_activation": "起動方法",
+    "activation_hotkey": "ホットキー",
+    "activation_double_ctrl": "Ctrl x2",
+    "activation_double_alt": "Alt x2",
+    "label_hotkey": "ホットキー",
+    "placeholder_hotkey": "Ctrl+Alt+Z",
+    "help_hotkey_examples": "例: Ctrl+Alt+Z, Ctrl+Shift+K, Alt+F2",
+    "label_blur_delay": "フォーカス移動遅延 (ms)",
+    "help_blur_delay": "フォーカス移動時にウィンドウを閉じるまでの遅延",
+    "label_preview_size": "プレビューサイズ (W x H)",
+    "label_image_preview_size": "画像プレビューサイズ (W x H)",
+    "label_launch_on_startup": "Windows 起動時に自動起動",
+    "button_save": "設定を保存",
+    "section_password_protection": "パスワード保護 (AES-256-GCM)",
+    "label_current_password": "現在のパスワード",
+    "label_new_password": "新しいパスワード",
+    "label_confirm_password": "パスワード確認",
+    "button_change_password": "パスワードを変更",
+    "button_remove_password": "パスワードを解除",
+    "button_set_password": "パスワードを設定",
+    "label_language": "言語",
+    "language_ja": "日本語",
+    "language_en": "English"
+  },
+  "password": {
+    "required": "パスワードを入力してください。",
+    "mismatch": "パスワードが一致しません。",
+    "current_required": "現在のパスワードを入力してください。",
+    "current_incorrect": "現在のパスワードが正しくありません。",
+    "success_changed": "パスワードを変更しました。",
+    "success_set_encrypted": "パスワードを設定しました。DB 内の履歴と定型文を暗号化しました。",
+    "failed_set": "パスワード設定に失敗しました。",
+    "success_removed": "パスワードを解除しました。DB 内の履歴と定型文を復号しました。",
+    "failed_remove": "パスワード解除に失敗しました。"
+  },
+  "template_editor": {
+    "label_title": "タイトル",
+    "label_group": "グループ",
+    "option_new_group": "+ 新規グループ",
+    "label_new_group_name": "新規グループ名",
+    "placeholder_group_name": "署名",
+    "label_type": "種類",
+    "type_text": "テキスト",
+    "type_image": "画像",
+    "button_change_image": "変更",
+    "button_remove_image": "削除",
+    "button_select_image": "画像ファイルを選択",
+    "label_template_body": "テンプレート本文",
+    "placeholder_variables": "{{date}} や {{clipboard}} を利用できます。",
+    "button_update": "更新",
+    "button_create": "作成",
+    "button_clear": "クリア",
+    "button_export": "エクスポート",
+    "button_import": "インポート",
+    "dialog_import_header": "テンプレート JSON インポート",
+    "placeholder_import_json": "{\"groups\":[...],\"templates\":[...]}",
+    "button_cancel": "キャンセル",
+    "button_import_submit": "インポート実行"
+  },
+  "pagination": {
+    "items_suffix": "件"
+  },
+  "error_boundary": {
+    "render_failed": "アプリの描画に失敗しました。",
+    "ui_init_failed": "UI の初期化に失敗しました"
+  },
+  "preview": {
+    "char_count_suffix": "文字"
+  },
+  "tooltip": {
+    "char_count_suffix": "文字"
+  },
+  "error_banner": {
+    "close_button": "閉じる"
+  },
+  "clipboard": {
+    "image_alt_text": "クリップボード画像"
+  }
+}

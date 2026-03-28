@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import ClipboardItem from "./ClipboardItem";
 import ContextMenu from "./ContextMenu";
@@ -85,6 +86,7 @@ function PopupWindow({
   onDismissError,
   onRegisterAsTemplate,
 }: PopupWindowProps) {
+  const { t } = useTranslation();
   const [editingTemplate, setEditingTemplate] = useState<TemplateEntry | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; entry: ClipboardEntry } | null>(null);
   const [templateContextMenu, setTemplateContextMenu] = useState<{ x: number; y: number; template: TemplateEntry } | null>(null);
@@ -134,37 +136,37 @@ function PopupWindow({
   const buildTransformMenus = useCallback(
     (text: string): MenuItem[] => [
       {
-        label: "整形",
+        label: t("context_menu.transform_label"),
         children: [
-          { label: "コメントを付加 (// )", action: () => void invoke("transform_and_paste", { text, transformType: "add_comment_prefix" }) },
-          { label: "引用符を付加 (> )", action: () => void invoke("transform_and_paste", { text, transformType: "add_quote_prefix" }) },
-          { label: "連番を付加 (1. 2. ...)", action: () => void invoke("transform_and_paste", { text, transformType: "add_numbering" }) },
-          { label: "各行を\"で囲む", action: () => void invoke("transform_and_paste", { text, transformType: "wrap_lines_in_quotes" }) },
-          { label: "前後の空白を削除", action: () => void invoke("transform_and_paste", { text, transformType: "trim" }) },
-          { label: "空行を削除", action: () => void invoke("transform_and_paste", { text, transformType: "remove_empty_lines" }) },
-          { label: "連続空行を1行に", action: () => void invoke("transform_and_paste", { text, transformType: "collapse_blank_lines" }) },
-          { label: "行末空白を削除", action: () => void invoke("transform_and_paste", { text, transformType: "trim_trailing" }) },
-          { label: "重複行を削除", action: () => void invoke("transform_and_paste", { text, transformType: "remove_duplicate_lines" }) },
-          { label: "HTMLタグを除去", action: () => void invoke("transform_and_paste", { text, transformType: "remove_html_tags" }) },
+          { label: t("transform.add_comment_prefix"), action: () => void invoke("transform_and_paste", { text, transformType: "add_comment_prefix" }) },
+          { label: t("transform.add_quote_prefix"), action: () => void invoke("transform_and_paste", { text, transformType: "add_quote_prefix" }) },
+          { label: t("transform.add_numbering"), action: () => void invoke("transform_and_paste", { text, transformType: "add_numbering" }) },
+          { label: t("transform.wrap_lines_in_quotes"), action: () => void invoke("transform_and_paste", { text, transformType: "wrap_lines_in_quotes" }) },
+          { label: t("transform.trim"), action: () => void invoke("transform_and_paste", { text, transformType: "trim" }) },
+          { label: t("transform.remove_empty_lines"), action: () => void invoke("transform_and_paste", { text, transformType: "remove_empty_lines" }) },
+          { label: t("transform.collapse_blank_lines"), action: () => void invoke("transform_and_paste", { text, transformType: "collapse_blank_lines" }) },
+          { label: t("transform.trim_trailing"), action: () => void invoke("transform_and_paste", { text, transformType: "trim_trailing" }) },
+          { label: t("transform.remove_duplicate_lines"), action: () => void invoke("transform_and_paste", { text, transformType: "remove_duplicate_lines" }) },
+          { label: t("transform.remove_html_tags"), action: () => void invoke("transform_and_paste", { text, transformType: "remove_html_tags" }) },
         ],
       },
       {
-        label: "変換",
+        label: t("context_menu.convert_label"),
         children: [
-          { label: "大文字→小文字", action: () => void invoke("transform_and_paste", { text, transformType: "to_lowercase" }) },
-          { label: "小文字→大文字", action: () => void invoke("transform_and_paste", { text, transformType: "to_uppercase" }) },
-          { label: "全角→半角", action: () => void invoke("transform_and_paste", { text, transformType: "fullwidth_to_halfwidth" }) },
-          { label: "半角→全角", action: () => void invoke("transform_and_paste", { text, transformType: "halfwidth_to_fullwidth" }) },
+          { label: t("convert.to_lowercase"), action: () => void invoke("transform_and_paste", { text, transformType: "to_lowercase" }) },
+          { label: t("convert.to_uppercase"), action: () => void invoke("transform_and_paste", { text, transformType: "to_uppercase" }) },
+          { label: t("convert.fullwidth_to_halfwidth"), action: () => void invoke("transform_and_paste", { text, transformType: "fullwidth_to_halfwidth" }) },
+          { label: t("convert.halfwidth_to_fullwidth"), action: () => void invoke("transform_and_paste", { text, transformType: "halfwidth_to_fullwidth" }) },
         ],
       },
     ],
-    [],
+    [t],
   );
 
   const buildTemplateContextMenuItems = useCallback(
     (template: TemplateEntry): MenuItem[] => [
       {
-        label: "削除",
+        label: t("context_menu.delete"),
         action: () => void templates.deleteTemplate(template.id),
         danger: true,
       },
@@ -176,19 +178,19 @@ function PopupWindow({
   const buildContextMenuItems = useCallback(
     (entry: ClipboardEntry): MenuItem[] => [
       {
-        label: "編集",
+        label: t("context_menu.edit"),
         action: () => {
           setEditingEntry(entry);
           setEditText(entry.text);
         },
       },
       {
-        label: "削除",
+        label: t("context_menu.delete"),
         action: () => void history.deleteEntry(entry.id),
         danger: true,
       },
       {
-        label: "定型文に登録",
+        label: t("context_menu.register_as_template"),
         action: () => onRegisterAsTemplate(entry),
       },
       ...buildTransformMenus(entry.text),
@@ -226,21 +228,21 @@ function PopupWindow({
               className={activeTab === "history" ? "active" : ""}
               onClick={() => onSelectTab("history")}
             >
-              履歴
+              {t("tab.history")}
             </button>
             <button
               type="button"
               className={activeTab === "templates" ? "active" : ""}
               onClick={() => onSelectTab("templates")}
             >
-              定型文
+              {t("tab.templates")}
             </button>
             <button
               type="button"
               className={activeTab === "settings" ? "active" : ""}
               onClick={() => onSelectTab("settings")}
             >
-              設定
+              {t("tab.settings")}
             </button>
           </nav>
         </header>
@@ -249,7 +251,7 @@ function PopupWindow({
           <div className="error-banner" role="alert">
             <span>{error}</span>
             <button type="button" onClick={onDismissError}>
-              Close
+              {t("error_banner.close_button")}
             </button>
           </div>
         ) : null}
@@ -259,7 +261,7 @@ function PopupWindow({
             <div className="tab-fixed-header">
               <SearchBar
                 value={history.search}
-                placeholder="履歴を検索"
+                placeholder={t("search.placeholder_history")}
                 onChange={history.setSearch}
               />
               <Pagination
@@ -270,7 +272,7 @@ function PopupWindow({
                 onPrevious={history.previousPage}
               />
             </div>
-            {history.loading ? <div className="empty-state">Loading...</div> : null}
+            {history.loading ? <div className="empty-state">{t("loading.message")}</div> : null}
             <div className="card-list">
               {history.entries.map((entry) => (
                 <ClipboardItem
@@ -283,7 +285,7 @@ function PopupWindow({
                 />
               ))}
               {!history.loading && history.entries.length === 0 ? (
-                <div className="empty-state">クリップボード履歴はまだありません。</div>
+                <div className="empty-state">{t("empty_state.no_history")}</div>
               ) : null}
             </div>
 
@@ -299,7 +301,7 @@ function PopupWindow({
             {editingEntry ? (
               <div className="edit-overlay">
                 <div className="edit-dialog">
-                  <div className="edit-dialog-header">編集</div>
+                  <div className="edit-dialog-header">{t("edit_dialog.header")}</div>
                   <textarea
                     value={editText}
                     onChange={(event) => setEditText(event.target.value)}
@@ -313,10 +315,10 @@ function PopupWindow({
                         setEditingEntry(null);
                       }}
                     >
-                      保存
+                      {t("edit_dialog.button_save")}
                     </button>
                     <button type="button" onClick={() => setEditingEntry(null)}>
-                      キャンセル
+                      {t("edit_dialog.button_cancel")}
                     </button>
                   </div>
                 </div>
@@ -330,7 +332,7 @@ function PopupWindow({
             <div className="tab-fixed-header">
               <SearchBar
                 value={templates.search}
-                placeholder="定型文を検索"
+                placeholder={t("search.placeholder_templates")}
                 onChange={templates.setSearch}
               />
               <div className="filter-row">
@@ -342,7 +344,7 @@ function PopupWindow({
                     )
                   }
                 >
-                  <option value="">全グループ</option>
+                  <option value="">{t("template_filter.all_groups")}</option>
                   {templates.groups.map((group) => (
                     <option key={group.id} value={group.id}>
                       {group.name}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface TooltipPreviewProps {
   title?: string;
@@ -26,6 +27,7 @@ function TooltipPreview({
   contextLabel,
   anchorRect,
 }: TooltipPreviewProps) {
+  const { t } = useTranslation();
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
@@ -65,7 +67,7 @@ function TooltipPreview({
     >
       <div className="tooltip-preview-meta">
         {contextLabel ? <span>{contextLabel}</span> : null}
-        {charCount != null && <span>{charCount}文字</span>}
+        {charCount != null && <span>{charCount}{t("tooltip.char_count_suffix")}</span>}
         {copiedAt && <span>{formatDate(copiedAt)}</span>}
       </div>
       {title ? <div className="tooltip-preview-title">{title}</div> : null}

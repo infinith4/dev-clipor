@@ -21,7 +21,14 @@
     "targets": ["msi", "nsis"],
     "windows": {
       "digestAlgorithm": "sha256",
-      "signCommand": "echo %1"
+      "signCommand": "echo %1",
+      "wix": {
+        "language": ["en-US", "ja-JP"]
+      },
+      "nsis": {
+        "languages": ["English", "Japanese"],
+        "displayLanguageSelector": true
+      }
     }
   }
 }

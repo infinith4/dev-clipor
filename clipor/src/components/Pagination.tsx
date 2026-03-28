@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 interface PaginationProps {
   page: number;
   totalPages: number;
@@ -7,6 +9,7 @@ interface PaginationProps {
 }
 
 function Pagination({ page, totalPages, totalItems, onPrevious, onNext }: PaginationProps) {
+  const { t } = useTranslation();
   return (
     <div className="pagination">
       <button type="button" onClick={onPrevious} disabled={page <= 1}>
@@ -15,7 +18,7 @@ function Pagination({ page, totalPages, totalItems, onPrevious, onNext }: Pagina
       <div className="pagination-status">
         <strong>{page}</strong>
         <span>/ {totalPages}</span>
-        <small>({totalItems}件)</small>
+        <small>({totalItems}{t("pagination.items_suffix")})</small>
       </div>
       <button type="button" onClick={onNext} disabled={page >= totalPages}>
         &gt;

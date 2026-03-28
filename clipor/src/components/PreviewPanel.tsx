@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
@@ -17,6 +18,7 @@ function formatDate(iso: string): string {
 }
 
 function PreviewPanel() {
+  const { t } = useTranslation();
   const [data, setData] = useState<PreviewPayload | null>(null);
 
   useEffect(() => {
@@ -44,7 +46,7 @@ function PreviewPanel() {
   return (
     <main className="preview-panel">
       <div className="preview-panel-meta">
-        {data.charCount != null && data.charCount > 0 && <span>{data.charCount}文字</span>}
+        {data.charCount != null && data.charCount > 0 && <span>{data.charCount}{t("preview.char_count_suffix")}</span>}
         {data.copiedAt && <span>{formatDate(data.copiedAt)}</span>}
       </div>
       <hr className="preview-panel-separator" />

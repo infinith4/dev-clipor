@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import type { ActivationMode, AppSettings } from "../types";
 
@@ -9,6 +10,7 @@ interface SettingsViewProps {
 }
 
 function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps) {
+  const { t, i18n } = useTranslation();
   const [draft, setDraft] = useState(settings);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -20,28 +22,33 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
     setDraft(settings);
   }, [settings]);
 
+  const handleLanguageChange = (lang: string) => {
+    i18n.changeLanguage(lang);
+    localStorage.setItem("clipor-lang", lang);
+  };
+
   const handleSetPassword = async () => {
     setPasswordError(null);
     setPasswordSuccess(null);
 
     if (!newPassword) {
-      setPasswordError("パスワードを入力してください。");
+      setPasswordError(t("password.required"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPasswordError("パスワードが一致しません。");
+      setPasswordError(t("password.mismatch"));
       return;
     }
 
     try {
       if (settings.requirePassword) {
         if (!currentPassword) {
-          setPasswordError("現在のパスワードを入力してください。");
+          setPasswordError(t("password.current_required"));
           return;
         }
         const ok = await invoke<boolean>("verify_password", { password: currentPassword });
         if (!ok) {
-          setPasswordError("現在のパスワードが正しくありません。");
+          setPasswordError(t("password.current_incorrect"));
           return;
         }
       }
@@ -52,12 +59,12 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
       setConfirmPassword("");
       setPasswordSuccess(
         settings.requirePassword
-          ? "パスワードを変更しました。"
-          : "パスワードを設定しました。DB 内の履歴と定型文を暗号化しました。",
+          ? t("password.success_changed")
+          : t("password.success_set_encrypted"),
       );
       onPasswordChanged();
     } catch (error) {
-      setPasswordError(error instanceof Error ? error.message : "パスワード設定に失敗しました。");
+      setPasswordError(error instanceof Error ? error.message : t("password.failed_set"));
     }
   };
 
@@ -66,17 +73,17 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
     setPasswordSuccess(null);
 
     if (!currentPassword) {
-      setPasswordError("現在のパスワードを入力してください。");
+      setPasswordError(t("password.current_required"));
       return;
     }
 
     try {
       await invoke("remove_password", { currentPassword });
       setCurrentPassword("");
-      setPasswordSuccess("パスワードを解除しました。DB 内の履歴と定型文を復号しました。");
+      setPasswordSuccess(t("password.success_removed"));
       onPasswordChanged();
     } catch (error) {
-      setPasswordError(error instanceof Error ? error.message : "パスワード解除に失敗しました。");
+      setPasswordError(error instanceof Error ? error.message : t("password.failed_remove"));
     }
   };
 
@@ -89,7 +96,17 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
       }}
     >
       <label>
-        <span>History limit</span>
+        <span>{t("settings.label_language")}</span>
+        <select
+          value={i18n.language}
+          onChange={(event) => handleLanguageChange(event.target.value)}
+        >
+          <option value="ja">{t("settings.language_ja")}</option>
+          <option value="en">{t("settings.language_en")}</option>
+        </select>
+      </label>
+      <label>
+        <span>{t("settings.label_history_limit")}</span>
         <input
           type="number"
           min={10}
@@ -104,7 +121,7 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
         />
       </label>
       <label>
-        <span>Page size</span>
+        <span>{t("settings.label_page_size")}</span>
         <input
           type="number"
           min={5}
@@ -119,12 +136,12 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
         />
       </label>
       <fieldset className="activation-mode-fieldset">
-        <legend>Activation</legend>
+        <legend>{t("settings.label_activation")}</legend>
         {(
           [
-            { value: "hotkey", label: "Hotkey" },
-            { value: "double-ctrl", label: "Ctrl x2" },
-            { value: "double-alt", label: "Alt x2" },
+            { value: "hotkey", label: t("settings.activation_hotkey") },
+            { value: "double-ctrl", label: t("settings.activation_double_ctrl") },
+            { value: "double-alt", label: t("settings.activation_double_alt") },
           ] as const
         ).map((option) => (
           <label key={option.value} className="radio-row">
@@ -147,11 +164,11 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
       {draft.activationMode === "hotkey" ? (
         <>
           <label>
-            <span>Hotkey</span>
+            <span>{t("settings.label_hotkey")}</span>
             <input
               type="text"
               value={draft.hotkey}
-              placeholder="Ctrl+Alt+Z"
+              placeholder={t("settings.placeholder_hotkey")}
               onChange={(event) =>
                 setDraft((current) => ({
                   ...current,
@@ -160,11 +177,11 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
               }
             />
           </label>
-          <p className="help-text">例: Ctrl+Alt+Z, Ctrl+Shift+K, Alt+F2</p>
+          <p className="help-text">{t("settings.help_hotkey_examples")}</p>
         </>
       ) : null}
       <label>
-        <span>Blur delay (ms)</span>
+        <span>{t("settings.label_blur_delay")}</span>
         <input
           type="number"
           min={0}
@@ -178,9 +195,9 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
           }
         />
       </label>
-      <p className="help-text">フォーカス移動時にウィンドウを閉じるまでの遅延</p>
+      <p className="help-text">{t("settings.help_blur_delay")}</p>
       <label>
-        <span>Preview size (W x H)</span>
+        <span>{t("settings.label_preview_size")}</span>
         <div style={{ display: "flex", gap: "4px" }}>
           <input
             type="number"
@@ -212,7 +229,7 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
         </div>
       </label>
       <label>
-        <span>Image preview size (W x H)</span>
+        <span>{t("settings.label_image_preview_size")}</span>
         <div style={{ display: "flex", gap: "4px" }}>
           <input
             type="number"
@@ -254,13 +271,13 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
             }))
           }
         />
-        <span>Launch on Windows startup</span>
+        <span>{t("settings.label_launch_on_startup")}</span>
       </label>
-      <button type="submit">Save settings</button>
+      <button type="submit">{t("settings.button_save")}</button>
 
       <div style={{ borderTop: "1px solid var(--line)", paddingTop: "8px", marginTop: "4px" }}>
         <span style={{ fontSize: "10px", color: "var(--muted)", fontWeight: "bold" }}>
-          Password Protection (AES-256-GCM)
+          {t("settings.section_password_protection")}
         </span>
 
         {passwordError ? (
@@ -277,7 +294,7 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
         {settings.requirePassword ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px" }}>
             <label>
-              <span>Current password</span>
+              <span>{t("settings.label_current_password")}</span>
               <input
                 type="password"
                 value={currentPassword}
@@ -285,7 +302,7 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
               />
             </label>
             <label>
-              <span>New password</span>
+              <span>{t("settings.label_new_password")}</span>
               <input
                 type="password"
                 value={newPassword}
@@ -293,7 +310,7 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
               />
             </label>
             <label>
-              <span>Confirm password</span>
+              <span>{t("settings.label_confirm_password")}</span>
               <input
                 type="password"
                 value={confirmPassword}
@@ -302,21 +319,21 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
             </label>
             <div style={{ display: "flex", gap: "6px" }}>
               <button type="button" onClick={() => void handleSetPassword()}>
-                Change password
+                {t("settings.button_change_password")}
               </button>
               <button
                 type="button"
                 className="danger"
                 onClick={() => void handleRemovePassword()}
               >
-                Remove password
+                {t("settings.button_remove_password")}
               </button>
             </div>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px" }}>
             <label>
-              <span>New password</span>
+              <span>{t("settings.label_new_password")}</span>
               <input
                 type="password"
                 value={newPassword}
@@ -324,7 +341,7 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
               />
             </label>
             <label>
-              <span>Confirm password</span>
+              <span>{t("settings.label_confirm_password")}</span>
               <input
                 type="password"
                 value={confirmPassword}
@@ -332,7 +349,7 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
               />
             </label>
             <button type="button" onClick={() => void handleSetPassword()}>
-              Set password
+              {t("settings.button_set_password")}
             </button>
           </div>
         )}

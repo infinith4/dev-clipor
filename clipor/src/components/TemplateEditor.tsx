@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { TemplateEntry, TemplateGroup } from "../types";
 
 interface TemplateEditorProps {
@@ -26,6 +27,7 @@ function TemplateEditor({
   onExport,
   onImport,
 }: TemplateEditorProps) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [contentType, setContentType] = useState<"text" | "image">("text");
@@ -72,7 +74,7 @@ function TemplateEditor({
           setTitle(file.name.replace(/\.[^.]+$/, ""));
         }
         if (!text.trim()) {
-          setText("[画像]");
+          setText(t("content.image_placeholder"));
         }
       }
     };
@@ -108,7 +110,7 @@ function TemplateEditor({
     onSave({
       id: editingTemplate?.id,
       title: title.trim(),
-      text: contentType === "image" ? (text.trim() || "[画像]") : text.trim(),
+      text: contentType === "image" ? (text.trim() || t("content.image_placeholder")) : text.trim(),
       contentType,
       imageData: contentType === "image" ? imageData : null,
       groupId: typeof groupId === "number" ? groupId : undefined,
@@ -119,18 +121,18 @@ function TemplateEditor({
   const handleClearImage = () => {
     setContentType("text");
     setImageData(null);
-    if (text === "[画像]") setText("");
+    if (text === t("content.image_placeholder")) setText("");
   };
 
   return (
     <section className="editor-panel">
       <div className="field-grid">
         <label>
-          <span>Title</span>
+          <span>{t("template_editor.label_title")}</span>
           <input value={title} onChange={(event) => setTitle(event.target.value)} />
         </label>
         <label>
-          <span>Group</span>
+          <span>{t("template_editor.label_group")}</span>
           <select
             value={groupId}
             onChange={(event) =>
@@ -142,23 +144,23 @@ function TemplateEditor({
                 {group.name}
               </option>
             ))}
-            <option value="new">+ New group</option>
+            <option value="new">{t("template_editor.option_new_group")}</option>
           </select>
         </label>
       </div>
       {groupId === "new" ? (
         <label>
-          <span>New group name</span>
+          <span>{t("template_editor.label_new_group_name")}</span>
           <input
             value={newGroupName}
             onChange={(event) => setNewGroupName(event.target.value)}
-            placeholder="署名"
+            placeholder={t("template_editor.placeholder_group_name")}
           />
         </label>
       ) : null}
       <div className="field-grid">
         <label>
-          <span>Type</span>
+          <span>{t("template_editor.label_type")}</span>
           <select
             value={contentType}
             onChange={(event) => {
@@ -166,12 +168,12 @@ function TemplateEditor({
               setContentType(val);
               if (val === "text") {
                 setImageData(null);
-                if (text === "[画像]") setText("");
+                if (text === t("content.image_placeholder")) setText("");
               }
             }}
           >
-            <option value="text">Text</option>
-            <option value="image">Image</option>
+            <option value="text">{t("template_editor.type_text")}</option>
+            <option value="image">{t("template_editor.type_image")}</option>
           </select>
         </label>
       </div>
@@ -193,39 +195,39 @@ function TemplateEditor({
               />
               <div className="row-actions">
                 <button type="button" onClick={() => fileInputRef.current?.click()}>
-                  Change
+                  {t("template_editor.button_change_image")}
                 </button>
                 <button type="button" onClick={handleClearImage}>
-                  Remove
+                  {t("template_editor.button_remove_image")}
                 </button>
               </div>
             </div>
           ) : (
             <button type="button" onClick={() => fileInputRef.current?.click()}>
-              Select image file
+              {t("template_editor.button_select_image")}
             </button>
           )}
         </div>
       ) : (
         <label>
-          <span>Template body</span>
+          <span>{t("template_editor.label_template_body")}</span>
           <textarea
             rows={6}
             value={text}
             onChange={(event) => setText(event.target.value)}
-            placeholder={"{{date}} や {{clipboard}} を利用できます。"}
+            placeholder={t("template_editor.placeholder_variables")}
           />
         </label>
       )}
       <div className="row-actions">
         <button type="button" onClick={handleSave}>
-          {editingTemplate ? "Update" : "Create"}
+          {editingTemplate ? t("template_editor.button_update") : t("template_editor.button_create")}
         </button>
         <button type="button" onClick={onCancel}>
-          Clear
+          {t("template_editor.button_clear")}
         </button>
         <button type="button" onClick={onExport}>
-          Export JSON
+          {t("template_editor.button_export")}
         </button>
         <button
           type="button"
@@ -234,7 +236,7 @@ function TemplateEditor({
             setShowImportDialog(true);
           }}
         >
-          Import JSON
+          {t("template_editor.button_import")}
         </button>
       </div>
       {showImportDialog ? (
@@ -244,21 +246,21 @@ function TemplateEditor({
             onClick={(event) => event.stopPropagation()}
             style={{ width: 280 }}
           >
-            <div className="edit-dialog-header">Import template JSON</div>
+            <div className="edit-dialog-header">{t("template_editor.dialog_import_header")}</div>
             <textarea
               ref={importTextareaRef}
               rows={8}
               value={importJson}
               onChange={(event) => setImportJson(event.target.value)}
-              placeholder='{"groups":[...],"templates":[...]}'
+              placeholder={t("template_editor.placeholder_import_json")}
               autoFocus
             />
             <div className="edit-dialog-actions">
               <button type="button" onClick={handleImportCancel}>
-                Cancel
+                {t("template_editor.button_cancel")}
               </button>
               <button type="button" onClick={handleImportSubmit} disabled={!importJson.trim()}>
-                Import
+                {t("template_editor.button_import_submit")}
               </button>
             </div>
           </div>

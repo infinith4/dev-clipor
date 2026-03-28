@@ -1,0 +1,157 @@
+{
+  "tab": {
+    "history": "History",
+    "templates": "Templates",
+    "settings": "Settings"
+  },
+  "search": {
+    "placeholder_history": "Search history",
+    "placeholder_templates": "Search templates"
+  },
+  "content": {
+    "image_placeholder": "[Image]"
+  },
+  "empty_state": {
+    "no_history": "No clipboard history yet.",
+    "no_templates": "No templates yet."
+  },
+  "loading": {
+    "message": "Loading..."
+  },
+  "context_menu": {
+    "transform_label": "Transform",
+    "convert_label": "Convert",
+    "delete": "Delete",
+    "edit": "Edit",
+    "register_as_template": "Save as template"
+  },
+  "transform": {
+    "add_comment_prefix": "Add comment prefix (// )",
+    "add_quote_prefix": "Add quote prefix (> )",
+    "add_numbering": "Add numbering (1. 2. ...)",
+    "wrap_lines_in_quotes": "Wrap lines in quotes",
+    "trim": "Trim whitespace",
+    "remove_empty_lines": "Remove empty lines",
+    "collapse_blank_lines": "Collapse blank lines",
+    "trim_trailing": "Trim trailing whitespace",
+    "remove_duplicate_lines": "Remove duplicate lines",
+    "remove_html_tags": "Remove HTML tags"
+  },
+  "convert": {
+    "to_lowercase": "To lowercase",
+    "to_uppercase": "To uppercase",
+    "fullwidth_to_halfwidth": "Fullwidth → Halfwidth",
+    "halfwidth_to_fullwidth": "Halfwidth → Fullwidth"
+  },
+  "edit_dialog": {
+    "header": "Edit",
+    "button_save": "Save",
+    "button_cancel": "Cancel"
+  },
+  "template_filter": {
+    "all_groups": "All groups"
+  },
+  "template": {
+    "group_name_from_history": "From history"
+  },
+  "setup": {
+    "description": "Set a password to protect your clipboard history.",
+    "label_new_password": "New password",
+    "label_confirm_password": "Confirm password",
+    "button_set_and_start": "Set password & start",
+    "button_skip": "Skip (no protection)",
+    "password_required": "Please enter a password.",
+    "password_mismatch": "Passwords do not match.",
+    "password_failed": "Failed to set password."
+  },
+  "unlock": {
+    "label_password": "Password",
+    "button_unlock": "Unlock",
+    "password_incorrect": "Incorrect password.",
+    "auth_failed": "Authentication failed."
+  },
+  "app": {
+    "window_init_failed": "Failed to initialize window."
+  },
+  "settings": {
+    "label_history_limit": "History limit",
+    "label_page_size": "Page size",
+    "label_activation": "Activation",
+    "activation_hotkey": "Hotkey",
+    "activation_double_ctrl": "Ctrl x2",
+    "activation_double_alt": "Alt x2",
+    "label_hotkey": "Hotkey",
+    "placeholder_hotkey": "Ctrl+Alt+Z",
+    "help_hotkey_examples": "e.g. Ctrl+Alt+Z, Ctrl+Shift+K, Alt+F2",
+    "label_blur_delay": "Blur delay (ms)",
+    "help_blur_delay": "Delay before closing window on focus loss",
+    "label_preview_size": "Preview size (W x H)",
+    "label_image_preview_size": "Image preview size (W x H)",
+    "label_launch_on_startup": "Launch on Windows startup",
+    "button_save": "Save settings",
+    "section_password_protection": "Password Protection (AES-256-GCM)",
+    "label_current_password": "Current password",
+    "label_new_password": "New password",
+    "label_confirm_password": "Confirm password",
+    "button_change_password": "Change password",
+    "button_remove_password": "Remove password",
+    "button_set_password": "Set password",
+    "label_language": "Language",
+    "language_ja": "日本語",
+    "language_en": "English"
+  },
+  "password": {
+    "required": "Please enter a password.",
+    "mismatch": "Passwords do not match.",
+    "current_required": "Please enter the current password.",
+    "current_incorrect": "Current password is incorrect.",
+    "success_changed": "Password changed successfully.",
+    "success_set_encrypted": "Password set. History and templates in DB have been encrypted.",
+    "failed_set": "Failed to set password.",
+    "success_removed": "Password removed. History and templates in DB have been decrypted.",
+    "failed_remove": "Failed to remove password."
+  },
+  "template_editor": {
+    "label_title": "Title",
+    "label_group": "Group",
+    "option_new_group": "+ New group",
+    "label_new_group_name": "New group name",
+    "placeholder_group_name": "Signature",
+    "label_type": "Type",
+    "type_text": "Text",
+    "type_image": "Image",
+    "button_change_image": "Change",
+    "button_remove_image": "Remove",
+    "button_select_image": "Select image file",
+    "label_template_body": "Template body",
+    "placeholder_variables": "You can use {{date}} and {{clipboard}}.",
+    "button_update": "Update",
+    "button_create": "Create",
+    "button_clear": "Clear",
+    "button_export": "Export JSON",
+    "button_import": "Import JSON",
+    "dialog_import_header": "Import template JSON",
+    "placeholder_import_json": "{\"groups\":[...],\"templates\":[...]}",
+    "button_cancel": "Cancel",
+    "button_import_submit": "Import"
+  },
+  "pagination": {
+    "items_suffix": "items"
+  },
+  "error_boundary": {
+    "render_failed": "Failed to render application.",
+    "ui_init_failed": "Failed to initialize UI"
+  },
+  "preview": {
+    "char_count_suffix": "chars"
+  },
+  "tooltip": {
+    "char_count_suffix": "chars"
+  },
+  "error_banner": {
+    "close_button": "Close"
+  },
+  "clipboard": {
+    "image_alt_text": "clipboard image"
+  }
+}
