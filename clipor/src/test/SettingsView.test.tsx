@@ -403,6 +403,68 @@ describe("SettingsView", () => {
     });
   });
 
+  describe("language switching", () => {
+    it("renders language select with current language", () => {
+      renderSettings();
+      const select = screen.getByLabelText("Language") as HTMLSelectElement;
+      expect(select).toBeInTheDocument();
+    });
+
+    it("changes language and saves to localStorage", () => {
+      const setItemSpy = vi.spyOn(Storage.prototype, "setItem");
+      renderSettings();
+      const select = screen.getByLabelText("Language") as HTMLSelectElement;
+      fireEvent.change(select, { target: { value: "en" } });
+      expect(setItemSpy).toHaveBeenCalledWith("clipor-lang", "en");
+      setItemSpy.mockRestore();
+    });
+  });
+
+  describe("activation mode", () => {
+    it("shows hotkey input when activationMode is hotkey", () => {
+      renderSettings({ activationMode: "hotkey" });
+      expect(screen.getByPlaceholderText("Ctrl+Alt+Z")).toBeInTheDocument();
+    });
+
+    it("hides hotkey input when activationMode is double-ctrl", () => {
+      renderSettings({ activationMode: "double-ctrl" });
+      expect(screen.queryByPlaceholderText("Ctrl+Alt+Z")).not.toBeInTheDocument();
+    });
+
+    it("hides hotkey input when activationMode is double-alt", () => {
+      renderSettings({ activationMode: "double-alt" });
+      expect(screen.queryByPlaceholderText("Ctrl+Alt+Z")).not.toBeInTheDocument();
+    });
+
+    it("switches activation mode via radio buttons", () => {
+      renderSettings({ activationMode: "hotkey" });
+      const doubleCtrlRadio = screen.getByLabelText("Double-press Ctrl") as HTMLInputElement;
+      fireEvent.click(doubleCtrlRadio);
+      expect(doubleCtrlRadio.checked).toBe(true);
+      // Hotkey input should now be hidden
+      expect(screen.queryByPlaceholderText("Ctrl+Alt+Z")).not.toBeInTheDocument();
+    });
+
+    it("shows hotkey input again when switching back to hotkey mode", () => {
+      renderSettings({ activationMode: "double-ctrl" });
+      expect(screen.queryByPlaceholderText("Ctrl+Alt+Z")).not.toBeInTheDocument();
+      const hotkeyRadio = screen.getByLabelText("Hotkey") as HTMLInputElement;
+      fireEvent.click(hotkeyRadio);
+      expect(screen.getByPlaceholderText("Ctrl+Alt+Z")).toBeInTheDocument();
+    });
+  });
+
+  describe("form submit prevents default", () => {
+    it("calls onSave and prevents form submission", () => {
+      const { onSave } = renderSettings();
+      const form = screen.getByText("Save settings").closest("form")!;
+      const submitEvent = new Event("submit", { bubbles: true, cancelable: true });
+      const preventDefaultSpy = vi.spyOn(submitEvent, "preventDefault");
+      form.dispatchEvent(submitEvent);
+      expect(preventDefaultSpy).toHaveBeenCalled();
+    });
+  });
+
   describe("error/success messages", () => {
     it("does not show error or success initially", () => {
       renderSettings();

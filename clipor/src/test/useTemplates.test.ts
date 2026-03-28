@@ -389,6 +389,31 @@ describe("useTemplates", () => {
       expect(jsonResult).toBeNull();
     });
 
+    it("sets error and returns null when clipboard.writeText rejects", async () => {
+      const payload: TemplateExportPayload = {
+        groups: [makeGroup()],
+        templates: [makeTemplate()],
+      };
+
+      const { result } = setup();
+
+      await waitForMount(result);
+
+      invokeMock.mockResolvedValue(payload);
+      const writeTextMock = vi.fn().mockRejectedValue(new Error("clipboard fail"));
+      Object.assign(navigator, {
+        clipboard: { writeText: writeTextMock },
+      });
+
+      let jsonResult: string | null = "not null";
+      await act(async () => {
+        jsonResult = await result.current.exportTemplates();
+      });
+
+      expect(setError).toHaveBeenCalledWith("clipboard fail");
+      expect(jsonResult).toBeNull();
+    });
+
     it("sets default error and returns null when export_templates rejects with non-Error", async () => {
       const { result } = setup();
 

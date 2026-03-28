@@ -198,6 +198,36 @@ describe("PreviewPanel", () => {
     });
   });
 
+  it("formats date with single-digit month and day with zero-padding", async () => {
+    invokeMock.mockResolvedValue({
+      text: "test",
+      charCount: 4,
+      copiedAt: "2025-01-05T03:07:00Z",
+    });
+
+    render(<PreviewPanel />);
+
+    await waitFor(() => {
+      // Month and day should be zero-padded
+      expect(screen.getByText(/2025\/01\/05/)).toBeInTheDocument();
+    });
+  });
+
+  it("displays copiedAt but not charCount when copiedAt is present and charCount is null", async () => {
+    invokeMock.mockResolvedValue({
+      text: "test",
+      charCount: null,
+      copiedAt: "2025-06-15T12:00:00Z",
+    });
+
+    render(<PreviewPanel />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/2025/)).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/文字/)).not.toBeInTheDocument();
+  });
+
   it("does not set data when initial invoke returns null", async () => {
     invokeMock.mockResolvedValue(null);
 

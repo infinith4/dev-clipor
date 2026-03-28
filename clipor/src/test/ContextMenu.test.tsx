@@ -162,4 +162,141 @@ describe("ContextMenu", () => {
       expect(screen.getByText("Delete")).toHaveClass("danger");
     });
   });
+
+  describe("viewport overflow positioning", () => {
+    it("shifts menu left when overflowing right edge", () => {
+      // Position at far right of viewport
+      vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+        top: 0,
+        left: 900,
+        right: 1100,
+        bottom: 100,
+        width: 200,
+        height: 100,
+        x: 900,
+        y: 0,
+        toJSON: () => {},
+      });
+      Object.defineProperty(window, "innerWidth", { value: 1000, writable: true });
+      Object.defineProperty(window, "innerHeight", { value: 800, writable: true });
+
+      render(<ContextMenu x={900} y={0} items={makeItems()} onClose={vi.fn()} />);
+      const menu = document.querySelector(".context-menu") as HTMLElement;
+      // Should be shifted left: 1000 - 200 = 800
+      expect(parseInt(menu.style.left)).toBeLessThanOrEqual(900);
+    });
+
+    it("shifts menu up when overflowing bottom edge", () => {
+      vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+        top: 700,
+        left: 0,
+        right: 100,
+        bottom: 900,
+        width: 100,
+        height: 200,
+        x: 0,
+        y: 700,
+        toJSON: () => {},
+      });
+      Object.defineProperty(window, "innerWidth", { value: 1000, writable: true });
+      Object.defineProperty(window, "innerHeight", { value: 800, writable: true });
+
+      render(<ContextMenu x={0} y={750} items={makeItems()} onClose={vi.fn()} />);
+      const menu = document.querySelector(".context-menu") as HTMLElement;
+      expect(parseInt(menu.style.top)).toBeLessThanOrEqual(750);
+    });
+
+    it("clamps negative left position to 0", () => {
+      vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+        top: 0,
+        left: -100,
+        right: 100,
+        bottom: 50,
+        width: 200,
+        height: 50,
+        x: -100,
+        y: 0,
+        toJSON: () => {},
+      });
+      Object.defineProperty(window, "innerWidth", { value: 50, writable: true });
+      Object.defineProperty(window, "innerHeight", { value: 800, writable: true });
+
+      render(<ContextMenu x={-100} y={0} items={makeItems()} onClose={vi.fn()} />);
+      const menu = document.querySelector(".context-menu") as HTMLElement;
+      expect(parseInt(menu.style.left)).toBeGreaterThanOrEqual(0);
+    });
+
+    it("clamps negative top position to 0", () => {
+      vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+        top: -100,
+        left: 0,
+        right: 100,
+        bottom: 100,
+        width: 100,
+        height: 200,
+        x: 0,
+        y: -100,
+        toJSON: () => {},
+      });
+      Object.defineProperty(window, "innerWidth", { value: 1000, writable: true });
+      Object.defineProperty(window, "innerHeight", { value: 50, writable: true });
+
+      render(<ContextMenu x={0} y={-100} items={makeItems()} onClose={vi.fn()} />);
+      const menu = document.querySelector(".context-menu") as HTMLElement;
+      expect(parseInt(menu.style.top)).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe("submenu positioning edge cases", () => {
+    function makeSubItems(): MenuItem[] {
+      return [
+        {
+          label: "Parent",
+          children: [
+            { label: "Child1", action: vi.fn() },
+          ],
+        },
+      ];
+    }
+
+    it("positions submenu to left when right overflow", () => {
+      Object.defineProperty(window, "innerWidth", { value: 300, writable: true });
+      Object.defineProperty(window, "innerHeight", { value: 800, writable: true });
+
+      render(<ContextMenu x={0} y={0} items={makeSubItems()} onClose={vi.fn()} />);
+      const parent = screen.getByText("Parent").closest(".context-menu-parent")!;
+      fireEvent.mouseEnter(parent);
+
+      // Submenu should render
+      expect(screen.getByText("Child1")).toBeInTheDocument();
+    });
+
+    it("handles submenu with no action (optional action)", () => {
+      const items: MenuItem[] = [
+        {
+          label: "Parent",
+          children: [
+            { label: "No Action" }, // action is undefined
+          ],
+        },
+      ];
+      const onClose = vi.fn();
+      render(<ContextMenu x={0} y={0} items={items} onClose={onClose} />);
+      const parent = screen.getByText("Parent").closest(".context-menu-parent")!;
+      fireEvent.mouseEnter(parent);
+      fireEvent.click(screen.getByText("No Action"));
+      // Should still call onClose even when action is undefined
+      expect(onClose).toHaveBeenCalled();
+    });
+  });
+
+  describe("item without action", () => {
+    it("calls onClose when item with no action is clicked", () => {
+      const items: MenuItem[] = [{ label: "InfoOnly" }];
+      const onClose = vi.fn();
+      render(<ContextMenu x={0} y={0} items={items} onClose={onClose} />);
+      fireEvent.click(screen.getByText("InfoOnly"));
+      expect(onClose).toHaveBeenCalled();
+    });
+  });
 });

@@ -618,6 +618,48 @@ describe("useClipboardHistory", () => {
       });
     });
 
+    it("does not decrement page when deleting last entry on page 1", async () => {
+      const entries = [makeEntry({ id: 1 })];
+      invokeMock.mockResolvedValue(makePage(entries, 1));
+
+      const { result } = renderHook(() => useClipboardHistory(10, setError));
+
+      await vi.waitFor(() => {
+        expect(result.current.entries).toHaveLength(1);
+      });
+
+      // On page 1, deleting the last entry should refresh, not decrement
+      invokeMock.mockResolvedValue(makePage([], 0));
+
+      await act(async () => {
+        await result.current.deleteEntry(1);
+      });
+
+      expect(result.current.page).toBe(1);
+      expect(invokeMock).toHaveBeenCalledWith("delete_history_entry", { id: 1 });
+    });
+
+    it("updates pageSize when initialPageSize prop changes", async () => {
+      invokeMock.mockResolvedValue(makePage([], 0));
+
+      const { result, rerender } = renderHook(
+        ({ pageSize }: { pageSize: number }) => useClipboardHistory(pageSize, setError),
+        { initialProps: { pageSize: 10 } },
+      );
+
+      await vi.waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.pageSize).toBe(10);
+
+      rerender({ pageSize: 25 });
+
+      await vi.waitFor(() => {
+        expect(result.current.pageSize).toBe(25);
+      });
+    });
+
     it("sends null when search is only whitespace", async () => {
       invokeMock.mockResolvedValue(makePage([], 0));
 

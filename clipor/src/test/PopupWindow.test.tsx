@@ -880,4 +880,284 @@ describe("PopupWindow", () => {
       expect(screen.getByText("定型文はまだありません。")).toBeInTheDocument();
     });
   });
+
+  /* ============================================================== */
+  /*  17. All transform submenu items                               */
+  /* ============================================================== */
+  describe("transform submenu items (all)", () => {
+    function renderAndOpenTransform() {
+      const entry = makeEntry({ id: 1, text: "some text" });
+      render(<PopupWindow {...makeProps({ history: { entries: [entry] } })} />);
+      const article = screen.getByText("some text").closest("article")!;
+      fireEvent.contextMenu(article);
+      const parent = screen.getByText("整形").closest(".context-menu-parent")!;
+      fireEvent.mouseEnter(parent);
+    }
+
+    const transformCases = [
+      { label: "コメント接頭辞追加", type: "add_comment_prefix" },
+      { label: "引用接頭辞追加", type: "add_quote_prefix" },
+      { label: "行番号追加", type: "add_numbering" },
+      { label: "行を引用符で囲む", type: "wrap_lines_in_quotes" },
+      { label: "前後の空白を削除", type: "trim" },
+      { label: "空行を削除", type: "remove_empty_lines" },
+      { label: "連続空行を1行に", type: "collapse_blank_lines" },
+      { label: "末尾の空白を削除", type: "trim_trailing" },
+      { label: "重複行を削除", type: "remove_duplicate_lines" },
+      { label: "HTMLタグを削除", type: "remove_html_tags" },
+    ] as const;
+
+    for (const { label, type } of transformCases) {
+      it(`clicking "${label}" calls transform_and_paste with type "${type}"`, async () => {
+        renderAndOpenTransform();
+        await userEvent.click(screen.getByText(label));
+        expect(invokeMock).toHaveBeenCalledWith("transform_and_paste", {
+          text: "some text",
+          transformType: type,
+        });
+      });
+    }
+  });
+
+  /* ============================================================== */
+  /*  18. All convert submenu items                                 */
+  /* ============================================================== */
+  describe("convert submenu items (all)", () => {
+    function renderAndOpenConvert() {
+      const entry = makeEntry({ id: 1, text: "some text" });
+      render(<PopupWindow {...makeProps({ history: { entries: [entry] } })} />);
+      const article = screen.getByText("some text").closest("article")!;
+      fireEvent.contextMenu(article);
+      const parent = screen.getByText("変換").closest(".context-menu-parent")!;
+      fireEvent.mouseEnter(parent);
+    }
+
+    const convertCases = [
+      { label: "小文字に変換", type: "to_lowercase" },
+      { label: "大文字に変換", type: "to_uppercase" },
+      { label: "全角→半角", type: "fullwidth_to_halfwidth" },
+      { label: "半角→全角", type: "halfwidth_to_fullwidth" },
+    ] as const;
+
+    for (const { label, type } of convertCases) {
+      it(`clicking "${label}" calls transform_and_paste with type "${type}"`, async () => {
+        renderAndOpenConvert();
+        await userEvent.click(screen.getByText(label));
+        expect(invokeMock).toHaveBeenCalledWith("transform_and_paste", {
+          text: "some text",
+          transformType: type,
+        });
+      });
+    }
+  });
+
+  /* ============================================================== */
+  /*  19. Template context menu                                     */
+  /* ============================================================== */
+  describe("template context menu", () => {
+    function renderTemplateWithContextMenu() {
+      const tmpl = makeTemplate({ id: 50, title: "tmpl title", text: "tmpl text" });
+      const deleteTemplate = vi.fn();
+      const props = makeProps({
+        activeTab: "templates",
+        templates: { templates: [tmpl], deleteTemplate },
+      });
+      render(<PopupWindow {...props} />);
+      const article = screen.getByText("tmpl title").closest("article")!;
+      fireEvent.contextMenu(article);
+      return { props, deleteTemplate };
+    }
+
+    it("opens template context menu on right-click", () => {
+      renderTemplateWithContextMenu();
+      expect(screen.getByText("削除")).toBeInTheDocument();
+      expect(screen.getByText("整形")).toBeInTheDocument();
+      expect(screen.getByText("変換")).toBeInTheDocument();
+    });
+
+    it("clicking delete calls deleteTemplate", async () => {
+      const { deleteTemplate } = renderTemplateWithContextMenu();
+      await userEvent.click(screen.getByText("削除"));
+      expect(deleteTemplate).toHaveBeenCalledWith(50);
+    });
+
+    it("clicking transform submenu item for template calls invoke", async () => {
+      renderTemplateWithContextMenu();
+      const parent = screen.getByText("整形").closest(".context-menu-parent")!;
+      fireEvent.mouseEnter(parent);
+      await userEvent.click(screen.getByText("前後の空白を削除"));
+      expect(invokeMock).toHaveBeenCalledWith("transform_and_paste", {
+        text: "tmpl text",
+        transformType: "trim",
+      });
+    });
+  });
+
+  /* ============================================================== */
+  /*  20. editingTemplate effect (cleanup on tab change)            */
+  /* ============================================================== */
+  describe("editingTemplate cleanup", () => {
+    it("clears editingTemplate when switching away from templates tab", () => {
+      const tmpl = makeTemplate({ id: 1, title: "Edit Me" });
+      const { rerender } = render(
+        <PopupWindow
+          {...makeProps({
+            activeTab: "templates",
+            templates: { templates: [tmpl], selectedTemplateId: 1 },
+          })}
+        />,
+      );
+
+      // Now switch to history tab
+      rerender(
+        <PopupWindow
+          {...makeProps({
+            activeTab: "history",
+            templates: { templates: [tmpl], selectedTemplateId: 1 },
+          })}
+        />,
+      );
+
+      // No editing state visible
+      expect(screen.queryByText("Edit Me")).not.toBeInTheDocument();
+    });
+
+    it("clears editingTemplate when selectedTemplateId becomes null", () => {
+      const tmpl = makeTemplate({ id: 1, title: "Deselect Me" });
+      const { rerender } = render(
+        <PopupWindow
+          {...makeProps({
+            activeTab: "templates",
+            templates: { templates: [tmpl], selectedTemplateId: 1 },
+          })}
+        />,
+      );
+
+      rerender(
+        <PopupWindow
+          {...makeProps({
+            activeTab: "templates",
+            templates: { templates: [tmpl], selectedTemplateId: null },
+          })}
+        />,
+      );
+
+      // The template editor should not be pre-filled
+    });
+  });
+
+  /* ============================================================== */
+  /*  21. hide_preview on tab change                                */
+  /* ============================================================== */
+  describe("hide_preview on tab change", () => {
+    it("calls hide_preview when tab changes", () => {
+      const { rerender } = render(
+        <PopupWindow {...makeProps({ activeTab: "history" })} />,
+      );
+      invokeMock.mockClear();
+
+      rerender(<PopupWindow {...makeProps({ activeTab: "templates" })} />);
+
+      expect(invokeMock).toHaveBeenCalledWith("hide_preview");
+    });
+  });
+
+  /* ============================================================== */
+  /*  22. Template group filter                                     */
+  /* ============================================================== */
+  describe("template group filter", () => {
+    it("renders group filter select with all groups option", () => {
+      const groups = [
+        { id: 1, name: "Work", sortOrder: 0, createdAt: "2026-01-01" },
+        { id: 2, name: "Personal", sortOrder: 1, createdAt: "2026-01-01" },
+      ];
+      render(
+        <PopupWindow
+          {...makeProps({
+            activeTab: "templates",
+            templates: { groups },
+          })}
+        />,
+      );
+      expect(screen.getByText("すべてのグループ")).toBeInTheDocument();
+      expect(screen.getByText("Work")).toBeInTheDocument();
+      expect(screen.getByText("Personal")).toBeInTheDocument();
+    });
+
+    it("calls setSelectedGroupId when a group is selected", () => {
+      const groups = [
+        { id: 1, name: "Work", sortOrder: 0, createdAt: "2026-01-01" },
+      ];
+      const setSelectedGroupId = vi.fn();
+      render(
+        <PopupWindow
+          {...makeProps({
+            activeTab: "templates",
+            templates: { groups, setSelectedGroupId },
+          })}
+        />,
+      );
+      const select = screen.getByDisplayValue("すべてのグループ") as HTMLSelectElement;
+      fireEvent.change(select, { target: { value: "1" } });
+      expect(setSelectedGroupId).toHaveBeenCalledWith(1);
+    });
+
+    it("calls setSelectedGroupId with null when all groups selected", () => {
+      const groups = [
+        { id: 1, name: "Work", sortOrder: 0, createdAt: "2026-01-01" },
+      ];
+      const setSelectedGroupId = vi.fn();
+      render(
+        <PopupWindow
+          {...makeProps({
+            activeTab: "templates",
+            templates: { groups, setSelectedGroupId, selectedGroupId: 1 },
+          })}
+        />,
+      );
+      const select = screen.getByDisplayValue("Work") as HTMLSelectElement;
+      fireEvent.change(select, { target: { value: "" } });
+      expect(setSelectedGroupId).toHaveBeenCalledWith(null);
+    });
+  });
+
+  /* ============================================================== */
+  /*  23. Template editor callbacks (save, export, import)          */
+  /* ============================================================== */
+  describe("template editor callbacks", () => {
+    it("calls saveTemplate and clears editingTemplate on save", async () => {
+      const saveTemplate = vi.fn();
+      render(
+        <PopupWindow
+          {...makeProps({
+            activeTab: "templates",
+            templates: { saveTemplate },
+          })}
+        />,
+      );
+
+      // Fill in the template editor form
+      const titleInput = screen.getByLabelText("タイトル") as HTMLInputElement;
+      fireEvent.change(titleInput, { target: { value: "Test Title" } });
+      const textarea = screen.getByPlaceholderText("{{name}} 形式で変数を使用できます");
+      fireEvent.change(textarea, { target: { value: "Test Body" } });
+
+      await userEvent.click(screen.getByText("作成"));
+      expect(saveTemplate).toHaveBeenCalled();
+    });
+
+    it("calls exportTemplates on export", async () => {
+      const exportTemplates = vi.fn();
+      render(
+        <PopupWindow
+          {...makeProps({
+            activeTab: "templates",
+            templates: { exportTemplates },
+          })}
+        />,
+      );
+      await userEvent.click(screen.getByText("エクスポート"));
+      expect(exportTemplates).toHaveBeenCalled();
+    });
+  });
 });
