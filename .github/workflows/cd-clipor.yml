@@ -47,6 +47,51 @@ jobs:
       - name: Build Tauri app
         run: npx tauri build
 
+      - name: Build MSIX package
+        shell: pwsh
+        working-directory: clipor
+        run: |
+          $tauriConf = Get-Content "src-tauri\tauri.conf.json" | ConvertFrom-Json
+          $semver    = $tauriConf.version
+          $version   = "$semver.0"
+          $appName   = "Clipor_${semver}_x64"
+
+          $publisher = "${{ vars.MSIX_PUBLISHER_DN }}"
+          if (-not $publisher) { $publisher = "CN=Clipor" }
+
+          $staging = "msix-staging"
+          New-Item -ItemType Directory -Path "$staging\assets" -Force | Out-Null
+
+          Copy-Item "src-tauri\target\release\clipor.exe" "$staging\"
+
+          $icons = @(
+            "StoreLogo.png",
+            "Square44x44Logo.png",
+            "Square71x71Logo.png",
+            "Square150x150Logo.png",
+            "Square310x310Logo.png"
+          )
+          foreach ($icon in $icons) {
+            Copy-Item "src-tauri\icons\$icon" "$staging\assets\" -ErrorAction Stop
+          }
+
+          $manifest = Get-Content "src-tauri\AppxManifest.xml" -Raw
+          $manifest = $manifest -replace "VERSION_PLACEHOLDER", $version
+          $manifest = $manifest -replace "PUBLISHER_PLACEHOLDER", $publisher
+          Set-Content "$staging\AppxManifest.xml" $manifest -Encoding UTF8
+
+          $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter makeappx.exe |
+                        Where-Object { $_.FullName -match "x64" } |
+                        Select-Object -Last 1 -ExpandProperty FullName
+          if (-not $makeappx) { throw "makeappx.exe not found" }
+
+          New-Item -ItemType Directory -Path "src-tauri\target\release\bundle\msix" -Force | Out-Null
+          $out = "src-tauri\target\release\bundle\msix\$appName.msix"
+
+          & $makeappx pack /d $staging /p $out /overwrite
+          if ($LASTEXITCODE -ne 0) { throw "makeappx failed" }
+          Write-Host "MSIX created: $out"
+
       - name: Upload build artifacts
         id: upload_build_artifacts
         uses: actions/upload-artifact@v5
@@ -56,6 +101,7 @@ jobs:
             clipor/src-tauri/target/release/clipor.exe
             clipor/src-tauri/target/release/bundle/msi/*.msi
             clipor/src-tauri/target/release/bundle/nsis/*.exe
+            clipor/src-tauri/target/release/bundle/msix/*.msix
           if-no-files-found: ignore
 
   prepare_release:
