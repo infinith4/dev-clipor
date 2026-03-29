@@ -14,14 +14,14 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="dev.infinith4.clipor"
+    Name="infinith4.Clipor-ClipboardManager"
     Publisher="PUBLISHER_PLACEHOLDER"
     Version="VERSION_PLACEHOLDER"
     ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>Clipor</DisplayName>
-    <PublisherDisplayName>Infinith4</PublisherDisplayName>
+    <DisplayName>Clipor - Clipboard Manager</DisplayName>
+    <PublisherDisplayName>infinith4</PublisherDisplayName>
     <Description>Clipboard manager for Windows</Description>
     <Logo>assets\StoreLogo.png</Logo>
   </Properties>
