@@ -90,6 +90,7 @@ jobs:
 
 - `s3://<R2_BUCKET_NAME>/v0.2.14/Clipor_0.2.14_x64_en-US.msi`
 - `s3://<R2_BUCKET_NAME>/v0.2.14/Clipor_0.2.14_x64_ja-JP.msi`
+- `s3://<R2_BUCKET_NAME>/v0.2.14/Clipor_0.2.14_x64.msix`
 - `s3://<R2_BUCKET_NAME>/v0.2.14/Clipor_0.2.14_x64-setup.exe`
 - `s3://<R2_BUCKET_NAME>/v0.2.14/clipor.exe`
 
@@ -97,6 +98,7 @@ jobs:
 
 - `https://pub-xxxx.r2.dev/v0.2.14/Clipor_0.2.14_x64_en-US.msi`
 - `https://pub-xxxx.r2.dev/v0.2.14/Clipor_0.2.14_x64_ja-JP.msi`
+- `https://pub-xxxx.r2.dev/v0.2.14/Clipor_0.2.14_x64.msix`
 - `https://pub-xxxx.r2.dev/v0.2.14/Clipor_0.2.14_x64-setup.exe`
 - `https://pub-xxxx.r2.dev/v0.2.14/clipor.exe`
 
