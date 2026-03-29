@@ -57,7 +57,7 @@ jobs:
           $appName   = "Clipor_${semver}_x64"
 
           $publisher = "${{ vars.MSIX_PUBLISHER_DN }}"
-          if (-not $publisher) { $publisher = "CN=Clipor" }
+          if (-not $publisher) { $publisher = "CN=C227927F-4D77-4DF5-8263-FC1E0B856AA6" }
 
           $staging = "msix-staging"
           New-Item -ItemType Directory -Path "$staging\assets" -Force | Out-Null

@@ -151,7 +151,7 @@ jobs:
           # Publisher DN — set MSIX_PUBLISHER_DN in repo variables for Store submission
           # Partner Center > Account settings > Legal info > Publisher identity
           $publisher = "${{ vars.MSIX_PUBLISHER_DN }}"
-          if (-not $publisher) { $publisher = "CN=Clipor" }
+          if (-not $publisher) { $publisher = "CN=C227927F-4D77-4DF5-8263-FC1E0B856AA6" }
 
           # Staging layout expected by AppxManifest.xml
           $staging = "msix-staging"
