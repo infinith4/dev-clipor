@@ -139,13 +139,19 @@ jobs:
         run: npx tauri build
 
       - name: Build MSIX package
-        if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         working-directory: clipor
         run: |
-          $tag     = "${{ github.ref_name }}"
-          $version = $tag.TrimStart('v') + ".0"   # MSIX requires 4-part version
-          $appName = "Clipor_$($tag.TrimStart('v'))_x64"
+          # Read version from tauri.conf.json (already synced for v* tags)
+          $tauriConf = Get-Content "src-tauri\tauri.conf.json" | ConvertFrom-Json
+          $semver    = $tauriConf.version
+          $version   = "$semver.0"   # MSIX requires 4-part version (X.Y.Z.0)
+          $appName   = "Clipor_${semver}_x64"
+
+          # Publisher DN — set MSIX_PUBLISHER_DN in repo variables for Store submission
+          # Partner Center > Account settings > Legal info > Publisher identity
+          $publisher = "${{ vars.MSIX_PUBLISHER_DN }}"
+          if (-not $publisher) { $publisher = "CN=Clipor" }
 
           # Staging layout expected by AppxManifest.xml
           $staging = "msix-staging"
@@ -166,9 +172,10 @@ jobs:
             Copy-Item "src-tauri\icons\$icon" "$staging\assets\" -ErrorAction Stop
           }
 
-          # Inject version into manifest
+          # Inject version and publisher into manifest
           $manifest = Get-Content "src-tauri\AppxManifest.xml" -Raw
           $manifest = $manifest -replace "VERSION_PLACEHOLDER", $version
+          $manifest = $manifest -replace "PUBLISHER_PLACEHOLDER", $publisher
           Set-Content "$staging\AppxManifest.xml" $manifest -Encoding UTF8
 
           # Locate makeappx.exe (part of Windows SDK, pre-installed on windows-latest)
