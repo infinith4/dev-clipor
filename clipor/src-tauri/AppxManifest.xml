@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MSIX Package Manifest for Clipor.
+
+  VERSION_PLACEHOLDER  - replaced at build time (e.g. 0.2.15.0)
+  PUBLISHER_PLACEHOLDER - replace with your Partner Center Publisher DN
+                          e.g. "CN=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+                          Find it in: Partner Center > Account settings > Legal info
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="dev.infinith4.clipor"
+    Publisher="PUBLISHER_PLACEHOLDER"
+    Version="VERSION_PLACEHOLDER"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>Clipor</DisplayName>
+    <PublisherDisplayName>Infinith4</PublisherDisplayName>
+    <Description>Clipboard manager for Windows</Description>
+    <Logo>assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily
+      Name="Windows.Desktop"
+      MinVersion="10.0.17763.0"
+      MaximumVersionTested="10.0.22621.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-US" />
+    <Resource Language="ja-JP" />
+  </Resources>
+
+  <Applications>
+    <Application
+      Id="Clipor"
+      Executable="clipor.exe"
+      EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="Clipor"
+        Description="Clipboard manager for Windows"
+        BackgroundColor="transparent"
+        Square150x150Logo="assets\Square150x150Logo.png"
+        Square44x44Logo="assets\Square44x44Logo.png">
+        <uap:DefaultTile
+          Square71x71Logo="assets\Square71x71Logo.png"
+          Square310x310Logo="assets\Square310x310Logo.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+
+</Package>
