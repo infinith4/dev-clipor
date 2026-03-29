@@ -138,6 +138,39 @@ jobs:
       - name: Build Tauri app
         run: npx tauri build
 
+      - name: Import code signing certificate
+        if: startsWith(github.ref, 'refs/tags/v') && env.CODE_SIGNING_CERT_BASE64 != ''
+        env:
+          CODE_SIGNING_CERT_BASE64: ${{ secrets.CODE_SIGNING_CERT_BASE64 }}
+          CODE_SIGNING_CERT_PASSWORD: ${{ secrets.CODE_SIGNING_CERT_PASSWORD }}
+        shell: pwsh
+        run: |
+          $pfxBytes = [System.Convert]::FromBase64String($env:CODE_SIGNING_CERT_BASE64)
+          $pfxPath  = "$env:TEMP\codesign.pfx"
+          [System.IO.File]::WriteAllBytes($pfxPath, $pfxBytes)
+          $pwd = ConvertTo-SecureString $env:CODE_SIGNING_CERT_PASSWORD -AsPlainText -Force
+          Import-PfxCertificate -FilePath $pfxPath -CertStoreLocation "Cert:\CurrentUser\My" -Password $pwd
+          Remove-Item $pfxPath
+
+      - name: Sign release binaries (MSI / EXE)
+        if: startsWith(github.ref, 'refs/tags/v') && env.CODE_SIGNING_CERT_BASE64 != ''
+        env:
+          CODE_SIGNING_CERT_BASE64: ${{ secrets.CODE_SIGNING_CERT_BASE64 }}
+        shell: pwsh
+        working-directory: clipor
+        run: |
+          $signtool = (Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe | Select-Object -Last 1).FullName
+          $files = @("src-tauri\target\release\clipor.exe") `
+                 + (Get-ChildItem "src-tauri\target\release\bundle\msi\*.msi").FullName `
+                 + (Get-ChildItem "src-tauri\target\release\bundle\nsis\*.exe").FullName
+          foreach ($f in $files) {
+            if (Test-Path $f) {
+              & $signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /a "$f"
+              if ($LASTEXITCODE -ne 0) { throw "signtool failed: $f" }
+              Write-Host "Signed: $f"
+            }
+          }
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v5
         with:
@@ -146,5 +179,6 @@ jobs:
             clipor/src-tauri/target/release/clipor.exe
             clipor/src-tauri/target/release/bundle/msi/*.msi
             clipor/src-tauri/target/release/bundle/nsis/*.exe
+            clipor/src-tauri/target/release/bundle/msix/*.msix
           if-no-files-found: ignore
           retention-days: 7

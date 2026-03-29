@@ -185,6 +185,7 @@ jobs:
             --exclude "*" \
             --include "*.msi" \
             --include "*.exe" \
+            --include "*.msix" \
             --endpoint-url "$ENDPOINT" \
             --no-progress
 
@@ -224,6 +225,7 @@ jobs:
           ### Direct Downloads (Cloudflare R2)
           - [MSI (en-US)](${BASE_URL}/${RELEASE_TAG}/Clipor_${VERSION}_x64_en-US.msi)
           - [MSI (ja-JP)](${BASE_URL}/${RELEASE_TAG}/Clipor_${VERSION}_x64_ja-JP.msi)
+          - [MSIX Package](${BASE_URL}/${RELEASE_TAG}/Clipor_${VERSION}_x64_en-US.msix)
           - [NSIS Setup](${BASE_URL}/${RELEASE_TAG}/Clipor_${VERSION}_x64-setup.exe)
           - [Portable EXE](${BASE_URL}/${RELEASE_TAG}/clipor.exe)
           EOF

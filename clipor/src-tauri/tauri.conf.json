@@ -18,7 +18,7 @@
   "bundle": {
     "active": true,
     "icon": ["icons/icon.ico"],
-    "targets": ["msi", "nsis"],
+    "targets": ["msi", "nsis", "msix"],
     "windows": {
       "digestAlgorithm": "sha256",
       "signCommand": "echo %1",
