@@ -8,6 +8,33 @@
 
 Windows 向けのクリップボードマネージャーアプリケーションです。クリップボードの履歴管理、テンプレート機能、パスワード保護によるセキュアな運用が可能です。
 
+## インストール
+
+<table>
+  <tr>
+    <td align="center" width="220">
+      <b>Microsoft Store</b><br><br>
+      <a href="https://apps.microsoft.com/detail/cd388dc7-a590-4a5a-b473-cc619446722f">
+        <img src="https://developer.microsoft.com/store/badges/images/Japanese_get-it-from-MS.png" alt="Microsoft Store からダウンロード" width="180">
+      </a>
+    </td>
+    <td align="center" width="220">
+      <b>MSI インストーラー</b><br><br>
+      <a href="https://github.com/infinith4/dev-clipor/releases/latest">
+        <img src="https://img.shields.io/badge/MSI-ダウンロード-0078D4?style=for-the-badge&logo=windows" alt="MSI ダウンロード">
+      </a><br><br>
+      <sub>Windows Installer 形式（推奨）</sub>
+    </td>
+    <td align="center" width="220">
+      <b>NSIS セットアップ</b><br><br>
+      <a href="https://github.com/infinith4/dev-clipor/releases/latest">
+        <img src="https://img.shields.io/badge/NSIS-ダウンロード-0078D4?style=for-the-badge&logo=windows" alt="NSIS ダウンロード">
+      </a><br><br>
+      <sub>セットアップ実行ファイル</sub>
+    </td>
+  </tr>
+</table>
+
 ## 主な機能
 
 - **クリップボード履歴** - コピーした内容を自動的に記録し、検索・フィルタリングが可能
