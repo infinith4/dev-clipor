@@ -12,20 +12,20 @@ Windows 向けのクリップボードマネージャーアプリケーション
 
 <table>
   <tr>
-    <td align="center" width="220">
+    <td align="center" width="33%">
       <b>Microsoft Store</b><br><br>
       <a href="https://apps.microsoft.com/detail/cd388dc7-a590-4a5a-b473-cc619446722f">
         <img src="https://developer.microsoft.com/store/badges/images/Japanese_get-it-from-MS.png" alt="Microsoft Store からダウンロード" width="180">
       </a>
     </td>
-    <td align="center" width="220">
+    <td align="center" width="33%">
       <b>MSI インストーラー</b><br><br>
       <a href="https://github.com/infinith4/dev-clipor/releases/latest">
         <img src="https://img.shields.io/badge/MSI-ダウンロード-0078D4?style=for-the-badge&logo=windows" alt="MSI ダウンロード">
       </a><br><br>
       <sub>Windows Installer 形式（推奨）</sub>
     </td>
-    <td align="center" width="220">
+    <td align="center" width="33%">
       <b>NSIS セットアップ</b><br><br>
       <a href="https://github.com/infinith4/dev-clipor/releases/latest">
         <img src="https://img.shields.io/badge/NSIS-ダウンロード-0078D4?style=for-the-badge&logo=windows" alt="NSIS ダウンロード">
