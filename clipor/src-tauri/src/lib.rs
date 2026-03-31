@@ -11,8 +11,8 @@ use std::time::{Duration, Instant};
 use tauri::menu::MenuBuilder;
 use tauri::tray::TrayIconBuilder;
 use tauri::{
-    AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Position, Size, WebviewUrl,
-    WebviewWindowBuilder, WindowEvent,
+    AppHandle, Emitter, LogicalSize, Manager, PhysicalPosition, Position, Size,
+    WebviewUrl, WebviewWindowBuilder, WindowEvent,
 };
 
 use crate::commands::clipboard::{
@@ -321,19 +321,25 @@ fn show_popup(app: &AppHandle, popup_shown_at: &Arc<Mutex<Option<Instant>>>) -> 
         .map_err(|error| error.to_string())?
         .or(app.primary_monitor().map_err(|error| error.to_string())?)
     {
+        let scale = monitor.scale_factor();
         let work_area = monitor.work_area();
         let min_x = work_area.position.x;
         let min_y = work_area.position.y;
         let max_x = min_x + work_area.size.width as i32;
         let max_y = min_y + work_area.size.height as i32;
-        let available_height = (work_area.size.height as i32 - POPUP_MARGIN * 2).max(280);
+        // work_area is in physical pixels; convert to logical before comparing with POPUP_* constants
+        let available_height =
+            ((work_area.size.height as f64 / scale) as i32 - POPUP_MARGIN * 2).max(280);
 
         target_width = POPUP_WIDTH;
         target_height = POPUP_HEIGHT.min(available_height);
 
-        // Position at cursor, but clamp so the window stays within the work area
-        target_x = cursor_x.max(min_x).min(max_x - target_width);
-        target_y = cursor_y.max(min_y).min(max_y - target_height);
+        // Position at cursor (physical px), clamped so the window stays within the work area.
+        // Convert logical window size to physical for the clamp calculation.
+        let phys_w = (target_width as f64 * scale) as i32;
+        let phys_h = (target_height as f64 * scale) as i32;
+        target_x = cursor_x.max(min_x).min(max_x - phys_w);
+        target_y = cursor_y.max(min_y).min(max_y - phys_h);
     }
 
     if let Ok(mut shown_at) = popup_shown_at.lock() {
@@ -341,9 +347,9 @@ fn show_popup(app: &AppHandle, popup_shown_at: &Arc<Mutex<Option<Instant>>>) -> 
     }
 
     window
-        .set_size(Size::Physical(PhysicalSize::new(
-            target_width.max(230) as u32,
-            target_height.max(280) as u32,
+        .set_size(Size::Logical(LogicalSize::new(
+            target_width.max(POPUP_WIDTH) as f64,
+            target_height.max(280) as f64,
         )))
         .map_err(|error| error.to_string())?;
     window
