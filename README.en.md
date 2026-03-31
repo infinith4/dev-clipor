@@ -8,6 +8,33 @@
 
 A clipboard manager application for Windows. It supports clipboard history, reusable templates, and secure operation with password protection.
 
+## Installation
+
+<table>
+  <tr>
+    <td align="center" width="220">
+      <b>Microsoft Store</b><br><br>
+      <a href="https://apps.microsoft.com/detail/cd388dc7-a590-4a5a-b473-cc619446722f">
+        <img src="https://developer.microsoft.com/store/badges/images/English_get-it-from-MS.png" alt="Get it from Microsoft" width="180">
+      </a>
+    </td>
+    <td align="center" width="220">
+      <b>MSI Installer</b><br><br>
+      <a href="https://github.com/infinith4/dev-clipor/releases/latest">
+        <img src="https://img.shields.io/badge/MSI-Download-0078D4?style=for-the-badge&logo=windows" alt="Download MSI">
+      </a><br><br>
+      <sub>Windows Installer (recommended)</sub>
+    </td>
+    <td align="center" width="220">
+      <b>NSIS Setup</b><br><br>
+      <a href="https://github.com/infinith4/dev-clipor/releases/latest">
+        <img src="https://img.shields.io/badge/NSIS-Download-0078D4?style=for-the-badge&logo=windows" alt="Download NSIS">
+      </a><br><br>
+      <sub>Setup executable</sub>
+    </td>
+  </tr>
+</table>
+
 ## Key Features
 
 - **Clipboard History** - Automatically records copied content with search and filtering
