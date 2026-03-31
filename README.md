@@ -74,6 +74,9 @@ Windows 向けのクリップボードマネージャーアプリケーション
 
 ## ビルド方法
 
+<details>
+<summary>ビルド手順を表示</summary>
+
 ### 開発モード
 
 ```bash
@@ -107,6 +110,8 @@ npm run tauri build
 ### CI/CD
 
 GitHub Actions によるビルド・リリースが設定されています。`v*` 形式のタグをプッシュすると、Windows 環境でビルドが実行され、GitHub Releases にインストーラーが公開されます。
+
+</details>
 
 ## データ保存先
 

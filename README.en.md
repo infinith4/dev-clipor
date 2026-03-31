@@ -74,6 +74,9 @@ A clipboard manager application for Windows. It supports clipboard history, reus
 
 ## Build
 
+<details>
+<summary>Show build instructions</summary>
+
 ### Development Mode
 
 ```bash
@@ -107,6 +110,8 @@ Build artifacts are generated under `clipor/src-tauri/target/release/`:
 ### CI/CD
 
 GitHub Actions is configured for build and release automation. When a tag in the `v*` format is pushed, a Windows build runs and the installers are published to GitHub Releases.
+
+</details>
 
 ## Data Storage
 
