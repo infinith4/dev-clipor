@@ -339,6 +339,10 @@ where
                             LAST_KEY_UP_TIME.store(0, Ordering::SeqCst);
                         }
                         OTHER_KEY_PRESSED.store(0, Ordering::SeqCst);
+                    } else {
+                        // A non-modifier key was released — clear the stale flag so that a
+                        // subsequent double-tap of Ctrl/Alt is not falsely blocked.
+                        OTHER_KEY_PRESSED.store(0, Ordering::SeqCst);
                     }
                 }
                 _ => {}
