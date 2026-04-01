@@ -24,6 +24,7 @@ const defaultSettings: AppSettings = {
   previewImageWidth: 520,
   previewImageHeight: 520,
   requirePassword: false,
+  rememberLastTab: false,
 };
 
 function makeEntry(overrides: Partial<ClipboardEntry> = {}): ClipboardEntry {

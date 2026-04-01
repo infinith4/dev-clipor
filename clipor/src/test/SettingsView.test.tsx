@@ -21,6 +21,7 @@ function defaultSettings(overrides?: Partial<AppSettings>): AppSettings {
     previewImageWidth: 500,
     previewImageHeight: 600,
     requirePassword: false,
+    rememberLastTab: false,
     ...overrides,
   };
 }

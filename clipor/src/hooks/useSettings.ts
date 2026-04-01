@@ -17,6 +17,7 @@ const defaultSettings: AppSettings = {
   previewImageWidth: 520,
   previewImageHeight: 520,
   requirePassword: false,
+  rememberLastTab: false,
 };
 
 export function useSettings(setError: SetError) {
