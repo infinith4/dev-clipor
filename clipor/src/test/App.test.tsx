@@ -89,6 +89,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 vi.mock("@tauri-apps/api/event", () => ({
   listen: listenMock,
+  emit: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("@tauri-apps/api/window", () => ({

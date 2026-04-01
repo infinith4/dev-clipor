@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import i18n from "../i18n";
 
 interface PreviewPayload {
   text?: string | null;
@@ -30,12 +31,18 @@ function PreviewPanel() {
       .catch(() => {});
 
     // Listen for subsequent updates
-    const unlistenPromise = listen<PreviewPayload>("preview://update", (event) => {
+    const unlistenPreviewPromise = listen<PreviewPayload>("preview://update", (event) => {
       setData(event.payload);
     });
 
+    // Listen for language changes broadcast from the main window
+    const unlistenLangPromise = listen<string>("ui://lang-change", (event) => {
+      void i18n.changeLanguage(event.payload);
+    });
+
     return () => {
-      void unlistenPromise.then((unlisten) => unlisten());
+      void unlistenPreviewPromise.then((unlisten) => unlisten());
+      void unlistenLangPromise.then((unlisten) => unlisten());
     };
   }, []);
 

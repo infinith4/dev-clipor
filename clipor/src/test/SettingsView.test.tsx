@@ -7,6 +7,9 @@ const mockInvoke = vi.hoisted(() => vi.fn());
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: mockInvoke,
 }));
+vi.mock("@tauri-apps/api/event", () => ({
+  emit: vi.fn().mockResolvedValue(undefined),
+}));
 
 function defaultSettings(overrides?: Partial<AppSettings>): AppSettings {
   return {

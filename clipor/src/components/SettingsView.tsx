@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
+import { emit } from "@tauri-apps/api/event";
 import type { ActivationMode, AppSettings } from "../types";
 
 interface SettingsViewProps {
@@ -41,6 +42,7 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
   const handleLanguageChange = (lang: string) => {
     i18n.changeLanguage(lang);
     localStorage.setItem("clipor-lang", lang);
+    void emit("ui://lang-change", lang);
     void triggerSave(draft);
   };
 

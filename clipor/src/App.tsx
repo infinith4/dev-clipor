@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
 import type { Window } from "@tauri-apps/api/window";
 import PopupWindow from "./components/PopupWindow";
@@ -32,7 +32,7 @@ function App() {
 }
 
 function MainApp() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState<PopupTab>("history");
   const [error, setError] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
@@ -216,6 +216,8 @@ function MainApp() {
       if (!settings.settings.rememberLastTab) {
         setActiveTab("history");
       }
+      // Sync language to the preview window (it has a separate localStorage context)
+      void emit("ui://lang-change", i18n.language);
       await popupWindowRef.current.show();
       await popupWindowRef.current.setFocus();
       setPopupVisible((v) => v + 1);
@@ -318,6 +320,7 @@ function MainApp() {
   }, [
     activeTab,
     hidePopup,
+    i18n.language,
     locked,
     needsSetup,
     settings.settings.rememberLastTab,
