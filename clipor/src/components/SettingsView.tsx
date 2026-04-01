@@ -273,6 +273,19 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
         />
         <span>{t("settings.label_launch_on_startup")}</span>
       </label>
+      <label className="checkbox-row">
+        <input
+          type="checkbox"
+          checked={draft.rememberLastTab}
+          onChange={(event) =>
+            setDraft((current) => ({
+              ...current,
+              rememberLastTab: event.target.checked,
+            }))
+          }
+        />
+        <span>{t("settings.label_remember_last_tab")}</span>
+      </label>
       <button type="submit">{t("settings.button_save")}</button>
 
       <div style={{ borderTop: "1px solid var(--line)", paddingTop: "8px", marginTop: "4px" }}>

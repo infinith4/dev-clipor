@@ -213,6 +213,9 @@ function MainApp() {
       if (!popupWindowRef.current) {
         return;
       }
+      if (!settings.settings.rememberLastTab) {
+        setActiveTab("history");
+      }
       await popupWindowRef.current.show();
       await popupWindowRef.current.setFocus();
       setPopupVisible((v) => v + 1);
@@ -317,6 +320,7 @@ function MainApp() {
     hidePopup,
     locked,
     needsSetup,
+    settings.settings.rememberLastTab,
     history.entries,
     history.refresh,
     history.selectEntry,

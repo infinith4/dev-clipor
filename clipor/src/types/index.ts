@@ -66,4 +66,5 @@ export interface AppSettings {
   previewImageWidth: number;
   previewImageHeight: number;
   requirePassword: boolean;
+  rememberLastTab: boolean;
 }

@@ -89,6 +89,7 @@
     "label_preview_size": "プレビューサイズ (W x H)",
     "label_image_preview_size": "画像プレビューサイズ (W x H)",
     "label_launch_on_startup": "Windows 起動時に自動起動",
+    "label_remember_last_tab": "最後のタブを記憶する",
     "button_save": "設定を保存",
     "section_password_protection": "パスワード保護 (AES-256-GCM)",
     "label_current_password": "現在のパスワード",

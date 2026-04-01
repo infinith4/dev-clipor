@@ -89,6 +89,7 @@
     "label_preview_size": "Preview size (W x H)",
     "label_image_preview_size": "Image preview size (W x H)",
     "label_launch_on_startup": "Launch on Windows startup",
+    "label_remember_last_tab": "Remember last tab",
     "button_save": "Save settings",
     "section_password_protection": "Password Protection (AES-256-GCM)",
     "label_current_password": "Current password",
