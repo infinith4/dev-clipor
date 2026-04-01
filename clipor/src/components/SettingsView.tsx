@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import type { ActivationMode, AppSettings } from "../types";
 
 interface SettingsViewProps {
   settings: AppSettings;
-  onSave: (settings: AppSettings) => void;
+  onSave: (settings: AppSettings) => Promise<void>;
   onPasswordChanged: () => void;
 }
 
@@ -17,14 +17,31 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
   const [currentPassword, setCurrentPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saved">("idle");
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setDraft(settings);
   }, [settings]);
 
+  // Clear the auto-reset timer on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
+  const triggerSave = async (next: AppSettings) => {
+    await onSave(next);
+    setSaveStatus("saved");
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
+  };
+
   const handleLanguageChange = (lang: string) => {
     i18n.changeLanguage(lang);
     localStorage.setItem("clipor-lang", lang);
+    void triggerSave(draft);
   };
 
   const handleSetPassword = async () => {
@@ -88,13 +105,13 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
   };
 
   return (
-    <form
-      className="settings-panel"
-      onSubmit={(event) => {
-        event.preventDefault();
-        onSave(draft);
-      }}
-    >
+    <div className="settings-panel">
+      {saveStatus === "saved" ? (
+        <p style={{ color: "var(--accent)", fontSize: "11px", marginBottom: "4px" }}>
+          {t("settings.saved_feedback")}
+        </p>
+      ) : null}
+
       <label>
         <span>{t("settings.label_language")}</span>
         <select
@@ -118,6 +135,11 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
               maxHistoryItems: Number(event.target.value),
             }))
           }
+          onBlur={(event) => {
+            const next = { ...draft, maxHistoryItems: Number(event.target.value) };
+            setDraft(next);
+            void triggerSave(next);
+          }}
         />
       </label>
       <label>
@@ -133,6 +155,11 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
               pageSize: Number(event.target.value),
             }))
           }
+          onBlur={(event) => {
+            const next = { ...draft, pageSize: Number(event.target.value) };
+            setDraft(next);
+            void triggerSave(next);
+          }}
         />
       </label>
       <fieldset className="activation-mode-fieldset">
@@ -150,12 +177,11 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
               name="activationMode"
               value={option.value}
               checked={draft.activationMode === option.value}
-              onChange={() =>
-                setDraft((current) => ({
-                  ...current,
-                  activationMode: option.value as ActivationMode,
-                }))
-              }
+              onChange={() => {
+                const next = { ...draft, activationMode: option.value as ActivationMode };
+                setDraft(next);
+                void triggerSave(next);
+              }}
             />
             <span>{option.label}</span>
           </label>
@@ -175,6 +201,11 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
                   hotkey: event.target.value,
                 }))
               }
+              onBlur={(event) => {
+                const next = { ...draft, hotkey: event.target.value };
+                setDraft(next);
+                void triggerSave(next);
+              }}
             />
           </label>
           <p className="help-text">{t("settings.help_hotkey_examples")}</p>
@@ -193,6 +224,11 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
               blurDelayMs: Number(event.target.value),
             }))
           }
+          onBlur={(event) => {
+            const next = { ...draft, blurDelayMs: Number(event.target.value) };
+            setDraft(next);
+            void triggerSave(next);
+          }}
         />
       </label>
       <p className="help-text">{t("settings.help_blur_delay")}</p>
@@ -210,6 +246,11 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
                 previewWidth: Number(event.target.value),
               }))
             }
+            onBlur={(event) => {
+              const next = { ...draft, previewWidth: Number(event.target.value) };
+              setDraft(next);
+              void triggerSave(next);
+            }}
             style={{ width: "70px" }}
           />
           <span style={{ alignSelf: "center" }}>x</span>
@@ -224,6 +265,11 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
                 previewHeight: Number(event.target.value),
               }))
             }
+            onBlur={(event) => {
+              const next = { ...draft, previewHeight: Number(event.target.value) };
+              setDraft(next);
+              void triggerSave(next);
+            }}
             style={{ width: "70px" }}
           />
         </div>
@@ -242,6 +288,11 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
                 previewImageWidth: Number(event.target.value),
               }))
             }
+            onBlur={(event) => {
+              const next = { ...draft, previewImageWidth: Number(event.target.value) };
+              setDraft(next);
+              void triggerSave(next);
+            }}
             style={{ width: "70px" }}
           />
           <span style={{ alignSelf: "center" }}>x</span>
@@ -256,6 +307,11 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
                 previewImageHeight: Number(event.target.value),
               }))
             }
+            onBlur={(event) => {
+              const next = { ...draft, previewImageHeight: Number(event.target.value) };
+              setDraft(next);
+              void triggerSave(next);
+            }}
             style={{ width: "70px" }}
           />
         </div>
@@ -264,12 +320,11 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
         <input
           type="checkbox"
           checked={draft.launchOnStartup}
-          onChange={(event) =>
-            setDraft((current) => ({
-              ...current,
-              launchOnStartup: event.target.checked,
-            }))
-          }
+          onChange={(event) => {
+            const next = { ...draft, launchOnStartup: event.target.checked };
+            setDraft(next);
+            void triggerSave(next);
+          }}
         />
         <span>{t("settings.label_launch_on_startup")}</span>
       </label>
@@ -277,16 +332,14 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
         <input
           type="checkbox"
           checked={draft.rememberLastTab}
-          onChange={(event) =>
-            setDraft((current) => ({
-              ...current,
-              rememberLastTab: event.target.checked,
-            }))
-          }
+          onChange={(event) => {
+            const next = { ...draft, rememberLastTab: event.target.checked };
+            setDraft(next);
+            void triggerSave(next);
+          }}
         />
         <span>{t("settings.label_remember_last_tab")}</span>
       </label>
-      <button type="submit">{t("settings.button_save")}</button>
 
       <div style={{ borderTop: "1px solid var(--line)", paddingTop: "8px", marginTop: "4px" }}>
         <span style={{ fontSize: "10px", color: "var(--muted)", fontWeight: "bold" }}>
@@ -367,7 +420,7 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
           </div>
         )}
       </div>
-    </form>
+    </div>
   );
 }
 

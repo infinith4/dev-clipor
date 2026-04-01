@@ -28,7 +28,7 @@ function defaultSettings(overrides?: Partial<AppSettings>): AppSettings {
 
 function renderSettings(overrides?: Partial<AppSettings>, propOverrides?: Record<string, unknown>) {
   const settings = defaultSettings(overrides);
-  const onSave = vi.fn();
+  const onSave = vi.fn().mockResolvedValue(undefined);
   const onPasswordChanged = vi.fn();
   const result = render(
     <SettingsView
@@ -172,11 +172,11 @@ describe("SettingsView", () => {
   });
 
   describe("form submission", () => {
-    it("calls onSave with updated draft on submit", () => {
+    it("calls onSave with updated draft on blur", () => {
       const { onSave } = renderSettings();
       const input = screen.getByLabelText("履歴保持数") as HTMLInputElement;
       fireEvent.change(input, { target: { value: "2000" } });
-      fireEvent.click(screen.getByText("設定を保存"));
+      fireEvent.blur(input);
       expect(onSave).toHaveBeenCalledWith(
         expect.objectContaining({ maxHistoryItems: 2000 }),
       );
@@ -432,7 +432,7 @@ describe("SettingsView", () => {
       await waitFor(() => {
         expect(screen.getByLabelText("Language")).toBeInTheDocument();
       });
-      expect(screen.getByText("Save settings")).toBeInTheDocument();
+      expect(screen.getByLabelText("Launch on Windows startup")).toBeInTheDocument();
     });
   });
 
@@ -470,14 +470,14 @@ describe("SettingsView", () => {
     });
   });
 
-  describe("form submit prevents default", () => {
-    it("calls onSave and prevents form submission", () => {
-      const { onSave } = renderSettings();
-      const form = screen.getByText("設定を保存").closest("form")!;
-      const submitEvent = new Event("submit", { bubbles: true, cancelable: true });
-      const preventDefaultSpy = vi.spyOn(submitEvent, "preventDefault");
-      form.dispatchEvent(submitEvent);
-      expect(preventDefaultSpy).toHaveBeenCalled();
+  describe("auto-save on checkbox change", () => {
+    it("calls onSave immediately when launchOnStartup is toggled", () => {
+      const { onSave } = renderSettings({ launchOnStartup: false });
+      const checkbox = screen.getByLabelText("Windows 起動時に自動起動") as HTMLInputElement;
+      fireEvent.click(checkbox);
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({ launchOnStartup: true }),
+      );
     });
   });
 

@@ -68,7 +68,7 @@ interface PopupWindowProps {
   };
   settings: {
     settings: AppSettings;
-    saveSettings: (settings: AppSettings) => void;
+    saveSettings: (settings: AppSettings) => Promise<void>;
     refresh: () => void;
   };
   onSelectTab: (tab: PopupTab) => void;
