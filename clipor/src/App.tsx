@@ -209,6 +209,8 @@ function MainApp() {
 
   useEffect(() => {
     const unlistenPopupPromise = listen("hotkey://toggle-popup", async () => {
+      // Reset selection so the first item is focused after data loads
+      setSelectedHistoryId(null);
       await Promise.all([history.refresh(), templates.refresh()]);
       if (!popupWindowRef.current) {
         return;
@@ -439,13 +441,23 @@ function MainApp() {
       activeTab={activeTab}
       error={error}
       history={{
-        ...history,
+        entries: history.entries,
+        loading: history.loading,
+        loadingMore: history.loadingMore,
+        hasMore: history.hasMore,
+        total: history.total,
+        search: history.search,
         selectedEntryId: selectedHistoryId,
+        setSearch: history.setSearch,
         setSelectedEntryId: setSelectedHistoryId,
+        selectEntry: history.selectEntry,
         pasteEntry: history.selectEntry,
         updateEntry: history.updateEntry,
+        togglePinned: history.togglePinned,
+        deleteEntry: history.deleteEntry,
         setClipboardFormatted: history.setClipboardFormatted,
         setClipboardConverted: history.setClipboardConverted,
+        loadMore: history.loadMore,
       }}
       onSelectTab={setActiveTab}
       onDismissError={() => setError(null)}

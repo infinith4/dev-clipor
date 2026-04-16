@@ -2,6 +2,10 @@ use std::path::Path;
 
 #[cfg(windows)]
 use std::mem::size_of;
+#[cfg(windows)]
+use std::thread;
+#[cfg(windows)]
+use std::time::Duration;
 
 #[cfg(windows)]
 use clipboard_win::{get_clipboard_string, set_clipboard_string};
@@ -43,12 +47,31 @@ pub fn cursor_position() -> Result<(i32, i32), String> {
     Ok((120, 120))
 }
 
+/// Try to open the clipboard up to 3 times (10 ms apart) to handle transient locks held by
+/// other processes.  Returns true if the clipboard was opened successfully.
+#[cfg(windows)]
+fn open_clipboard_with_retry() -> bool {
+    for _ in 0..3 {
+        unsafe {
+            if OpenClipboard(None).is_ok() {
+                return true;
+            }
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+    false
+}
+
 #[cfg(windows)]
 pub fn get_clipboard_text() -> Result<Option<String>, String> {
-    match get_clipboard_string() {
-        Ok(text) => Ok(Some(text)),
-        Err(_) => Ok(None),
+    // Retry up to 3 times; clipboard_win opens/closes clipboard internally
+    for _ in 0..3 {
+        match get_clipboard_string() {
+            Ok(text) => return Ok(Some(text)),
+            Err(_) => thread::sleep(Duration::from_millis(10)),
+        }
     }
+    Ok(None)
 }
 
 #[cfg(not(windows))]
@@ -71,7 +94,7 @@ pub fn set_clipboard_text(_text: &str) -> Result<(), String> {
 #[cfg(windows)]
 pub fn get_clipboard_image() -> Result<Option<Vec<u8>>, String> {
     unsafe {
-        if OpenClipboard(None).is_err() {
+        if !open_clipboard_with_retry() {
             return Ok(None);
         }
 
@@ -103,6 +126,41 @@ pub fn get_clipboard_image() -> Result<Option<Vec<u8>>, String> {
         let _ = CloseClipboard();
         result
     }
+}
+
+/// Check for an image AND read it in a single clipboard open/close session to avoid the TOCTOU
+/// race between a separate has_image check and a subsequent get_image call.
+/// Returns None if the clipboard holds no image or is unavailable.
+#[cfg(windows)]
+pub fn try_get_clipboard_image() -> Option<Vec<u8>> {
+    if !open_clipboard_with_retry() {
+        return None;
+    }
+    unsafe {
+        let result = (|| -> Option<Vec<u8>> {
+            let handle = GetClipboardData(CF_DIB).ok()?;
+            let hmem = HGLOBAL(handle.0);
+            let ptr = GlobalLock(hmem);
+            if ptr.is_null() {
+                return None;
+            }
+            let size = GlobalSize(hmem);
+            let data = if size > 0 {
+                Some(std::slice::from_raw_parts(ptr as *const u8, size).to_vec())
+            } else {
+                None
+            };
+            let _ = GlobalUnlock(hmem);
+            data
+        })();
+        let _ = CloseClipboard();
+        result
+    }
+}
+
+#[cfg(not(windows))]
+pub fn try_get_clipboard_image() -> Option<Vec<u8>> {
+    None
 }
 
 #[cfg(not(windows))]
@@ -148,10 +206,10 @@ pub fn set_clipboard_image(_dib_data: &[u8]) -> Result<(), String> {
 /// Check if clipboard currently contains an image (CF_DIB).
 #[cfg(windows)]
 pub fn clipboard_has_image() -> bool {
+    if !open_clipboard_with_retry() {
+        return false;
+    }
     unsafe {
-        if OpenClipboard(None).is_err() {
-            return false;
-        }
         let has = GetClipboardData(CF_DIB).is_ok();
         let _ = CloseClipboard();
         has

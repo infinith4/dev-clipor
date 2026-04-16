@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import ClipboardItem from "./ClipboardItem";
 import ContextMenu from "./ContextMenu";
 import type { MenuItem } from "./ContextMenu";
-import Pagination from "./Pagination";
 import SearchBar from "./SearchBar";
 import SettingsView from "./SettingsView";
 import TemplateEditor from "./TemplateEditor";
@@ -26,15 +25,13 @@ interface PopupWindowProps {
       imageData?: string | null;
     }>;
     loading: boolean;
-    page: number;
+    loadingMore: boolean;
+    hasMore: boolean;
     total: number;
-    totalPages: number;
     search: string;
     selectedEntryId: number | null;
     setSearch: (value: string) => void;
     setSelectedEntryId: (value: number) => void;
-    previousPage: () => void;
-    nextPage: () => void;
     selectEntry: (id: number) => void;
     pasteEntry: (id: number) => void;
     updateEntry: (id: number, text: string) => void;
@@ -42,6 +39,7 @@ interface PopupWindowProps {
     deleteEntry: (id: number) => void;
     setClipboardFormatted: (id: number) => void;
     setClipboardConverted: (id: number) => void;
+    loadMore: () => void;
   };
   templates: {
     groups: Array<{ id: number; name: string; sortOrder: number; createdAt: string }>;
@@ -95,6 +93,9 @@ function PopupWindow({
   const visibleTemplates = useMemo(() => templates.templates, [templates.templates]);
   const isCompactLayout = true;
 
+  // Sentinel ref for infinite scroll
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
   const tabs: PopupTab[] = ["history", "templates", "settings"];
 
   useEffect(() => {
@@ -116,6 +117,24 @@ function PopupWindow({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeTab, onSelectTab]);
+
+  // IntersectionObserver for infinite scroll — fires loadMore when sentinel becomes visible
+  useEffect(() => {
+    if (activeTab !== "history") return;
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (observerEntries) => {
+        if (observerEntries[0].isIntersecting) {
+          history.loadMore();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [activeTab, history.loadMore]);
 
   const handleContextMenu = useCallback((event: React.MouseEvent, entry: ClipboardEntry) => {
     setContextMenu({ x: event.clientX, y: event.clientY, entry });
@@ -264,13 +283,6 @@ function PopupWindow({
                 placeholder={t("search.placeholder_history")}
                 onChange={history.setSearch}
               />
-              <Pagination
-                page={history.page}
-                totalItems={history.total}
-                totalPages={history.totalPages}
-                onNext={history.nextPage}
-                onPrevious={history.previousPage}
-              />
             </div>
             {history.loading ? <div className="empty-state">{t("loading.message")}</div> : null}
             <div className="card-list">
@@ -284,6 +296,11 @@ function PopupWindow({
                   onContextMenu={handleContextMenu}
                 />
               ))}
+              {/* Infinite scroll sentinel */}
+              <div ref={sentinelRef} style={{ height: 1 }} />
+              {history.loadingMore ? (
+                <div className="empty-state">{t("loading.message")}</div>
+              ) : null}
               {!history.loading && history.entries.length === 0 ? (
                 <div className="empty-state">{t("empty_state.no_history")}</div>
               ) : null}
