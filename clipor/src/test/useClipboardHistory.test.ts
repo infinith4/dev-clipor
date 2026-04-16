@@ -112,24 +112,43 @@ describe("useClipboardHistory", () => {
   });
 
   describe("setSearch", () => {
-    it("updates search and resets page to 1", async () => {
+    it("updates search and triggers a re-fetch from page 1", async () => {
       const { result } = setup();
 
       await vi.waitFor(() => {
         expect(result.current.loading).toBe(false);
       });
 
+      invokeMock.mockResolvedValue(makePage([], 0));
+
       act(() => {
         result.current.setSearch("test");
       });
 
       expect(result.current.search).toBe("test");
-      expect(result.current.page).toBe(1);
+
+      // The search change should eventually trigger a new fetch with the new term
+      await vi.waitFor(() => {
+        expect(invokeMock).toHaveBeenCalledWith("get_history", expect.objectContaining({ search: "test" }));
+      });
     });
   });
 
-  describe("pagination", () => {
-    it("nextPage increments page up to totalPages", async () => {
+  describe("infinite scroll", () => {
+    it("hasMore is false when all entries are loaded", async () => {
+      const entries = [makeEntry({ id: 1 }), makeEntry({ id: 2 })];
+      invokeMock.mockResolvedValue(makePage(entries, 2));
+
+      const { result } = renderHook(() => useClipboardHistory(10, setError));
+
+      await vi.waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.hasMore).toBe(false);
+    });
+
+    it("hasMore is true when there are more entries to load", async () => {
       const entries = [makeEntry()];
       invokeMock.mockResolvedValue(makePage(entries, 25));
 
@@ -139,29 +158,40 @@ describe("useClipboardHistory", () => {
         expect(result.current.loading).toBe(false);
       });
 
-      // totalPages = ceil(25/10) = 3
-      expect(result.current.totalPages).toBe(3);
-
-      act(() => {
-        result.current.nextPage();
-      });
-      expect(result.current.page).toBe(2);
-
-      act(() => {
-        result.current.nextPage();
-      });
-      expect(result.current.page).toBe(3);
-
-      // Should not go past totalPages
-      act(() => {
-        result.current.nextPage();
-      });
-      expect(result.current.page).toBe(3);
+      expect(result.current.hasMore).toBe(true);
     });
 
-    it("previousPage decrements page down to 1", async () => {
-      const entries = [makeEntry()];
-      invokeMock.mockResolvedValue(makePage(entries, 25));
+    it("loadMore appends entries from the next page", async () => {
+      const page1 = [makeEntry({ id: 1 }), makeEntry({ id: 2 })];
+      const page2 = [makeEntry({ id: 3 })];
+      invokeMock.mockResolvedValue(makePage(page1, 3));
+
+      const { result } = renderHook(() => useClipboardHistory(2, setError));
+
+      await vi.waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.entries).toHaveLength(2);
+      expect(result.current.hasMore).toBe(true);
+
+      invokeMock.mockResolvedValue(makePage(page2, 3));
+
+      await act(async () => {
+        result.current.loadMore();
+      });
+
+      await vi.waitFor(() => {
+        expect(result.current.loadingMore).toBe(false);
+      });
+
+      expect(result.current.entries).toHaveLength(3);
+      expect(result.current.hasMore).toBe(false);
+    });
+
+    it("loadMore does nothing when hasMore is false", async () => {
+      const entries = [makeEntry({ id: 1 })];
+      invokeMock.mockResolvedValue(makePage(entries, 1));
 
       const { result } = renderHook(() => useClipboardHistory(10, setError));
 
@@ -169,44 +199,13 @@ describe("useClipboardHistory", () => {
         expect(result.current.loading).toBe(false);
       });
 
-      // Go to page 3
-      act(() => {
-        result.current.nextPage();
-      });
-      act(() => {
-        result.current.nextPage();
-      });
-      expect(result.current.page).toBe(3);
+      const callCountBefore = invokeMock.mock.calls.length;
 
       act(() => {
-        result.current.previousPage();
-      });
-      expect(result.current.page).toBe(2);
-
-      act(() => {
-        result.current.previousPage();
-      });
-      expect(result.current.page).toBe(1);
-
-      // Should not go below 1
-      act(() => {
-        result.current.previousPage();
-      });
-      expect(result.current.page).toBe(1);
-    });
-  });
-
-  describe("totalPages", () => {
-    it("returns at least 1 when total is 0", async () => {
-      invokeMock.mockResolvedValue(makePage([], 0));
-
-      const { result } = renderHook(() => useClipboardHistory(10, setError));
-
-      await vi.waitFor(() => {
-        expect(result.current.loading).toBe(false);
+        result.current.loadMore();
       });
 
-      expect(result.current.totalPages).toBe(1);
+      expect(invokeMock.mock.calls.length).toBe(callCountBefore);
     });
   });
 
@@ -427,8 +426,7 @@ describe("useClipboardHistory", () => {
       expect(invokeMock).toHaveBeenCalledWith("delete_history_entry", { id: 1 });
     });
 
-    it("decrements page when last entry on page > 1 is deleted", async () => {
-      // Start with page of multiple entries to get to page 2
+    it("deletes entry and refreshes from page 1 (infinite scroll)", async () => {
       const entries = [makeEntry({ id: 3 })];
       invokeMock.mockResolvedValue(makePage(entries, 15));
 
@@ -438,31 +436,18 @@ describe("useClipboardHistory", () => {
         expect(result.current.entries).toHaveLength(1);
       });
 
-      // Go to page 2
-      act(() => {
-        result.current.nextPage();
-      });
-
-      await vi.waitFor(() => {
-        expect(result.current.page).toBe(2);
-      });
-
-      // Now simulate single entry on page 2
-      invokeMock.mockResolvedValue(makePage([makeEntry({ id: 11 })], 11));
-
-      await vi.waitFor(() => {
-        expect(result.current.entries).toHaveLength(1);
-      });
-
-      // Delete the last entry on page 2 — should go back to page 1
-      invokeMock.mockResolvedValue(undefined);
+      // Delete an entry — should always call delete + refresh (no page decrement)
+      invokeMock.mockResolvedValue(makePage([], 0));
 
       await act(async () => {
-        await result.current.deleteEntry(11);
+        await result.current.deleteEntry(3);
       });
 
-      expect(invokeMock).toHaveBeenCalledWith("delete_history_entry", { id: 11 });
-      expect(result.current.page).toBe(1);
+      expect(invokeMock).toHaveBeenCalledWith("delete_history_entry", { id: 3 });
+      // After delete, refresh is called — entries reset to page 1 result
+      await vi.waitFor(() => {
+        expect(result.current.entries).toHaveLength(0);
+      });
     });
 
     it("sets error when delete_history_entry rejects with Error", async () => {
@@ -621,7 +606,7 @@ describe("useClipboardHistory", () => {
       });
     });
 
-    it("does not decrement page when deleting last entry on page 1", async () => {
+    it("deleting the only entry refreshes to an empty list", async () => {
       const entries = [makeEntry({ id: 1 })];
       invokeMock.mockResolvedValue(makePage(entries, 1));
 
@@ -631,15 +616,17 @@ describe("useClipboardHistory", () => {
         expect(result.current.entries).toHaveLength(1);
       });
 
-      // On page 1, deleting the last entry should refresh, not decrement
       invokeMock.mockResolvedValue(makePage([], 0));
 
       await act(async () => {
         await result.current.deleteEntry(1);
       });
 
-      expect(result.current.page).toBe(1);
       expect(invokeMock).toHaveBeenCalledWith("delete_history_entry", { id: 1 });
+
+      await vi.waitFor(() => {
+        expect(result.current.entries).toHaveLength(0);
+      });
     });
 
     it("updates pageSize when initialPageSize prop changes", async () => {
