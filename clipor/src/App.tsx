@@ -46,6 +46,7 @@ function MainApp() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
   const [popupVisible, setPopupVisible] = useState(0);
   const popupWindowRef = useRef<Window | null>(null);
+  const selectOnLoadRef = useRef<"first" | "last" | null>(null);
   const settings = useSettings(setError);
   const history = useClipboardHistory(settings.settings.pageSize, setError);
   const templates = useTemplates(setError);
@@ -124,6 +125,12 @@ function MainApp() {
   useEffect(() => {
     if (history.entries.length === 0) {
       setSelectedHistoryId(null);
+      return;
+    }
+
+    if (selectOnLoadRef.current === "last") {
+      selectOnLoadRef.current = null;
+      setSelectedHistoryId(history.entries[history.entries.length - 1].id);
       return;
     }
 
@@ -259,19 +266,30 @@ function MainApp() {
 
         if (event.key === "ArrowDown" && history.entries.length > 0) {
           event.preventDefault();
-          const nextIndex = currentIndex >= 0 ? Math.min(currentIndex + 1, history.entries.length - 1) : 0;
-          const nextId = history.entries[nextIndex].id;
-          setSelectedHistoryId(nextId);
-          showHistoryPreview(nextId);
+          if (currentIndex >= history.entries.length - 1 && history.page < history.totalPages) {
+            // At last item of page → advance to next page, select first item
+            history.nextPage();
+          } else {
+            const nextIndex = currentIndex >= 0 ? Math.min(currentIndex + 1, history.entries.length - 1) : 0;
+            const nextId = history.entries[nextIndex].id;
+            setSelectedHistoryId(nextId);
+            showHistoryPreview(nextId);
+          }
           return;
         }
 
         if (event.key === "ArrowUp" && history.entries.length > 0) {
           event.preventDefault();
-          const nextIndex = currentIndex >= 0 ? Math.max(currentIndex - 1, 0) : 0;
-          const nextId = history.entries[nextIndex].id;
-          setSelectedHistoryId(nextId);
-          showHistoryPreview(nextId);
+          if (currentIndex === 0 && history.page > 1) {
+            // At first item of page → go back to previous page, select last item
+            selectOnLoadRef.current = "last";
+            history.previousPage();
+          } else {
+            const nextIndex = currentIndex >= 0 ? Math.max(currentIndex - 1, 0) : 0;
+            const nextId = history.entries[nextIndex].id;
+            setSelectedHistoryId(nextId);
+            showHistoryPreview(nextId);
+          }
           return;
         }
 
@@ -331,6 +349,10 @@ function MainApp() {
     needsSetup,
     settings.settings.rememberLastTab,
     history.entries,
+    history.page,
+    history.totalPages,
+    history.nextPage,
+    history.previousPage,
     history.refresh,
     history.selectEntry,
     selectedHistoryId,
