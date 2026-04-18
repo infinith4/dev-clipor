@@ -47,9 +47,10 @@ function MainApp() {
   const [popupVisible, setPopupVisible] = useState(0);
   const popupWindowRef = useRef<Window | null>(null);
   const selectOnLoadRef = useRef<"first" | "last" | null>(null);
+  const selectTemplateOnLoadRef = useRef<"first" | "last" | null>(null);
   const settings = useSettings(setError);
   const history = useClipboardHistory(settings.settings.pageSize, setError);
-  const templates = useTemplates(setError);
+  const templates = useTemplates(settings.settings.pageSize, setError);
 
   const hidePopup = useCallback(async () => {
     await invoke("hide_preview").catch(() => {});
@@ -144,6 +145,12 @@ function MainApp() {
   useEffect(() => {
     if (templates.templates.length === 0) {
       setSelectedTemplateId(null);
+      return;
+    }
+
+    if (selectTemplateOnLoadRef.current === "last") {
+      selectTemplateOnLoadRef.current = null;
+      setSelectedTemplateId(templates.templates[templates.templates.length - 1].id);
       return;
     }
 
@@ -264,10 +271,21 @@ function MainApp() {
       if (activeTab === "history") {
         const currentIndex = history.entries.findIndex((entry) => entry.id === selectedHistoryId);
 
+        if (event.key === "ArrowRight" && history.page < history.totalPages) {
+          event.preventDefault();
+          history.nextPage();
+          return;
+        }
+
+        if (event.key === "ArrowLeft" && history.page > 1) {
+          event.preventDefault();
+          history.previousPage();
+          return;
+        }
+
         if (event.key === "ArrowDown" && history.entries.length > 0) {
           event.preventDefault();
           if (currentIndex >= history.entries.length - 1 && history.page < history.totalPages) {
-            // At last item of page → advance to next page, select first item
             history.nextPage();
           } else {
             const nextIndex = currentIndex >= 0 ? Math.min(currentIndex + 1, history.entries.length - 1) : 0;
@@ -281,7 +299,6 @@ function MainApp() {
         if (event.key === "ArrowUp" && history.entries.length > 0) {
           event.preventDefault();
           if (currentIndex === 0 && history.page > 1) {
-            // At first item of page → go back to previous page, select last item
             selectOnLoadRef.current = "last";
             history.previousPage();
           } else {
@@ -306,22 +323,43 @@ function MainApp() {
           (template) => template.id === selectedTemplateId,
         );
 
+        if (event.key === "ArrowRight" && templates.page < templates.totalPages) {
+          event.preventDefault();
+          templates.nextPage();
+          return;
+        }
+
+        if (event.key === "ArrowLeft" && templates.page > 1) {
+          event.preventDefault();
+          templates.previousPage();
+          return;
+        }
+
         if (event.key === "ArrowDown" && templates.templates.length > 0) {
           event.preventDefault();
-          const nextIndex =
-            currentIndex >= 0 ? Math.min(currentIndex + 1, templates.templates.length - 1) : 0;
-          const nextId = templates.templates[nextIndex].id;
-          setSelectedTemplateId(nextId);
-          showTemplatePreview(nextId);
+          if (currentIndex >= templates.templates.length - 1 && templates.page < templates.totalPages) {
+            templates.nextPage();
+          } else {
+            const nextIndex =
+              currentIndex >= 0 ? Math.min(currentIndex + 1, templates.templates.length - 1) : 0;
+            const nextId = templates.templates[nextIndex].id;
+            setSelectedTemplateId(nextId);
+            showTemplatePreview(nextId);
+          }
           return;
         }
 
         if (event.key === "ArrowUp" && templates.templates.length > 0) {
           event.preventDefault();
-          const nextIndex = currentIndex >= 0 ? Math.max(currentIndex - 1, 0) : 0;
-          const nextId = templates.templates[nextIndex].id;
-          setSelectedTemplateId(nextId);
-          showTemplatePreview(nextId);
+          if (currentIndex === 0 && templates.page > 1) {
+            selectTemplateOnLoadRef.current = "last";
+            templates.previousPage();
+          } else {
+            const nextIndex = currentIndex >= 0 ? Math.max(currentIndex - 1, 0) : 0;
+            const nextId = templates.templates[nextIndex].id;
+            setSelectedTemplateId(nextId);
+            showTemplatePreview(nextId);
+          }
           return;
         }
 
@@ -359,6 +397,10 @@ function MainApp() {
     selectedTemplateId,
     showHistoryPreview,
     showTemplatePreview,
+    templates.page,
+    templates.totalPages,
+    templates.nextPage,
+    templates.previousPage,
     templates.pasteTemplate,
     templates.refresh,
     templates.templates,

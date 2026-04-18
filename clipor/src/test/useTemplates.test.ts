@@ -41,15 +41,15 @@ describe("useTemplates", () => {
     setError = vi.fn<(message: string | null) => void>();
     localStorage.setItem("clipor-lang", "ja");
     void i18n.changeLanguage("ja");
-    // Default: both calls resolve to empty arrays
+    // Default: both calls resolve to empty/page results
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "get_template_groups") return Promise.resolve([]);
-      if (cmd === "get_templates") return Promise.resolve([]);
+      if (cmd === "get_templates") return Promise.resolve({ entries: [], total: 0, page: 1, pageSize: 20 });
       return Promise.resolve(undefined);
     });
   });
 
-  const setup = () => renderHook(() => useTemplates(setError));
+  const setup = () => renderHook(() => useTemplates(20, setError));
 
   const waitForMount = async (result: { current: ReturnType<typeof useTemplates> }) => {
     await vi.waitFor(() => {
@@ -63,18 +63,18 @@ describe("useTemplates", () => {
 
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "get_template_groups") return Promise.resolve(groups);
-      if (cmd === "get_templates") return Promise.resolve(templates);
+      if (cmd === "get_templates") return Promise.resolve({ entries: templates, total: 1, page: 1, pageSize: 20 });
       return Promise.resolve(undefined);
     });
 
-    const { result } = renderHook(() => useTemplates(setError));
+    const { result } = renderHook(() => useTemplates(20, setError));
 
     await vi.waitFor(() => {
       expect(result.current.groups).toEqual(groups);
     });
 
     expect(result.current.templates).toEqual(templates);
-    expect(invokeMock).toHaveBeenCalledWith("get_templates", { search: null, groupId: null });
+    expect(invokeMock).toHaveBeenCalledWith("get_templates", { search: null, groupId: null, page: 1, pageSize: 20 });
     expect(setError).toHaveBeenCalledWith(null);
   });
 
@@ -114,7 +114,7 @@ describe("useTemplates", () => {
       expect(result.current.search).toBe("test");
 
       await vi.waitFor(() => {
-        expect(invokeMock).toHaveBeenCalledWith("get_templates", { search: "test", groupId: null });
+        expect(invokeMock).toHaveBeenCalledWith("get_templates", { search: "test", groupId: null, page: 1, pageSize: 20 });
       });
     });
 
@@ -129,7 +129,7 @@ describe("useTemplates", () => {
 
       await vi.waitFor(() => {
         // The hook trims and converts empty to null
-        expect(invokeMock).toHaveBeenCalledWith("get_templates", { search: null, groupId: null });
+        expect(invokeMock).toHaveBeenCalledWith("get_templates", { search: null, groupId: null, page: 1, pageSize: 20 });
       });
     });
 
@@ -145,7 +145,7 @@ describe("useTemplates", () => {
       expect(result.current.selectedGroupId).toBe(5);
 
       await vi.waitFor(() => {
-        expect(invokeMock).toHaveBeenCalledWith("get_templates", { search: null, groupId: 5 });
+        expect(invokeMock).toHaveBeenCalledWith("get_templates", { search: null, groupId: 5, page: 1, pageSize: 20 });
       });
     });
   });
@@ -175,7 +175,7 @@ describe("useTemplates", () => {
       invokeMock.mockImplementation((cmd: string) => {
         if (cmd === "hide_preview") return Promise.reject(new Error("no window"));
         if (cmd === "get_template_groups") return Promise.resolve([]);
-        if (cmd === "get_templates") return Promise.resolve([]);
+        if (cmd === "get_templates") return Promise.resolve({ entries: [], total: 0, page: 1, pageSize: 20 });
         return Promise.resolve(undefined);
       });
 
@@ -194,7 +194,7 @@ describe("useTemplates", () => {
       invokeMock.mockImplementation((cmd: string) => {
         if (cmd === "paste_template") return Promise.reject(new Error("paste fail"));
         if (cmd === "get_template_groups") return Promise.resolve([]);
-        if (cmd === "get_templates") return Promise.resolve([]);
+        if (cmd === "get_templates") return Promise.resolve({ entries: [], total: 0, page: 1, pageSize: 20 });
         return Promise.resolve(undefined);
       });
 
@@ -213,7 +213,7 @@ describe("useTemplates", () => {
       invokeMock.mockImplementation((cmd: string) => {
         if (cmd === "paste_template") return Promise.reject(42);
         if (cmd === "get_template_groups") return Promise.resolve([]);
-        if (cmd === "get_templates") return Promise.resolve([]);
+        if (cmd === "get_templates") return Promise.resolve({ entries: [], total: 0, page: 1, pageSize: 20 });
         return Promise.resolve(undefined);
       });
 
@@ -562,7 +562,7 @@ describe("useTemplates", () => {
       invokeMock.mockImplementation((cmd: string) => {
         if (cmd === "import_templates") return Promise.reject(new Error("import fail"));
         if (cmd === "get_template_groups") return Promise.resolve([]);
-        if (cmd === "get_templates") return Promise.resolve([]);
+        if (cmd === "get_templates") return Promise.resolve({ entries: [], total: 0, page: 1, pageSize: 20 });
         return Promise.resolve(undefined);
       });
 
@@ -583,7 +583,7 @@ describe("useTemplates", () => {
       invokeMock.mockImplementation((cmd: string) => {
         if (cmd === "import_templates") return Promise.reject(undefined);
         if (cmd === "get_template_groups") return Promise.resolve([]);
-        if (cmd === "get_templates") return Promise.resolve([]);
+        if (cmd === "get_templates") return Promise.resolve({ entries: [], total: 0, page: 1, pageSize: 20 });
         return Promise.resolve(undefined);
       });
 
@@ -607,7 +607,7 @@ describe("useTemplates", () => {
       const templates = [makeTemplate()];
       invokeMock.mockImplementation((cmd: string) => {
         if (cmd === "get_template_groups") return Promise.resolve(groups);
-        if (cmd === "get_templates") return Promise.resolve(templates);
+        if (cmd === "get_templates") return Promise.resolve({ entries: templates, total: 1, page: 1, pageSize: 20 });
         return Promise.resolve(undefined);
       });
 

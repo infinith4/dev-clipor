@@ -1,6 +1,6 @@
 use tauri::{AppHandle, Manager, State};
 
-use crate::models::template::{TemplateEntry, TemplateExportPayload, TemplateGroup};
+use crate::models::template::{TemplateEntry, TemplateExportPayload, TemplateGroup, TemplatePage};
 use crate::services::template_store::UpsertTemplateInput;
 use crate::AppState;
 
@@ -14,10 +14,16 @@ pub fn get_templates(
     state: State<'_, AppState>,
     search: Option<String>,
     group_id: Option<i64>,
-) -> Result<Vec<TemplateEntry>, String> {
-    state
+    page: i64,
+    page_size: i64,
+) -> Result<TemplatePage, String> {
+    let all = state
         .template_store
-        .list_templates(search.as_deref(), group_id)
+        .list_templates(search.as_deref(), group_id)?;
+    let total = all.len() as i64;
+    let offset = ((page - 1).max(0) * page_size) as usize;
+    let entries = all.into_iter().skip(offset).take(page_size as usize).collect();
+    Ok(TemplatePage { entries, total, page, page_size })
 }
 
 #[tauri::command(rename_all = "camelCase")]

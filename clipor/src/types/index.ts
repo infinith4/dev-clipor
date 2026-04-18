@@ -52,6 +52,13 @@ export interface TemplateExportPayload {
   templates: TemplateEntry[];
 }
 
+export interface TemplatePage {
+  entries: TemplateEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export type ActivationMode = "hotkey" | "double-ctrl" | "double-alt";
 
 export interface AppSettings {
