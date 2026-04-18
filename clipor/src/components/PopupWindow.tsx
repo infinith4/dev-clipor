@@ -151,7 +151,8 @@ function PopupWindow({
   useEffect(() => {
     if (activeTab !== "history") return;
     const sentinel = bottomSentinelRef.current;
-    if (!sentinel) return;
+    const root = cardListRef.current;
+    if (!sentinel || !root) return;
 
     const observer = new IntersectionObserver(
       (observerEntries) => {
@@ -165,7 +166,7 @@ function PopupWindow({
           history.nextPage();
         }
       },
-      { threshold: 0.1 },
+      { root, threshold: 0.1 },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -175,7 +176,8 @@ function PopupWindow({
   useEffect(() => {
     if (activeTab !== "history") return;
     const sentinel = topSentinelRef.current;
-    if (!sentinel) return;
+    const root = cardListRef.current;
+    if (!sentinel || !root) return;
 
     const observer = new IntersectionObserver(
       (observerEntries) => {
@@ -189,7 +191,7 @@ function PopupWindow({
           history.previousPage();
         }
       },
-      { threshold: 0.1 },
+      { root, threshold: 0.1 },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -211,7 +213,8 @@ function PopupWindow({
   useEffect(() => {
     if (activeTab !== "templates") return;
     const sentinel = bottomTemplSentinelRef.current;
-    if (!sentinel) return;
+    const root = cardListTemplateRef.current;
+    if (!sentinel || !root) return;
 
     const observer = new IntersectionObserver(
       (observerEntries) => {
@@ -225,7 +228,7 @@ function PopupWindow({
           templates.nextPage();
         }
       },
-      { threshold: 0.1 },
+      { root, threshold: 0.1 },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -235,7 +238,8 @@ function PopupWindow({
   useEffect(() => {
     if (activeTab !== "templates") return;
     const sentinel = topTemplSentinelRef.current;
-    if (!sentinel) return;
+    const root = cardListTemplateRef.current;
+    if (!sentinel || !root) return;
 
     const observer = new IntersectionObserver(
       (observerEntries) => {
@@ -249,7 +253,7 @@ function PopupWindow({
           templates.previousPage();
         }
       },
-      { threshold: 0.1 },
+      { root, threshold: 0.1 },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
