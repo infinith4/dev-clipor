@@ -103,14 +103,12 @@ function PopupWindow({
 
   // Refs for scroll-based page navigation — history
   const cardListRef = useRef<HTMLDivElement>(null);
-  const topSentinelRef = useRef<HTMLDivElement>(null);
-  const bottomSentinelRef = useRef<HTMLDivElement>(null);
   const navCooldownRef = useRef(false);
+  const prevHistScrollRef = useRef(0);
   // Refs for scroll-based page navigation — templates
   const cardListTemplateRef = useRef<HTMLDivElement>(null);
-  const topTemplSentinelRef = useRef<HTMLDivElement>(null);
-  const bottomTemplSentinelRef = useRef<HTMLDivElement>(null);
   const navCooldownTemplateRef = useRef(false);
+  const prevTemplScrollRef = useRef(0);
 
   const tabs: PopupTab[] = ["history", "templates", "settings"];
 
@@ -147,55 +145,27 @@ function PopupWindow({
     return () => clearTimeout(timer);
   }, [history.entries]);
 
-  // IntersectionObserver: bottom sentinel → next page
+  // Scroll event: bottom → next page, top (scrolling up) → previous page — history
   useEffect(() => {
     if (activeTab !== "history") return;
-    const sentinel = bottomSentinelRef.current;
-    const root = cardListRef.current;
-    if (!sentinel || !root) return;
-
-    const observer = new IntersectionObserver(
-      (observerEntries) => {
-        if (
-          observerEntries[0].isIntersecting &&
-          !navCooldownRef.current &&
-          !history.loading &&
-          history.page < history.totalPages
-        ) {
-          navCooldownRef.current = true;
-          history.nextPage();
-        }
-      },
-      { root, threshold: 0.1 },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [activeTab, history.loading, history.nextPage, history.page, history.totalPages]);
-
-  // IntersectionObserver: top sentinel → previous page
-  useEffect(() => {
-    if (activeTab !== "history") return;
-    const sentinel = topSentinelRef.current;
-    const root = cardListRef.current;
-    if (!sentinel || !root) return;
-
-    const observer = new IntersectionObserver(
-      (observerEntries) => {
-        if (
-          observerEntries[0].isIntersecting &&
-          !navCooldownRef.current &&
-          !history.loading &&
-          history.page > 1
-        ) {
-          navCooldownRef.current = true;
-          history.previousPage();
-        }
-      },
-      { root, threshold: 0.1 },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [activeTab, history.loading, history.previousPage, history.page]);
+    const cardList = cardListRef.current;
+    if (!cardList) return;
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = cardList;
+      const prev = prevHistScrollRef.current;
+      prevHistScrollRef.current = scrollTop;
+      if (navCooldownRef.current || history.loading) return;
+      if (scrollTop > prev && scrollHeight - scrollTop - clientHeight <= 1 && history.page < history.totalPages) {
+        navCooldownRef.current = true;
+        history.nextPage();
+      } else if (scrollTop < prev && scrollTop === 0 && history.page > 1) {
+        navCooldownRef.current = true;
+        history.previousPage();
+      }
+    };
+    cardList.addEventListener("scroll", handleScroll);
+    return () => cardList.removeEventListener("scroll", handleScroll);
+  }, [activeTab, history.loading, history.nextPage, history.page, history.previousPage, history.totalPages]);
 
   // Scroll templates list to top whenever template entries change
   useEffect(() => {
@@ -209,55 +179,27 @@ function PopupWindow({
     return () => clearTimeout(timer);
   }, [templates.templates]);
 
-  // IntersectionObserver: templates bottom sentinel → next page
+  // Scroll event: bottom → next page, top (scrolling up) → previous page — templates
   useEffect(() => {
     if (activeTab !== "templates") return;
-    const sentinel = bottomTemplSentinelRef.current;
-    const root = cardListTemplateRef.current;
-    if (!sentinel || !root) return;
-
-    const observer = new IntersectionObserver(
-      (observerEntries) => {
-        if (
-          observerEntries[0].isIntersecting &&
-          !navCooldownTemplateRef.current &&
-          !templates.loading &&
-          templates.page < templates.totalPages
-        ) {
-          navCooldownTemplateRef.current = true;
-          templates.nextPage();
-        }
-      },
-      { root, threshold: 0.1 },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [activeTab, templates.loading, templates.nextPage, templates.page, templates.totalPages]);
-
-  // IntersectionObserver: templates top sentinel → previous page
-  useEffect(() => {
-    if (activeTab !== "templates") return;
-    const sentinel = topTemplSentinelRef.current;
-    const root = cardListTemplateRef.current;
-    if (!sentinel || !root) return;
-
-    const observer = new IntersectionObserver(
-      (observerEntries) => {
-        if (
-          observerEntries[0].isIntersecting &&
-          !navCooldownTemplateRef.current &&
-          !templates.loading &&
-          templates.page > 1
-        ) {
-          navCooldownTemplateRef.current = true;
-          templates.previousPage();
-        }
-      },
-      { root, threshold: 0.1 },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [activeTab, templates.loading, templates.previousPage, templates.page]);
+    const cardList = cardListTemplateRef.current;
+    if (!cardList) return;
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = cardList;
+      const prev = prevTemplScrollRef.current;
+      prevTemplScrollRef.current = scrollTop;
+      if (navCooldownTemplateRef.current || templates.loading) return;
+      if (scrollTop > prev && scrollHeight - scrollTop - clientHeight <= 1 && templates.page < templates.totalPages) {
+        navCooldownTemplateRef.current = true;
+        templates.nextPage();
+      } else if (scrollTop < prev && scrollTop === 0 && templates.page > 1) {
+        navCooldownTemplateRef.current = true;
+        templates.previousPage();
+      }
+    };
+    cardList.addEventListener("scroll", handleScroll);
+    return () => cardList.removeEventListener("scroll", handleScroll);
+  }, [activeTab, templates.loading, templates.nextPage, templates.page, templates.previousPage, templates.totalPages]);
 
   const handleContextMenu = useCallback((event: React.MouseEvent, entry: ClipboardEntry) => {
     setContextMenu({ x: event.clientX, y: event.clientY, entry });
@@ -416,8 +358,6 @@ function PopupWindow({
             </div>
             {history.loading ? <div className="empty-state">{t("loading.message")}</div> : null}
             <div className="card-list" ref={cardListRef}>
-              {/* Top sentinel: triggers previousPage when scrolled back to top */}
-              <div ref={topSentinelRef} style={{ height: 1 }} />
               {history.entries.map((entry) => (
                 <ClipboardItem
                   key={entry.id}
@@ -428,8 +368,6 @@ function PopupWindow({
                   onContextMenu={handleContextMenu}
                 />
               ))}
-              {/* Bottom sentinel: triggers nextPage when scrolled to bottom */}
-              <div ref={bottomSentinelRef} style={{ height: 1 }} />
               {!history.loading && history.entries.length === 0 ? (
                 <div className="empty-state">{t("empty_state.no_history")}</div>
               ) : null}
@@ -508,7 +446,6 @@ function PopupWindow({
             </div>
             {templates.loading ? <div className="empty-state">{t("loading.message")}</div> : null}
             <div className="card-list" ref={cardListTemplateRef}>
-              <div ref={topTemplSentinelRef} style={{ height: 1 }} />
               <TemplateList
                 templates={visibleTemplates}
                 selectedTemplateId={templates.selectedTemplateId}
@@ -516,7 +453,6 @@ function PopupWindow({
                 onPaste={templates.pasteTemplate}
                 onContextMenu={handleTemplateContextMenu}
               />
-              <div ref={bottomTemplSentinelRef} style={{ height: 1 }} />
             </div>
 
             {templateContextMenu ? (
