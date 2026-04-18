@@ -92,6 +92,7 @@ pub fn set_clipboard_text(_text: &str) -> Result<(), String> {
 /// Get image data from clipboard as raw DIB bytes.
 /// Returns None if no image is on the clipboard.
 #[cfg(windows)]
+#[allow(dead_code)]
 pub fn get_clipboard_image() -> Result<Option<Vec<u8>>, String> {
     unsafe {
         if !open_clipboard_with_retry() {
@@ -205,6 +206,7 @@ pub fn set_clipboard_image(_dib_data: &[u8]) -> Result<(), String> {
 
 /// Check if clipboard currently contains an image (CF_DIB).
 #[cfg(windows)]
+#[allow(dead_code)]
 pub fn clipboard_has_image() -> bool {
     if !open_clipboard_with_retry() {
         return false;

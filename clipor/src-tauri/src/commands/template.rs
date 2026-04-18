@@ -1,6 +1,6 @@
 use tauri::{AppHandle, Manager, State};
 
-use crate::models::template::{TemplateEntry, TemplateExportPayload, TemplateGroup, TemplatePage};
+use crate::models::template::{TemplateExportPayload, TemplateGroup, TemplatePage};
 use crate::services::template_store::UpsertTemplateInput;
 use crate::AppState;
 
