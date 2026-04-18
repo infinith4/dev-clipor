@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import ClipboardItem from "./ClipboardItem";
@@ -46,12 +46,18 @@ interface PopupWindowProps {
   templates: {
     groups: Array<{ id: number; name: string; sortOrder: number; createdAt: string }>;
     templates: TemplateEntry[];
+    loading: boolean;
+    page: number;
+    total: number;
+    totalPages: number;
     search: string;
     selectedGroupId: number | null;
     selectedTemplateId: number | null;
     setSearch: (value: string) => void;
     setSelectedGroupId: (value: number | null) => void;
     setSelectedTemplate: (template: TemplateEntry) => void;
+    previousPage: () => void;
+    nextPage: () => void;
     pasteTemplate: (id: number) => Promise<void>;
     saveTemplate: (payload: {
       id?: number;
@@ -95,6 +101,15 @@ function PopupWindow({
   const visibleTemplates = useMemo(() => templates.templates, [templates.templates]);
   const isCompactLayout = true;
 
+  // Refs for scroll-based page navigation — history
+  const cardListRef = useRef<HTMLDivElement>(null);
+  const navCooldownRef = useRef(false);
+  const prevHistScrollRef = useRef(0);
+  // Refs for scroll-based page navigation — templates
+  const cardListTemplateRef = useRef<HTMLDivElement>(null);
+  const navCooldownTemplateRef = useRef(false);
+  const prevTemplScrollRef = useRef(0);
+
   const tabs: PopupTab[] = ["history", "templates", "settings"];
 
   useEffect(() => {
@@ -102,13 +117,12 @@ function PopupWindow({
       const tag = (event.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
-      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      if (event.key === "Tab") {
         event.preventDefault();
         const currentIndex = tabs.indexOf(activeTab);
-        const nextIndex =
-          event.key === "ArrowRight"
-            ? (currentIndex + 1) % tabs.length
-            : (currentIndex - 1 + tabs.length) % tabs.length;
+        const nextIndex = event.shiftKey
+          ? (currentIndex - 1 + tabs.length) % tabs.length
+          : (currentIndex + 1) % tabs.length;
         onSelectTab(tabs[nextIndex]);
       }
     };
@@ -116,6 +130,76 @@ function PopupWindow({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeTab, onSelectTab]);
+
+  // Scroll list to top whenever entries change (after any page navigation)
+  useEffect(() => {
+    // Activate cooldown immediately so sentinels don't fire before the user can see the page
+    navCooldownRef.current = true;
+    if (cardListRef.current) {
+      cardListRef.current.scrollTop = 0;
+    }
+    // Release cooldown after the new page's entries have rendered
+    const timer = setTimeout(() => {
+      navCooldownRef.current = false;
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [history.entries]);
+
+  // Scroll event: bottom → next page, top (scrolling up) → previous page — history
+  useEffect(() => {
+    if (activeTab !== "history") return;
+    const cardList = cardListRef.current;
+    if (!cardList) return;
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = cardList;
+      const prev = prevHistScrollRef.current;
+      prevHistScrollRef.current = scrollTop;
+      if (navCooldownRef.current || history.loading) return;
+      if (scrollTop > prev && scrollHeight - scrollTop - clientHeight <= 1 && history.page < history.totalPages) {
+        navCooldownRef.current = true;
+        history.nextPage();
+      } else if (scrollTop < prev && scrollTop === 0 && history.page > 1) {
+        navCooldownRef.current = true;
+        history.previousPage();
+      }
+    };
+    cardList.addEventListener("scroll", handleScroll);
+    return () => cardList.removeEventListener("scroll", handleScroll);
+  }, [activeTab, history.loading, history.nextPage, history.page, history.previousPage, history.totalPages]);
+
+  // Scroll templates list to top whenever template entries change
+  useEffect(() => {
+    navCooldownTemplateRef.current = true;
+    if (cardListTemplateRef.current) {
+      cardListTemplateRef.current.scrollTop = 0;
+    }
+    const timer = setTimeout(() => {
+      navCooldownTemplateRef.current = false;
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [templates.templates]);
+
+  // Scroll event: bottom → next page, top (scrolling up) → previous page — templates
+  useEffect(() => {
+    if (activeTab !== "templates") return;
+    const cardList = cardListTemplateRef.current;
+    if (!cardList) return;
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = cardList;
+      const prev = prevTemplScrollRef.current;
+      prevTemplScrollRef.current = scrollTop;
+      if (navCooldownTemplateRef.current || templates.loading) return;
+      if (scrollTop > prev && scrollHeight - scrollTop - clientHeight <= 1 && templates.page < templates.totalPages) {
+        navCooldownTemplateRef.current = true;
+        templates.nextPage();
+      } else if (scrollTop < prev && scrollTop === 0 && templates.page > 1) {
+        navCooldownTemplateRef.current = true;
+        templates.previousPage();
+      }
+    };
+    cardList.addEventListener("scroll", handleScroll);
+    return () => cardList.removeEventListener("scroll", handleScroll);
+  }, [activeTab, templates.loading, templates.nextPage, templates.page, templates.previousPage, templates.totalPages]);
 
   const handleContextMenu = useCallback((event: React.MouseEvent, entry: ClipboardEntry) => {
     setContextMenu({ x: event.clientX, y: event.clientY, entry });
@@ -273,7 +357,7 @@ function PopupWindow({
               />
             </div>
             {history.loading ? <div className="empty-state">{t("loading.message")}</div> : null}
-            <div className="card-list">
+            <div className="card-list" ref={cardListRef}>
               {history.entries.map((entry) => (
                 <ClipboardItem
                   key={entry.id}
@@ -352,8 +436,16 @@ function PopupWindow({
                   ))}
                 </select>
               </div>
+              <Pagination
+                page={templates.page}
+                totalItems={templates.total}
+                totalPages={templates.totalPages}
+                onNext={templates.nextPage}
+                onPrevious={templates.previousPage}
+              />
             </div>
-            <div className="card-list">
+            {templates.loading ? <div className="empty-state">{t("loading.message")}</div> : null}
+            <div className="card-list" ref={cardListTemplateRef}>
               <TemplateList
                 templates={visibleTemplates}
                 selectedTemplateId={templates.selectedTemplateId}

@@ -25,6 +25,7 @@ const defaultSettings: AppSettings = {
   previewImageHeight: 520,
   requirePassword: false,
   rememberLastTab: false,
+  templatePageSize: 8,
 };
 
 function makeEntry(overrides: Partial<ClipboardEntry> = {}): ClipboardEntry {
@@ -107,12 +108,18 @@ function makeProps(overrides: PropsOverrides = {}) {
     templates: {
       groups: [] as Array<{ id: number; name: string; sortOrder: number; createdAt: string }>,
       templates: [] as TemplateEntry[],
+      loading: false,
+      page: 1,
+      total: 0,
+      totalPages: 1,
       search: "",
       selectedGroupId: null as number | null,
       selectedTemplateId: null as number | null,
       setSearch: vi.fn(),
       setSelectedGroupId: vi.fn(),
       setSelectedTemplate: vi.fn(),
+      previousPage: vi.fn(),
+      nextPage: vi.fn(),
       pasteTemplate: vi.fn().mockResolvedValue(undefined),
       saveTemplate: vi.fn(),
       deleteTemplate: vi.fn(),
@@ -200,31 +207,31 @@ describe("PopupWindow", () => {
   /*  3. Tab keyboard navigation                                    */
   /* ============================================================== */
   describe("keyboard navigation", () => {
-    it("ArrowRight moves from history to templates", () => {
+    it("Tab moves from history to templates", () => {
       const onSelectTab = vi.fn();
       render(<PopupWindow {...makeProps({ onSelectTab })} />);
-      fireEvent.keyDown(window, { key: "ArrowRight" });
+      fireEvent.keyDown(window, { key: "Tab" });
       expect(onSelectTab).toHaveBeenCalledWith("templates");
     });
 
-    it("ArrowRight wraps from settings to history", () => {
+    it("Tab wraps from settings to history", () => {
       const onSelectTab = vi.fn();
       render(<PopupWindow {...makeProps({ activeTab: "settings", onSelectTab })} />);
-      fireEvent.keyDown(window, { key: "ArrowRight" });
+      fireEvent.keyDown(window, { key: "Tab" });
       expect(onSelectTab).toHaveBeenCalledWith("history");
     });
 
-    it("ArrowLeft moves from history to settings (wraps)", () => {
+    it("Shift+Tab moves from history to settings (wraps)", () => {
       const onSelectTab = vi.fn();
       render(<PopupWindow {...makeProps({ onSelectTab })} />);
-      fireEvent.keyDown(window, { key: "ArrowLeft" });
+      fireEvent.keyDown(window, { key: "Tab", shiftKey: true });
       expect(onSelectTab).toHaveBeenCalledWith("settings");
     });
 
-    it("ArrowLeft moves from templates to history", () => {
+    it("Shift+Tab moves from templates to history", () => {
       const onSelectTab = vi.fn();
       render(<PopupWindow {...makeProps({ activeTab: "templates", onSelectTab })} />);
-      fireEvent.keyDown(window, { key: "ArrowLeft" });
+      fireEvent.keyDown(window, { key: "Tab", shiftKey: true });
       expect(onSelectTab).toHaveBeenCalledWith("history");
     });
 

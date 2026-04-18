@@ -25,6 +25,7 @@ pub struct AppSettings {
     pub preview_image_height: u32,
     pub require_password: bool,
     pub remember_last_tab: bool,
+    pub template_page_size: usize,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password_salt: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -46,6 +47,7 @@ impl Default for AppSettings {
             preview_image_height: 520,
             require_password: false,
             remember_last_tab: false,
+            template_page_size: 8,
             password_salt: None,
             password_verify: None,
         }

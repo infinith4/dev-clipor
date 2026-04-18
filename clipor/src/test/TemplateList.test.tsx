@@ -47,23 +47,9 @@ describe("TemplateList", () => {
       expect(screen.getByText("Default")).toBeInTheDocument();
     });
 
-    it("renders text preview for text templates", () => {
+    it("renders title for text templates", () => {
       render(<TemplateList {...defaultProps()} />);
-      expect(screen.getByText("Hello world")).toBeInTheDocument();
-    });
-
-    it("truncates text preview to 60 chars", () => {
-      const longText = "A".repeat(100);
-      const template = makeTemplate({ text: longText });
-      render(<TemplateList {...defaultProps({ templates: [template] })} />);
-      const preview = screen.getByText("A".repeat(60));
-      expect(preview).toBeInTheDocument();
-    });
-
-    it("replaces newlines with spaces in preview", () => {
-      const template = makeTemplate({ text: "Line1\nLine2\r\nLine3" });
-      render(<TemplateList {...defaultProps({ templates: [template] })} />);
-      expect(screen.getByText("Line1 Line2 Line3")).toBeInTheDocument();
+      expect(screen.getByText("Greeting")).toBeInTheDocument();
     });
 
     it("renders image for image templates", () => {
@@ -78,24 +64,24 @@ describe("TemplateList", () => {
       expect(img).toHaveAttribute("src", "data:image/png;base64,base64data");
     });
 
-    it("renders text preview for image template without imageData", () => {
+    it("renders title for image template without imageData", () => {
       const template = makeTemplate({
         contentType: "image",
         imageData: null,
-        text: "fallback text",
+        title: "Image Title",
       });
       render(<TemplateList {...defaultProps({ templates: [template] })} />);
-      expect(screen.getByText("fallback text")).toBeInTheDocument();
+      expect(screen.getByText("Image Title")).toBeInTheDocument();
     });
 
-    it("renders text preview for image template with undefined imageData", () => {
+    it("renders title for image template with undefined imageData", () => {
       const template = makeTemplate({
         contentType: "image",
         imageData: undefined,
-        text: "fallback",
+        title: "Image Title",
       });
       render(<TemplateList {...defaultProps({ templates: [template] })} />);
-      expect(screen.getByText("fallback")).toBeInTheDocument();
+      expect(screen.getByText("Image Title")).toBeInTheDocument();
     });
 
     it("renders multiple templates", () => {

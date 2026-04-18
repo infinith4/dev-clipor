@@ -30,3 +30,12 @@ pub struct TemplateExportPayload {
     pub groups: Vec<TemplateGroup>,
     pub templates: Vec<TemplateEntry>,
 }
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TemplatePage {
+    pub entries: Vec<TemplateEntry>,
+    pub total: i64,
+    pub page: i64,
+    pub page_size: i64,
+}

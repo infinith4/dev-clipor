@@ -34,25 +34,23 @@ pub fn spawn_monitor(
                 continue;
             }
 
-            // Check for image first
-            if win32::clipboard_has_image() {
-                if let Ok(Some(dib_data)) = win32::get_clipboard_image() {
-                    if dib_data.len() <= image_util::MAX_IMAGE_BYTES {
-                        let hash = image_util::hash_image(&dib_data);
-                        if hash != last_image_hash {
-                            if let Ok(png) = image_util::dib_to_png(&dib_data) {
-                                let b64 = image_util::png_to_base64(&png);
-                                let _ = history_store.save_image(
-                                    &b64,
-                                    &hash,
-                                    settings.max_history_items,
-                                );
-                                last_image_hash = hash;
-                                // Also update last_seen so we don't double-save
-                                // if the clipboard also has text representation
-                                if let Ok(Some(text)) = win32::get_clipboard_text() {
-                                    last_seen = text;
-                                }
+            // Check for image first — single clipboard session avoids TOCTOU race
+            if let Some(dib_data) = win32::try_get_clipboard_image() {
+                if dib_data.len() <= image_util::MAX_IMAGE_BYTES {
+                    let hash = image_util::hash_image(&dib_data);
+                    if hash != last_image_hash {
+                        if let Ok(png) = image_util::dib_to_png(&dib_data) {
+                            let b64 = image_util::png_to_base64(&png);
+                            let _ = history_store.save_image(
+                                &b64,
+                                &hash,
+                                settings.max_history_items,
+                            );
+                            last_image_hash = hash;
+                            // Also update last_seen so we don't double-save
+                            // if the clipboard also has text representation
+                            if let Ok(Some(text)) = win32::get_clipboard_text() {
+                                last_seen = text;
                             }
                         }
                     }

@@ -46,9 +46,13 @@ function MainApp() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
   const [popupVisible, setPopupVisible] = useState(0);
   const popupWindowRef = useRef<Window | null>(null);
+  const selectOnLoadRef = useRef<"first" | "last" | null>(null);
+  const selectTemplateOnLoadRef = useRef<"first" | "last" | null>(null);
+  const lockInputRef = useRef<HTMLInputElement>(null);
+  const maxCardListHeightRef = useRef<number | null>(null);
   const settings = useSettings(setError);
   const history = useClipboardHistory(settings.settings.pageSize, setError);
-  const templates = useTemplates(setError);
+  const templates = useTemplates(settings.settings.templatePageSize, setError);
 
   const hidePopup = useCallback(async () => {
     await invoke("hide_preview").catch(() => {});
@@ -65,6 +69,13 @@ function MainApp() {
       setNeedsSetup(true);
     }
   }, [settings.settings.requirePassword, settings.setupSkipped]);
+
+  // Keep lock screen input focused whenever lock screen is shown or popup appears
+  useEffect(() => {
+    if (locked) {
+      lockInputRef.current?.focus();
+    }
+  }, [locked, popupVisible]);
 
   const handleSetupPassword = useCallback(async () => {
     setSetupError(null);
@@ -127,6 +138,12 @@ function MainApp() {
       return;
     }
 
+    if (selectOnLoadRef.current === "last") {
+      selectOnLoadRef.current = null;
+      setSelectedHistoryId(history.entries[history.entries.length - 1].id);
+      return;
+    }
+
     setSelectedHistoryId((current) =>
       current && history.entries.some((entry) => entry.id === current)
         ? current
@@ -137,6 +154,12 @@ function MainApp() {
   useEffect(() => {
     if (templates.templates.length === 0) {
       setSelectedTemplateId(null);
+      return;
+    }
+
+    if (selectTemplateOnLoadRef.current === "last") {
+      selectTemplateOnLoadRef.current = null;
+      setSelectedTemplateId(templates.templates[templates.templates.length - 1].id);
       return;
     }
 
@@ -209,6 +232,8 @@ function MainApp() {
 
   useEffect(() => {
     const unlistenPopupPromise = listen("hotkey://toggle-popup", async () => {
+      // Reset selection so the first item is focused after data loads
+      setSelectedHistoryId(null);
       await Promise.all([history.refresh(), templates.refresh()]);
       if (!popupWindowRef.current) {
         return;
@@ -218,13 +243,19 @@ function MainApp() {
       }
       // Sync language to the preview window (it has a separate localStorage context)
       void emit("ui://lang-change", i18n.language);
+      maxCardListHeightRef.current = null;
+      await popupWindowRef.current.setSize(new LogicalSize(COMPACT_WINDOW_WIDTH, WINDOW_HEIGHT));
       await popupWindowRef.current.show();
       await popupWindowRef.current.setFocus();
       setPopupVisible((v) => v + 1);
     });
-    const unlistenTabPromise = listen<string>("ui://select-tab", (event) => {
+    const unlistenTabPromise = listen<string>("ui://select-tab", async (event) => {
       if (event.payload === "history" || event.payload === "templates" || event.payload === "settings") {
         setActiveTab(event.payload);
+        if (event.payload === "history") {
+          setSelectedHistoryId(null);
+          await Promise.all([history.refresh(), templates.refresh()]);
+        }
       }
     });
 
@@ -251,21 +282,42 @@ function MainApp() {
       if (activeTab === "history") {
         const currentIndex = history.entries.findIndex((entry) => entry.id === selectedHistoryId);
 
+        if (event.key === "ArrowRight" && history.page < history.totalPages) {
+          event.preventDefault();
+          history.nextPage();
+          return;
+        }
+
+        if (event.key === "ArrowLeft" && history.page > 1) {
+          event.preventDefault();
+          history.previousPage();
+          return;
+        }
+
         if (event.key === "ArrowDown" && history.entries.length > 0) {
           event.preventDefault();
-          const nextIndex = currentIndex >= 0 ? Math.min(currentIndex + 1, history.entries.length - 1) : 0;
-          const nextId = history.entries[nextIndex].id;
-          setSelectedHistoryId(nextId);
-          showHistoryPreview(nextId);
+          if (currentIndex >= history.entries.length - 1 && history.page < history.totalPages) {
+            history.nextPage();
+          } else {
+            const nextIndex = currentIndex >= 0 ? Math.min(currentIndex + 1, history.entries.length - 1) : 0;
+            const nextId = history.entries[nextIndex].id;
+            setSelectedHistoryId(nextId);
+            showHistoryPreview(nextId);
+          }
           return;
         }
 
         if (event.key === "ArrowUp" && history.entries.length > 0) {
           event.preventDefault();
-          const nextIndex = currentIndex >= 0 ? Math.max(currentIndex - 1, 0) : 0;
-          const nextId = history.entries[nextIndex].id;
-          setSelectedHistoryId(nextId);
-          showHistoryPreview(nextId);
+          if (currentIndex === 0 && history.page > 1) {
+            selectOnLoadRef.current = "last";
+            history.previousPage();
+          } else {
+            const nextIndex = currentIndex >= 0 ? Math.max(currentIndex - 1, 0) : 0;
+            const nextId = history.entries[nextIndex].id;
+            setSelectedHistoryId(nextId);
+            showHistoryPreview(nextId);
+          }
           return;
         }
 
@@ -282,22 +334,43 @@ function MainApp() {
           (template) => template.id === selectedTemplateId,
         );
 
+        if (event.key === "ArrowRight" && templates.page < templates.totalPages) {
+          event.preventDefault();
+          templates.nextPage();
+          return;
+        }
+
+        if (event.key === "ArrowLeft" && templates.page > 1) {
+          event.preventDefault();
+          templates.previousPage();
+          return;
+        }
+
         if (event.key === "ArrowDown" && templates.templates.length > 0) {
           event.preventDefault();
-          const nextIndex =
-            currentIndex >= 0 ? Math.min(currentIndex + 1, templates.templates.length - 1) : 0;
-          const nextId = templates.templates[nextIndex].id;
-          setSelectedTemplateId(nextId);
-          showTemplatePreview(nextId);
+          if (currentIndex >= templates.templates.length - 1 && templates.page < templates.totalPages) {
+            templates.nextPage();
+          } else {
+            const nextIndex =
+              currentIndex >= 0 ? Math.min(currentIndex + 1, templates.templates.length - 1) : 0;
+            const nextId = templates.templates[nextIndex].id;
+            setSelectedTemplateId(nextId);
+            showTemplatePreview(nextId);
+          }
           return;
         }
 
         if (event.key === "ArrowUp" && templates.templates.length > 0) {
           event.preventDefault();
-          const nextIndex = currentIndex >= 0 ? Math.max(currentIndex - 1, 0) : 0;
-          const nextId = templates.templates[nextIndex].id;
-          setSelectedTemplateId(nextId);
-          showTemplatePreview(nextId);
+          if (currentIndex === 0 && templates.page > 1) {
+            selectTemplateOnLoadRef.current = "last";
+            templates.previousPage();
+          } else {
+            const nextIndex = currentIndex >= 0 ? Math.max(currentIndex - 1, 0) : 0;
+            const nextId = templates.templates[nextIndex].id;
+            setSelectedTemplateId(nextId);
+            showTemplatePreview(nextId);
+          }
           return;
         }
 
@@ -325,12 +398,20 @@ function MainApp() {
     needsSetup,
     settings.settings.rememberLastTab,
     history.entries,
+    history.page,
+    history.totalPages,
+    history.nextPage,
+    history.previousPage,
     history.refresh,
     history.selectEntry,
     selectedHistoryId,
     selectedTemplateId,
     showHistoryPreview,
     showTemplatePreview,
+    templates.page,
+    templates.totalPages,
+    templates.nextPage,
+    templates.previousPage,
     templates.pasteTemplate,
     templates.refresh,
     templates.templates,
@@ -350,6 +431,27 @@ function MainApp() {
 
     void resizeWindow();
   }, []);
+
+  // Shrink window to fit content when history items don't fill the page
+  useEffect(() => {
+    if (activeTab !== "history" || locked || needsSetup) {
+      void popupWindowRef.current?.setSize(new LogicalSize(COMPACT_WINDOW_WIDTH, WINDOW_HEIGHT));
+      return;
+    }
+    if (history.loading) return;
+    requestAnimationFrame(() => {
+      const cardList = document.querySelector(".card-list") as HTMLElement | null;
+      if (!cardList || !popupWindowRef.current) return;
+      // Capture the max card-list height at full window size (720px) once per popup show
+      if (maxCardListHeightRef.current === null) {
+        maxCardListHeightRef.current = cardList.clientHeight;
+      }
+      const waste = Math.max(0, maxCardListHeightRef.current - cardList.scrollHeight);
+      void popupWindowRef.current.setSize(
+        new LogicalSize(COMPACT_WINDOW_WIDTH, WINDOW_HEIGHT - waste),
+      );
+    });
+  }, [history.entries, history.loading, activeTab, locked, needsSetup, popupVisible]);
 
   if (needsSetup) {
     return (
@@ -418,10 +520,10 @@ function MainApp() {
             <label>
               <span>{t("unlock.label_password")}</span>
               <input
+                ref={lockInputRef}
                 type="password"
                 value={lockPassword}
                 onChange={(e) => setLockPassword(e.target.value)}
-                autoFocus
               />
             </label>
             {lockError ? (
@@ -439,11 +541,22 @@ function MainApp() {
       activeTab={activeTab}
       error={error}
       history={{
-        ...history,
+        entries: history.entries,
+        loading: history.loading,
+        page: history.page,
+        total: history.total,
+        totalPages: history.totalPages,
+        search: history.search,
         selectedEntryId: selectedHistoryId,
+        setSearch: history.setSearch,
         setSelectedEntryId: setSelectedHistoryId,
+        previousPage: history.previousPage,
+        nextPage: history.nextPage,
+        selectEntry: history.selectEntry,
         pasteEntry: history.selectEntry,
         updateEntry: history.updateEntry,
+        togglePinned: history.togglePinned,
+        deleteEntry: history.deleteEntry,
         setClipboardFormatted: history.setClipboardFormatted,
         setClipboardConverted: history.setClipboardConverted,
       }}

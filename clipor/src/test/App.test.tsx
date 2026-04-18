@@ -126,6 +126,7 @@ vi.mock("../hooks/useSettings", () => ({
       previewImageWidth: 520,
       previewImageHeight: 520,
       requirePassword: settingsState.requirePassword,
+      templatePageSize: 8,
     },
     setupSkipped: settingsState.setupSkipped,
     refresh: settingsRefreshMock,
@@ -1249,7 +1250,7 @@ describe("App", () => {
       expect(call.height).toBe(720);
     });
 
-    it("does not resize again when switching to settings tab", async () => {
+    it("restores to full height when switching to settings tab", async () => {
       render(await importApp());
       await waitFor(() => {
         expect(setSizeMock).toHaveBeenCalled();
@@ -1260,8 +1261,10 @@ describe("App", () => {
         fireEvent.click(screen.getByTestId("tab-settings"));
       });
 
-      // resize effect only runs on mount, not on tab change
-      expect(setSizeMock.mock.calls.length).toBe(callCount);
+      // switching away from history restores full window height
+      expect(setSizeMock.mock.calls.length).toBeGreaterThan(callCount);
+      const lastCall = setSizeMock.mock.calls[setSizeMock.mock.calls.length - 1][0] as { width: number; height: number };
+      expect(lastCall.height).toBe(720);
     });
   });
 
