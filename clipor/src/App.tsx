@@ -49,6 +49,7 @@ function MainApp() {
   const selectOnLoadRef = useRef<"first" | "last" | null>(null);
   const selectTemplateOnLoadRef = useRef<"first" | "last" | null>(null);
   const lockInputRef = useRef<HTMLInputElement>(null);
+  const maxCardListHeightRef = useRef<number | null>(null);
   const settings = useSettings(setError);
   const history = useClipboardHistory(settings.settings.pageSize, setError);
   const templates = useTemplates(settings.settings.templatePageSize, setError);
@@ -242,6 +243,8 @@ function MainApp() {
       }
       // Sync language to the preview window (it has a separate localStorage context)
       void emit("ui://lang-change", i18n.language);
+      maxCardListHeightRef.current = null;
+      await popupWindowRef.current.setSize(new LogicalSize(COMPACT_WINDOW_WIDTH, WINDOW_HEIGHT));
       await popupWindowRef.current.show();
       await popupWindowRef.current.setFocus();
       setPopupVisible((v) => v + 1);
@@ -428,6 +431,27 @@ function MainApp() {
 
     void resizeWindow();
   }, []);
+
+  // Shrink window to fit content when history items don't fill the page
+  useEffect(() => {
+    if (activeTab !== "history" || locked || needsSetup) {
+      void popupWindowRef.current?.setSize(new LogicalSize(COMPACT_WINDOW_WIDTH, WINDOW_HEIGHT));
+      return;
+    }
+    if (history.loading) return;
+    requestAnimationFrame(() => {
+      const cardList = document.querySelector(".card-list") as HTMLElement | null;
+      if (!cardList || !popupWindowRef.current) return;
+      // Capture the max card-list height at full window size (720px) once per popup show
+      if (maxCardListHeightRef.current === null) {
+        maxCardListHeightRef.current = cardList.clientHeight;
+      }
+      const waste = Math.max(0, maxCardListHeightRef.current - cardList.scrollHeight);
+      void popupWindowRef.current.setSize(
+        new LogicalSize(COMPACT_WINDOW_WIDTH, WINDOW_HEIGHT - waste),
+      );
+    });
+  }, [history.entries, history.loading, activeTab, locked, needsSetup, popupVisible]);
 
   if (needsSetup) {
     return (
