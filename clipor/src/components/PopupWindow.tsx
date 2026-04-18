@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import ClipboardItem from "./ClipboardItem";
 import ContextMenu from "./ContextMenu";
 import type { MenuItem } from "./ContextMenu";
+import Pagination from "./Pagination";
 import SearchBar from "./SearchBar";
 import SettingsView from "./SettingsView";
 import TemplateEditor from "./TemplateEditor";
@@ -25,13 +26,15 @@ interface PopupWindowProps {
       imageData?: string | null;
     }>;
     loading: boolean;
-    loadingMore: boolean;
-    hasMore: boolean;
+    page: number;
     total: number;
+    totalPages: number;
     search: string;
     selectedEntryId: number | null;
     setSearch: (value: string) => void;
     setSelectedEntryId: (value: number) => void;
+    previousPage: () => void;
+    nextPage: () => void;
     selectEntry: (id: number) => void;
     pasteEntry: (id: number) => void;
     updateEntry: (id: number, text: string) => void;
@@ -39,7 +42,6 @@ interface PopupWindowProps {
     deleteEntry: (id: number) => void;
     setClipboardFormatted: (id: number) => void;
     setClipboardConverted: (id: number) => void;
-    loadMore: () => void;
   };
   templates: {
     groups: Array<{ id: number; name: string; sortOrder: number; createdAt: string }>;
@@ -93,8 +95,13 @@ function PopupWindow({
   const visibleTemplates = useMemo(() => templates.templates, [templates.templates]);
   const isCompactLayout = true;
 
-  // Sentinel ref for infinite scroll
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  // Refs for scroll-based page navigation
+  const cardListRef = useRef<HTMLDivElement>(null);
+  const topSentinelRef = useRef<HTMLDivElement>(null);
+  const bottomSentinelRef = useRef<HTMLDivElement>(null);
+  // Cooldown prevents back-to-back page jumps (e.g. after going to next page the
+  // list scrolls to top, which would immediately trigger previousPage).
+  const navCooldownRef = useRef(false);
 
   const tabs: PopupTab[] = ["history", "templates", "settings"];
 
@@ -118,23 +125,65 @@ function PopupWindow({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeTab, onSelectTab]);
 
-  // IntersectionObserver for infinite scroll — fires loadMore when sentinel becomes visible
+  // Scroll list to top whenever entries change (after any page navigation)
+  useEffect(() => {
+    if (cardListRef.current) {
+      cardListRef.current.scrollTop = 0;
+    }
+    // Release cooldown after the new page's entries have rendered
+    const timer = setTimeout(() => {
+      navCooldownRef.current = false;
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [history.entries]);
+
+  // IntersectionObserver: bottom sentinel → next page
   useEffect(() => {
     if (activeTab !== "history") return;
-    const sentinel = sentinelRef.current;
+    const sentinel = bottomSentinelRef.current;
     if (!sentinel) return;
 
     const observer = new IntersectionObserver(
       (observerEntries) => {
-        if (observerEntries[0].isIntersecting) {
-          history.loadMore();
+        if (
+          observerEntries[0].isIntersecting &&
+          !navCooldownRef.current &&
+          !history.loading &&
+          history.page < history.totalPages
+        ) {
+          navCooldownRef.current = true;
+          history.nextPage();
         }
       },
       { threshold: 0.1 },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [activeTab, history.loadMore]);
+  }, [activeTab, history.loading, history.nextPage, history.page, history.totalPages]);
+
+  // IntersectionObserver: top sentinel → previous page
+  useEffect(() => {
+    if (activeTab !== "history") return;
+    const sentinel = topSentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (observerEntries) => {
+        if (
+          observerEntries[0].isIntersecting &&
+          !navCooldownRef.current &&
+          !history.loading &&
+          history.page > 1
+        ) {
+          navCooldownRef.current = true;
+          history.previousPage();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [activeTab, history.loading, history.previousPage, history.page]);
 
   const handleContextMenu = useCallback((event: React.MouseEvent, entry: ClipboardEntry) => {
     setContextMenu({ x: event.clientX, y: event.clientY, entry });
@@ -283,9 +332,18 @@ function PopupWindow({
                 placeholder={t("search.placeholder_history")}
                 onChange={history.setSearch}
               />
+              <Pagination
+                page={history.page}
+                totalItems={history.total}
+                totalPages={history.totalPages}
+                onNext={history.nextPage}
+                onPrevious={history.previousPage}
+              />
             </div>
             {history.loading ? <div className="empty-state">{t("loading.message")}</div> : null}
-            <div className="card-list">
+            <div className="card-list" ref={cardListRef}>
+              {/* Top sentinel: triggers previousPage when scrolled back to top */}
+              <div ref={topSentinelRef} style={{ height: 1 }} />
               {history.entries.map((entry) => (
                 <ClipboardItem
                   key={entry.id}
@@ -296,11 +354,8 @@ function PopupWindow({
                   onContextMenu={handleContextMenu}
                 />
               ))}
-              {/* Infinite scroll sentinel */}
-              <div ref={sentinelRef} style={{ height: 1 }} />
-              {history.loadingMore ? (
-                <div className="empty-state">{t("loading.message")}</div>
-              ) : null}
+              {/* Bottom sentinel: triggers nextPage when scrolled to bottom */}
+              <div ref={bottomSentinelRef} style={{ height: 1 }} />
               {!history.loading && history.entries.length === 0 ? (
                 <div className="empty-state">{t("empty_state.no_history")}</div>
               ) : null}

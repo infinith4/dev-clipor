@@ -112,7 +112,7 @@ describe("useClipboardHistory", () => {
   });
 
   describe("setSearch", () => {
-    it("updates search and triggers a re-fetch from page 1", async () => {
+    it("updates search and resets page to 1", async () => {
       const { result } = setup();
 
       await vi.waitFor(() => {
@@ -127,28 +127,17 @@ describe("useClipboardHistory", () => {
 
       expect(result.current.search).toBe("test");
 
-      // The search change should eventually trigger a new fetch with the new term
       await vi.waitFor(() => {
-        expect(invokeMock).toHaveBeenCalledWith("get_history", expect.objectContaining({ search: "test" }));
+        expect(invokeMock).toHaveBeenCalledWith(
+          "get_history",
+          expect.objectContaining({ search: "test", page: 1 }),
+        );
       });
     });
   });
 
-  describe("infinite scroll", () => {
-    it("hasMore is false when all entries are loaded", async () => {
-      const entries = [makeEntry({ id: 1 }), makeEntry({ id: 2 })];
-      invokeMock.mockResolvedValue(makePage(entries, 2));
-
-      const { result } = renderHook(() => useClipboardHistory(10, setError));
-
-      await vi.waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(result.current.hasMore).toBe(false);
-    });
-
-    it("hasMore is true when there are more entries to load", async () => {
+  describe("pagination", () => {
+    it("nextPage increments page up to totalPages", async () => {
       const entries = [makeEntry()];
       invokeMock.mockResolvedValue(makePage(entries, 25));
 
@@ -158,40 +147,22 @@ describe("useClipboardHistory", () => {
         expect(result.current.loading).toBe(false);
       });
 
-      expect(result.current.hasMore).toBe(true);
+      expect(result.current.totalPages).toBe(3);
+
+      act(() => { result.current.nextPage(); });
+      expect(result.current.page).toBe(2);
+
+      act(() => { result.current.nextPage(); });
+      expect(result.current.page).toBe(3);
+
+      // Should not go past totalPages
+      act(() => { result.current.nextPage(); });
+      expect(result.current.page).toBe(3);
     });
 
-    it("loadMore appends entries from the next page", async () => {
-      const page1 = [makeEntry({ id: 1 }), makeEntry({ id: 2 })];
-      const page2 = [makeEntry({ id: 3 })];
-      invokeMock.mockResolvedValue(makePage(page1, 3));
-
-      const { result } = renderHook(() => useClipboardHistory(2, setError));
-
-      await vi.waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(result.current.entries).toHaveLength(2);
-      expect(result.current.hasMore).toBe(true);
-
-      invokeMock.mockResolvedValue(makePage(page2, 3));
-
-      await act(async () => {
-        result.current.loadMore();
-      });
-
-      await vi.waitFor(() => {
-        expect(result.current.loadingMore).toBe(false);
-      });
-
-      expect(result.current.entries).toHaveLength(3);
-      expect(result.current.hasMore).toBe(false);
-    });
-
-    it("loadMore does nothing when hasMore is false", async () => {
-      const entries = [makeEntry({ id: 1 })];
-      invokeMock.mockResolvedValue(makePage(entries, 1));
+    it("previousPage decrements page down to 1", async () => {
+      const entries = [makeEntry()];
+      invokeMock.mockResolvedValue(makePage(entries, 25));
 
       const { result } = renderHook(() => useClipboardHistory(10, setError));
 
@@ -199,13 +170,33 @@ describe("useClipboardHistory", () => {
         expect(result.current.loading).toBe(false);
       });
 
-      const callCountBefore = invokeMock.mock.calls.length;
+      act(() => { result.current.nextPage(); });
+      act(() => { result.current.nextPage(); });
+      expect(result.current.page).toBe(3);
 
-      act(() => {
-        result.current.loadMore();
+      act(() => { result.current.previousPage(); });
+      expect(result.current.page).toBe(2);
+
+      act(() => { result.current.previousPage(); });
+      expect(result.current.page).toBe(1);
+
+      // Should not go below 1
+      act(() => { result.current.previousPage(); });
+      expect(result.current.page).toBe(1);
+    });
+  });
+
+  describe("totalPages", () => {
+    it("returns at least 1 when total is 0", async () => {
+      invokeMock.mockResolvedValue(makePage([], 0));
+
+      const { result } = renderHook(() => useClipboardHistory(10, setError));
+
+      await vi.waitFor(() => {
+        expect(result.current.loading).toBe(false);
       });
 
-      expect(invokeMock.mock.calls.length).toBe(callCountBefore);
+      expect(result.current.totalPages).toBe(1);
     });
   });
 
