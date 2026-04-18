@@ -14,7 +14,7 @@ Windows 向けのクリップボードマネージャーアプリケーション
   <tr>
     <td align="center" width="33%">
       <b>Microsoft Store</b><br><br>
-      <a href="https://apps.microsoft.com/detail/cd388dc7-a590-4a5a-b473-cc619446722f">
+      <a href="https://apps.microsoft.com/detail/9P0CRL2FRKF9?hl=ja&gl=JP&ocid=pdpshare">
         <img src="https://developer.microsoft.com/store/badges/images/Japanese_get-it-from-MS.png" alt="Microsoft Store からダウンロード" width="180">
       </a>
     </td>
