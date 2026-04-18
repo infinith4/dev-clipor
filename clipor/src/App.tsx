@@ -443,13 +443,15 @@ function MainApp() {
       history={{
         entries: history.entries,
         loading: history.loading,
-        loadingMore: history.loadingMore,
-        hasMore: history.hasMore,
+        page: history.page,
         total: history.total,
+        totalPages: history.totalPages,
         search: history.search,
         selectedEntryId: selectedHistoryId,
         setSearch: history.setSearch,
         setSelectedEntryId: setSelectedHistoryId,
+        previousPage: history.previousPage,
+        nextPage: history.nextPage,
         selectEntry: history.selectEntry,
         pasteEntry: history.selectEntry,
         updateEntry: history.updateEntry,
@@ -457,7 +459,6 @@ function MainApp() {
         deleteEntry: history.deleteEntry,
         setClipboardFormatted: history.setClipboardFormatted,
         setClipboardConverted: history.setClipboardConverted,
-        loadMore: history.loadMore,
       }}
       onSelectTab={setActiveTab}
       onDismissError={() => setError(null)}
