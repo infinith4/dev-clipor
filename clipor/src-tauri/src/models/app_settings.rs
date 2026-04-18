@@ -47,7 +47,7 @@ impl Default for AppSettings {
             preview_image_height: 520,
             require_password: false,
             remember_last_tab: false,
-            template_page_size: 10,
+            template_page_size: 8,
             password_salt: None,
             password_verify: None,
         }
