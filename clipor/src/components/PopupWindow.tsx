@@ -46,12 +46,18 @@ interface PopupWindowProps {
   templates: {
     groups: Array<{ id: number; name: string; sortOrder: number; createdAt: string }>;
     templates: TemplateEntry[];
+    loading: boolean;
+    page: number;
+    total: number;
+    totalPages: number;
     search: string;
     selectedGroupId: number | null;
     selectedTemplateId: number | null;
     setSearch: (value: string) => void;
     setSelectedGroupId: (value: number | null) => void;
     setSelectedTemplate: (template: TemplateEntry) => void;
+    previousPage: () => void;
+    nextPage: () => void;
     pasteTemplate: (id: number) => Promise<void>;
     saveTemplate: (payload: {
       id?: number;
@@ -95,13 +101,16 @@ function PopupWindow({
   const visibleTemplates = useMemo(() => templates.templates, [templates.templates]);
   const isCompactLayout = true;
 
-  // Refs for scroll-based page navigation
+  // Refs for scroll-based page navigation — history
   const cardListRef = useRef<HTMLDivElement>(null);
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
-  // Cooldown prevents back-to-back page jumps (e.g. after going to next page the
-  // list scrolls to top, which would immediately trigger previousPage).
   const navCooldownRef = useRef(false);
+  // Refs for scroll-based page navigation — templates
+  const cardListTemplateRef = useRef<HTMLDivElement>(null);
+  const topTemplSentinelRef = useRef<HTMLDivElement>(null);
+  const bottomTemplSentinelRef = useRef<HTMLDivElement>(null);
+  const navCooldownTemplateRef = useRef(false);
 
   const tabs: PopupTab[] = ["history", "templates", "settings"];
 
@@ -110,13 +119,12 @@ function PopupWindow({
       const tag = (event.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
-      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      if (event.key === "Tab") {
         event.preventDefault();
         const currentIndex = tabs.indexOf(activeTab);
-        const nextIndex =
-          event.key === "ArrowRight"
-            ? (currentIndex + 1) % tabs.length
-            : (currentIndex - 1 + tabs.length) % tabs.length;
+        const nextIndex = event.shiftKey
+          ? (currentIndex - 1 + tabs.length) % tabs.length
+          : (currentIndex + 1) % tabs.length;
         onSelectTab(tabs[nextIndex]);
       }
     };
@@ -186,6 +194,66 @@ function PopupWindow({
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [activeTab, history.loading, history.previousPage, history.page]);
+
+  // Scroll templates list to top whenever template entries change
+  useEffect(() => {
+    navCooldownTemplateRef.current = true;
+    if (cardListTemplateRef.current) {
+      cardListTemplateRef.current.scrollTop = 0;
+    }
+    const timer = setTimeout(() => {
+      navCooldownTemplateRef.current = false;
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [templates.templates]);
+
+  // IntersectionObserver: templates bottom sentinel → next page
+  useEffect(() => {
+    if (activeTab !== "templates") return;
+    const sentinel = bottomTemplSentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (observerEntries) => {
+        if (
+          observerEntries[0].isIntersecting &&
+          !navCooldownTemplateRef.current &&
+          !templates.loading &&
+          templates.page < templates.totalPages
+        ) {
+          navCooldownTemplateRef.current = true;
+          templates.nextPage();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [activeTab, templates.loading, templates.nextPage, templates.page, templates.totalPages]);
+
+  // IntersectionObserver: templates top sentinel → previous page
+  useEffect(() => {
+    if (activeTab !== "templates") return;
+    const sentinel = topTemplSentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (observerEntries) => {
+        if (
+          observerEntries[0].isIntersecting &&
+          !navCooldownTemplateRef.current &&
+          !templates.loading &&
+          templates.page > 1
+        ) {
+          navCooldownTemplateRef.current = true;
+          templates.previousPage();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [activeTab, templates.loading, templates.previousPage, templates.page]);
 
   const handleContextMenu = useCallback((event: React.MouseEvent, entry: ClipboardEntry) => {
     setContextMenu({ x: event.clientX, y: event.clientY, entry });
@@ -426,8 +494,17 @@ function PopupWindow({
                   ))}
                 </select>
               </div>
+              <Pagination
+                page={templates.page}
+                totalItems={templates.total}
+                totalPages={templates.totalPages}
+                onNext={templates.nextPage}
+                onPrevious={templates.previousPage}
+              />
             </div>
-            <div className="card-list">
+            {templates.loading ? <div className="empty-state">{t("loading.message")}</div> : null}
+            <div className="card-list" ref={cardListTemplateRef}>
+              <div ref={topTemplSentinelRef} style={{ height: 1 }} />
               <TemplateList
                 templates={visibleTemplates}
                 selectedTemplateId={templates.selectedTemplateId}
@@ -435,6 +512,7 @@ function PopupWindow({
                 onPaste={templates.pasteTemplate}
                 onContextMenu={handleTemplateContextMenu}
               />
+              <div ref={bottomTemplSentinelRef} style={{ height: 1 }} />
             </div>
 
             {templateContextMenu ? (
