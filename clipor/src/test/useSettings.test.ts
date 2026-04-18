@@ -24,6 +24,7 @@ const defaultSettings: AppSettings = {
   previewImageHeight: 520,
   requirePassword: false,
   rememberLastTab: false,
+  templatePageSize: 10,
 };
 
 const customSettings: AppSettings = {
