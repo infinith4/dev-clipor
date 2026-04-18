@@ -164,6 +164,26 @@ function SettingsView({ settings, onSave, onPasswordChanged }: SettingsViewProps
           }}
         />
       </label>
+      <label>
+        <span>{t("settings.label_template_page_size")}</span>
+        <input
+          type="number"
+          min={5}
+          max={100}
+          value={draft.templatePageSize}
+          onChange={(event) =>
+            setDraft((current) => ({
+              ...current,
+              templatePageSize: Number(event.target.value),
+            }))
+          }
+          onBlur={(event) => {
+            const next = { ...draft, templatePageSize: Number(event.target.value) };
+            setDraft(next);
+            void triggerSave(next);
+          }}
+        />
+      </label>
       <fieldset className="activation-mode-fieldset">
         <legend>{t("settings.label_activation")}</legend>
         {(

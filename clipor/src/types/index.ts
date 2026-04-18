@@ -74,4 +74,5 @@ export interface AppSettings {
   previewImageHeight: number;
   requirePassword: boolean;
   rememberLastTab: boolean;
+  templatePageSize: number;
 }

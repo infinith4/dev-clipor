@@ -77,6 +77,7 @@
   "settings": {
     "label_history_limit": "History limit",
     "label_page_size": "Page size",
+    "label_template_page_size": "Templates per page",
     "label_activation": "Activation",
     "activation_hotkey": "Hotkey",
     "activation_double_ctrl": "Ctrl x2",
