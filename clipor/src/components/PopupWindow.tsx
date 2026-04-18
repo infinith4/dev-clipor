@@ -127,6 +127,8 @@ function PopupWindow({
 
   // Scroll list to top whenever entries change (after any page navigation)
   useEffect(() => {
+    // Activate cooldown immediately so sentinels don't fire before the user can see the page
+    navCooldownRef.current = true;
     if (cardListRef.current) {
       cardListRef.current.scrollTop = 0;
     }

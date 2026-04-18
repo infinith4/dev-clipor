@@ -224,9 +224,13 @@ function MainApp() {
       await popupWindowRef.current.setFocus();
       setPopupVisible((v) => v + 1);
     });
-    const unlistenTabPromise = listen<string>("ui://select-tab", (event) => {
+    const unlistenTabPromise = listen<string>("ui://select-tab", async (event) => {
       if (event.payload === "history" || event.payload === "templates" || event.payload === "settings") {
         setActiveTab(event.payload);
+        if (event.payload === "history") {
+          setSelectedHistoryId(null);
+          await Promise.all([history.refresh(), templates.refresh()]);
+        }
       }
     });
 
