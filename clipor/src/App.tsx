@@ -48,6 +48,7 @@ function MainApp() {
   const popupWindowRef = useRef<Window | null>(null);
   const selectOnLoadRef = useRef<"first" | "last" | null>(null);
   const selectTemplateOnLoadRef = useRef<"first" | "last" | null>(null);
+  const lockInputRef = useRef<HTMLInputElement>(null);
   const settings = useSettings(setError);
   const history = useClipboardHistory(settings.settings.pageSize, setError);
   const templates = useTemplates(settings.settings.templatePageSize, setError);
@@ -67,6 +68,13 @@ function MainApp() {
       setNeedsSetup(true);
     }
   }, [settings.settings.requirePassword, settings.setupSkipped]);
+
+  // Keep lock screen input focused whenever lock screen is shown or popup appears
+  useEffect(() => {
+    if (locked) {
+      lockInputRef.current?.focus();
+    }
+  }, [locked, popupVisible]);
 
   const handleSetupPassword = useCallback(async () => {
     setSetupError(null);
@@ -488,10 +496,10 @@ function MainApp() {
             <label>
               <span>{t("unlock.label_password")}</span>
               <input
+                ref={lockInputRef}
                 type="password"
                 value={lockPassword}
                 onChange={(e) => setLockPassword(e.target.value)}
-                autoFocus
               />
             </label>
             {lockError ? (
