@@ -50,7 +50,7 @@ function MainApp() {
   const selectTemplateOnLoadRef = useRef<"first" | "last" | null>(null);
   const settings = useSettings(setError);
   const history = useClipboardHistory(settings.settings.pageSize, setError);
-  const templates = useTemplates(settings.settings.pageSize, setError);
+  const templates = useTemplates(settings.settings.templatePageSize, setError);
 
   const hidePopup = useCallback(async () => {
     await invoke("hide_preview").catch(() => {});

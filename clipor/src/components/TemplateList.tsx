@@ -23,11 +23,10 @@ function TemplateItemRow({
   onContextMenu?: (event: React.MouseEvent, template: TemplateEntry) => void;
 }) {
   const isImage = template.contentType === "image" && template.imageData;
-  const preview = template.text.replace(/\r?\n/g, " ").slice(0, 60);
 
   return (
     <article
-      className={`panel-card${isSelected ? " selected" : ""}`}
+      className={`panel-card clipboard-item${isSelected ? " selected" : ""}`}
       role="button"
       tabIndex={0}
       onClick={() => onPaste(template.id)}
@@ -38,21 +37,20 @@ function TemplateItemRow({
         onContextMenu(event, template);
       } : undefined}
     >
-      <div className="template-header">
-        <div>
-          <h3>{template.title}</h3>
-          <span className="badge">{template.groupName}</span>
-        </div>
+      <div className="clipboard-body">
+        {isImage ? (
+          <img
+            src={`data:image/png;base64,${template.imageData}`}
+            alt={template.title}
+            className="clipboard-thumbnail"
+          />
+        ) : (
+          <p>{template.title}</p>
+        )}
       </div>
-      {isImage ? (
-        <img
-          src={`data:image/png;base64,${template.imageData}`}
-          alt={template.title}
-          className="template-image-thumb"
-        />
-      ) : (
-        <p className="template-text">{preview}</p>
-      )}
+      <div className="clipboard-meta">
+        <span className="badge">{template.groupName}</span>
+      </div>
     </article>
   );
 }

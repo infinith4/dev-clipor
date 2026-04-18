@@ -126,6 +126,7 @@ vi.mock("../hooks/useSettings", () => ({
       previewImageWidth: 520,
       previewImageHeight: 520,
       requirePassword: settingsState.requirePassword,
+      templatePageSize: 10,
     },
     setupSkipped: settingsState.setupSkipped,
     refresh: settingsRefreshMock,

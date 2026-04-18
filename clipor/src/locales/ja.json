@@ -77,6 +77,7 @@
   "settings": {
     "label_history_limit": "履歴保持数",
     "label_page_size": "ページサイズ",
+    "label_template_page_size": "定型文のページサイズ",
     "label_activation": "起動方法",
     "activation_hotkey": "ホットキー",
     "activation_double_ctrl": "Ctrl x2",

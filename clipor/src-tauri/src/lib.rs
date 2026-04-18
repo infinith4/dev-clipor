@@ -75,7 +75,6 @@ pub fn run() {
 
     tauri::Builder::default()
         .on_window_event({
-            let history_store = history_store.clone();
             let settings_service = settings_service.clone();
             let popup_shown_at = popup_shown_at.clone();
             move |window, event| {
@@ -92,17 +91,7 @@ pub fn run() {
                     }
 
                     let settings = settings_service.load().unwrap_or_default();
-                    let require_pw = settings.require_password;
                     let blur_delay_ms = settings.blur_delay_ms;
-                    let has_key = history_store.has_encryption_key();
-                    let locked = require_pw && !has_key;
-                    eprintln!(
-                        "[blur] require_password={}, has_encryption_key={}, locked={}",
-                        require_pw, has_key, locked
-                    );
-                    if locked {
-                        return;
-                    }
 
                     let recently_shown = popup_shown_at
                         .lock()
