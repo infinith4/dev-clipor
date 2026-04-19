@@ -10,6 +10,7 @@ import { useClipboardHistory } from "./hooks/useClipboardHistory";
 import { useSettings } from "./hooks/useSettings";
 import { useTemplates } from "./hooks/useTemplates";
 import type { PopupTab } from "./types";
+import { getElementStackHeight } from "./utils/layout";
 
 const COMPACT_WINDOW_WIDTH = 230;
 const WINDOW_HEIGHT = 720;
@@ -432,7 +433,7 @@ function MainApp() {
     void resizeWindow();
   }, []);
 
-  // Shrink window to fit content when history items don't fill the page
+  // Shrink the popup when the current history page leaves unused space below the last item.
   useEffect(() => {
     if (activeTab !== "history" || locked || needsSetup) {
       void popupWindowRef.current?.setSize(new LogicalSize(COMPACT_WINDOW_WIDTH, WINDOW_HEIGHT));
@@ -442,11 +443,13 @@ function MainApp() {
     requestAnimationFrame(() => {
       const cardList = document.querySelector(".card-list") as HTMLElement | null;
       if (!cardList || !popupWindowRef.current) return;
-      // Capture the max card-list height at full window size (720px) once per popup show
+      // Capture the max card-list height at full window size (720px) once per popup show.
       if (maxCardListHeightRef.current === null) {
         maxCardListHeightRef.current = cardList.clientHeight;
       }
-      const waste = Math.max(0, maxCardListHeightRef.current - cardList.scrollHeight);
+      const contentHeight = getElementStackHeight(cardList);
+      if (contentHeight <= 0) return;
+      const waste = Math.max(0, maxCardListHeightRef.current - contentHeight);
       void popupWindowRef.current.setSize(
         new LogicalSize(COMPACT_WINDOW_WIDTH, WINDOW_HEIGHT - waste),
       );
