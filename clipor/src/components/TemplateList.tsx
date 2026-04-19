@@ -48,9 +48,6 @@ function TemplateItemRow({
           <p>{template.title}</p>
         )}
       </div>
-      <div className="clipboard-meta">
-        <span className="badge">{template.groupName}</span>
-      </div>
     </article>
   );
 }

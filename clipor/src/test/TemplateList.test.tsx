@@ -42,9 +42,9 @@ describe("TemplateList", () => {
       expect(screen.getByText("Greeting")).toBeInTheDocument();
     });
 
-    it("renders group badge", () => {
+    it("does not render group badge", () => {
       render(<TemplateList {...defaultProps()} />);
-      expect(screen.getByText("Default")).toBeInTheDocument();
+      expect(screen.queryByText("Default")).not.toBeInTheDocument();
     });
 
     it("renders title for text templates", () => {
