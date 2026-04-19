@@ -379,6 +379,103 @@ describe("PopupWindow", () => {
     });
   });
 
+  describe("wheel pagination", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("moves to the next history page on wheel-down at the bottom", () => {
+      vi.useFakeTimers();
+      const nextPage = vi.fn();
+      const entries = [makeEntry({ id: 1, text: "Item 1" })];
+      const { container } = render(
+        <PopupWindow
+          {...makeProps({
+            history: {
+              entries,
+              page: 1,
+              total: 40,
+              totalPages: 2,
+              nextPage,
+            },
+          })}
+        />,
+      );
+
+      vi.advanceTimersByTime(401);
+
+      const cardList = container.querySelector(".card-list") as HTMLDivElement;
+      Object.defineProperty(cardList, "scrollTop", { configurable: true, value: 0, writable: true });
+      Object.defineProperty(cardList, "scrollHeight", { configurable: true, value: 120 });
+      Object.defineProperty(cardList, "clientHeight", { configurable: true, value: 120 });
+
+      fireEvent.wheel(cardList, { deltaY: 120 });
+
+      expect(nextPage).toHaveBeenCalledTimes(1);
+    });
+
+    it("moves to the previous history page on wheel-up at the top", () => {
+      vi.useFakeTimers();
+      const previousPage = vi.fn();
+      const entries = [makeEntry({ id: 1, text: "Item 1" })];
+      const { container } = render(
+        <PopupWindow
+          {...makeProps({
+            history: {
+              entries,
+              page: 2,
+              total: 40,
+              totalPages: 2,
+              previousPage,
+            },
+          })}
+        />,
+      );
+
+      vi.advanceTimersByTime(401);
+
+      const cardList = container.querySelector(".card-list") as HTMLDivElement;
+      Object.defineProperty(cardList, "scrollTop", { configurable: true, value: 0, writable: true });
+      Object.defineProperty(cardList, "scrollHeight", { configurable: true, value: 120 });
+      Object.defineProperty(cardList, "clientHeight", { configurable: true, value: 120 });
+
+      fireEvent.wheel(cardList, { deltaY: -120 });
+
+      expect(previousPage).toHaveBeenCalledTimes(1);
+    });
+
+    it("moves to the next template page on wheel-down at the bottom", () => {
+      vi.useFakeTimers();
+      const nextPage = vi.fn();
+      const { container } = render(
+        <PopupWindow
+          {...makeProps({
+            activeTab: "templates",
+            templates: {
+              templates: [makeTemplate({ id: 1, title: "Template 1" })],
+              page: 1,
+              total: 16,
+              totalPages: 2,
+              nextPage,
+            },
+          })}
+        />,
+      );
+
+      vi.advanceTimersByTime(401);
+
+      const lists = container.querySelectorAll(".card-list");
+      const cardList = lists[0] as HTMLDivElement;
+      Object.defineProperty(cardList, "scrollTop", { configurable: true, value: 0, writable: true });
+      Object.defineProperty(cardList, "scrollHeight", { configurable: true, value: 120 });
+      Object.defineProperty(cardList, "clientHeight", { configurable: true, value: 120 });
+
+      fireEvent.wheel(cardList, { deltaY: 120 });
+
+      expect(nextPage).toHaveBeenCalledTimes(1);
+    });
+  });
+
   /* ============================================================== */
   /*  7. Context menu (right-click)                                 */
   /* ============================================================== */

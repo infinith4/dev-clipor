@@ -201,6 +201,54 @@ function PopupWindow({
     return () => cardList.removeEventListener("scroll", handleScroll);
   }, [activeTab, templates.loading, templates.nextPage, templates.page, templates.previousPage, templates.totalPages]);
 
+  const handleHistoryWheel = useCallback(
+    (event: React.WheelEvent<HTMLDivElement>) => {
+      const cardList = cardListRef.current;
+      if (!cardList || navCooldownRef.current || history.loading) {
+        return;
+      }
+
+      const { scrollTop, scrollHeight, clientHeight } = cardList;
+      const atTop = scrollTop <= 0;
+      const atBottom = scrollHeight - scrollTop - clientHeight <= 1;
+
+      if (event.deltaY > 0 && atBottom && history.page < history.totalPages) {
+        event.preventDefault();
+        navCooldownRef.current = true;
+        history.nextPage();
+      } else if (event.deltaY < 0 && atTop && history.page > 1) {
+        event.preventDefault();
+        navCooldownRef.current = true;
+        history.previousPage();
+      }
+    },
+    [history.loading, history.nextPage, history.page, history.previousPage, history.totalPages],
+  );
+
+  const handleTemplatesWheel = useCallback(
+    (event: React.WheelEvent<HTMLDivElement>) => {
+      const cardList = cardListTemplateRef.current;
+      if (!cardList || navCooldownTemplateRef.current || templates.loading) {
+        return;
+      }
+
+      const { scrollTop, scrollHeight, clientHeight } = cardList;
+      const atTop = scrollTop <= 0;
+      const atBottom = scrollHeight - scrollTop - clientHeight <= 1;
+
+      if (event.deltaY > 0 && atBottom && templates.page < templates.totalPages) {
+        event.preventDefault();
+        navCooldownTemplateRef.current = true;
+        templates.nextPage();
+      } else if (event.deltaY < 0 && atTop && templates.page > 1) {
+        event.preventDefault();
+        navCooldownTemplateRef.current = true;
+        templates.previousPage();
+      }
+    },
+    [templates.loading, templates.nextPage, templates.page, templates.previousPage, templates.totalPages],
+  );
+
   const handleContextMenu = useCallback((event: React.MouseEvent, entry: ClipboardEntry) => {
     setContextMenu({ x: event.clientX, y: event.clientY, entry });
   }, []);
@@ -357,7 +405,7 @@ function PopupWindow({
               />
             </div>
             {history.loading ? <div className="empty-state">{t("loading.message")}</div> : null}
-            <div className="card-list" ref={cardListRef}>
+            <div className="card-list" ref={cardListRef} onWheel={handleHistoryWheel}>
               {history.entries.map((entry) => (
                 <ClipboardItem
                   key={entry.id}
@@ -445,7 +493,7 @@ function PopupWindow({
               />
             </div>
             {templates.loading ? <div className="empty-state">{t("loading.message")}</div> : null}
-            <div className="card-list" ref={cardListTemplateRef}>
+            <div className="card-list" ref={cardListTemplateRef} onWheel={handleTemplatesWheel}>
               <TemplateList
                 templates={visibleTemplates}
                 selectedTemplateId={templates.selectedTemplateId}
