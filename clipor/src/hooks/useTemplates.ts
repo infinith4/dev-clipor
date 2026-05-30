@@ -135,6 +135,23 @@ export function useTemplates(initialPageSize: number, setError: SetError) {
     [refresh, setError],
   );
 
+  const reorderTemplates = useCallback(
+    async (ids: number[]) => {
+      // Optimistic update
+      setTemplates((current) => {
+        const map = new Map(current.map((t) => [t.id, t]));
+        return ids.map((id, index) => ({ ...map.get(id)!, sortOrder: index })).filter(Boolean);
+      });
+      try {
+        await invoke("reorder_templates", { ids });
+      } catch (error) {
+        setError(error instanceof Error ? error.message : i18n.t("errors.templates_save"));
+        await refresh();
+      }
+    },
+    [refresh, setError],
+  );
+
   const exportTemplates = useCallback(async () => {
     try {
       const payload = await invoke<TemplateExportPayload>("export_templates");
@@ -204,5 +221,6 @@ export function useTemplates(initialPageSize: number, setError: SetError) {
     deleteTemplate,
     exportTemplates,
     importTemplates,
+    reorderTemplates,
   };
 }

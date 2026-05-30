@@ -307,6 +307,27 @@ textarea {
   border-color: var(--selected-bg);
 }
 
+.panel-card.drag-over {
+  border-top: 2px solid var(--accent);
+}
+
+.panel-card[draggable="true"] {
+  cursor: grab;
+}
+
+.panel-card[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.drag-handle {
+  font-size: 10px;
+  color: var(--muted);
+  margin-right: 4px;
+  flex-shrink: 0;
+  user-select: none;
+  cursor: grab;
+}
+
 .panel-card.selected .clipboard-meta,
 .panel-card.selected .badge,
 .panel-card.selected .template-header small {
@@ -321,6 +342,8 @@ textarea {
 }
 
 .clipboard-body {
+  display: flex;
+  align-items: center;
   padding: 0;
   border: none;
   background: transparent;

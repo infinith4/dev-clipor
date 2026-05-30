@@ -69,6 +69,7 @@ interface PopupWindowProps {
       newGroupName?: string;
     }) => void;
     deleteTemplate: (id: number) => void;
+    reorderTemplates: (ids: number[]) => void;
     exportTemplates: () => void;
     importTemplates: (json: string) => void;
   };
@@ -500,6 +501,7 @@ function PopupWindow({
                 onSelect={templates.setSelectedTemplate}
                 onPaste={templates.pasteTemplate}
                 onContextMenu={handleTemplateContextMenu}
+                onReorder={templates.reorderTemplates}
               />
             </div>
 

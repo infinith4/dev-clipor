@@ -123,6 +123,7 @@ function makeProps(overrides: PropsOverrides = {}) {
       pasteTemplate: vi.fn().mockResolvedValue(undefined),
       saveTemplate: vi.fn(),
       deleteTemplate: vi.fn(),
+      reorderTemplates: vi.fn(),
       exportTemplates: vi.fn(),
       importTemplates: vi.fn(),
       ...tmplOverrides,

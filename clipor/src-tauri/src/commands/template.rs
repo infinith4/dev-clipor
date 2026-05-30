@@ -48,6 +48,11 @@ pub fn upsert_template(
     })
 }
 
+#[tauri::command(rename_all = "camelCase")]
+pub fn reorder_templates(state: State<'_, AppState>, ids: Vec<i64>) -> Result<(), String> {
+    state.template_store.reorder_templates(&ids)
+}
+
 #[tauri::command]
 pub fn delete_template(state: State<'_, AppState>, id: i64) -> Result<(), String> {
     state.template_store.delete_template(id)

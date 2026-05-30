@@ -195,6 +195,20 @@ impl TemplateStore {
         Ok(())
     }
 
+    pub fn reorder_templates(&self, ids: &[i64]) -> Result<(), String> {
+        let mut connection = self.connect()?;
+        let transaction = connection.transaction().map_err(|error| error.to_string())?;
+        for (index, &id) in ids.iter().enumerate() {
+            transaction
+                .execute(
+                    "UPDATE templates SET sort_order = ?1 WHERE id = ?2",
+                    params![index as i64, id],
+                )
+                .map_err(|error| error.to_string())?;
+        }
+        transaction.commit().map_err(|error| error.to_string())
+    }
+
     pub fn delete_template(&self, id: i64) -> Result<(), String> {
         let connection = self.connect()?;
         let _ = self.resolve_write_encryption(&connection)?;

@@ -27,7 +27,7 @@ use crate::commands::settings::{
 };
 use crate::commands::template::{
     delete_template, export_templates, get_template_groups, get_templates, import_templates,
-    paste_template, upsert_template,
+    paste_template, reorder_templates, upsert_template,
 };
 use crate::models::app_settings::AppSettings;
 use crate::services::clipboard_history_store::ClipboardHistoryStore;
@@ -272,6 +272,7 @@ pub fn run() {
             get_templates,
             upsert_template,
             delete_template,
+            reorder_templates,
             paste_template,
             export_templates,
             import_templates,
