@@ -89,48 +89,65 @@ function TemplateList({
   onReorder,
 }: TemplateListProps) {
   const { t } = useTranslation();
-  const [dragSourceId, setDragSourceId] = useState<number | null>(null);
+
+  // refs for synchronous access inside drag event handlers
+  const dragSourceIdRef = useRef<number | null>(null);
+  const orderedIdsRef = useRef<number[]>([]);
+
+  // state only to trigger re-render for visual update
+  const [displayTemplates, setDisplayTemplates] = useState<TemplateEntry[]>(templates);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
-  const orderedRef = useRef<number[]>([]);
+
+  // Sync displayTemplates when templates prop changes (and no drag in progress)
+  const prevTemplatesRef = useRef(templates);
+  if (prevTemplatesRef.current !== templates && dragSourceIdRef.current === null) {
+    prevTemplatesRef.current = templates;
+    setDisplayTemplates(templates);
+  }
 
   if (templates.length === 0) {
     return <div className="empty-state">{t("empty_state.no_templates")}</div>;
   }
 
   const handleDragStart = (id: number) => {
-    setDragSourceId(id);
-    orderedRef.current = templates.map((t) => t.id);
+    dragSourceIdRef.current = id;
+    orderedIdsRef.current = templates.map((t) => t.id);
+    setDisplayTemplates([...templates]);
   };
 
   const handleDragEnter = (id: number) => {
-    if (dragSourceId === null || dragSourceId === id) return;
+    const sourceId = dragSourceIdRef.current;
+    if (sourceId === null || sourceId === id) return;
+
     setDragOverId(id);
-    const current = [...orderedRef.current];
-    const fromIndex = current.indexOf(dragSourceId);
+
+    const current = [...orderedIdsRef.current];
+    const fromIndex = current.indexOf(sourceId);
     const toIndex = current.indexOf(id);
     if (fromIndex === -1 || toIndex === -1) return;
     current.splice(fromIndex, 1);
-    current.splice(toIndex, 0, dragSourceId);
-    orderedRef.current = current;
+    current.splice(toIndex, 0, sourceId);
+    orderedIdsRef.current = current;
+
+    // Re-build display list from the new order
+    const templateMap = new Map(templates.map((t) => [t.id, t]));
+    const reordered = current
+      .map((tid) => templateMap.get(tid))
+      .filter((t): t is TemplateEntry => t !== undefined);
+    setDisplayTemplates(reordered);
   };
 
   const handleDragEnd = () => {
-    if (dragSourceId !== null && onReorder) {
-      onReorder(orderedRef.current);
+    if (dragSourceIdRef.current !== null && onReorder) {
+      onReorder(orderedIdsRef.current);
     }
-    setDragSourceId(null);
+    dragSourceIdRef.current = null;
     setDragOverId(null);
   };
 
-  const displayOrder = dragSourceId !== null
-    ? orderedRef.current
-        .map((id) => templates.find((t) => t.id === id))
-        .filter((t): t is TemplateEntry => t !== undefined)
-    : templates;
-
   return (
     <div className="card-list">
-      {displayOrder.map((template) => (
+      {displayTemplates.map((template) => (
         <TemplateItemRow
           key={template.id}
           template={template}
