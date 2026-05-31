@@ -23,7 +23,9 @@
     "convert_label": "Convert",
     "delete": "Delete",
     "edit": "Edit",
-    "register_as_template": "Save as template"
+    "register_as_template": "Save as template",
+    "move_up": "Move up",
+    "move_down": "Move down"
   },
   "transform": {
     "add_comment_prefix": "Add comment prefix (// )",

@@ -297,15 +297,43 @@ function PopupWindow({
   );
 
   const buildTemplateContextMenuItems = useCallback(
-    (template: TemplateEntry): MenuItem[] => [
-      {
-        label: t("context_menu.delete"),
-        action: () => void templates.deleteTemplate(template.id),
-        danger: true,
-      },
-      ...buildTransformMenus(template.text),
-    ],
-    [templates, buildTransformMenus],
+    (template: TemplateEntry): MenuItem[] => {
+      const ids = visibleTemplates.map((t) => t.id);
+      const idx = ids.indexOf(template.id);
+      const moveUp = idx > 0
+        ? [{
+            label: t("context_menu.move_up"),
+            action: () => {
+              const next = [...ids];
+              [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+              void templates.reorderTemplates(next);
+              closeTemplateContextMenu();
+            },
+          }]
+        : [];
+      const moveDown = idx < ids.length - 1
+        ? [{
+            label: t("context_menu.move_down"),
+            action: () => {
+              const next = [...ids];
+              [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+              void templates.reorderTemplates(next);
+              closeTemplateContextMenu();
+            },
+          }]
+        : [];
+      return [
+        ...moveUp,
+        ...moveDown,
+        {
+          label: t("context_menu.delete"),
+          action: () => void templates.deleteTemplate(template.id),
+          danger: true,
+        },
+        ...buildTransformMenus(template.text),
+      ];
+    },
+    [templates, visibleTemplates, closeTemplateContextMenu, buildTransformMenus, t],
   );
 
   const buildContextMenuItems = useCallback(

@@ -23,7 +23,9 @@
     "convert_label": "変換",
     "delete": "削除",
     "edit": "編集",
-    "register_as_template": "定型文に登録"
+    "register_as_template": "定型文に登録",
+    "move_up": "上へ移動",
+    "move_down": "下へ移動"
   },
   "transform": {
     "add_comment_prefix": "コメントを付加 (// )",

@@ -233,29 +233,38 @@ function MainApp() {
 
   useEffect(() => {
     const unlistenPopupPromise = listen("hotkey://toggle-popup", async () => {
-      // Reset selection so the first item is focused after data loads
       setSelectedHistoryId(null);
-      await Promise.all([history.refresh(), templates.refresh()]);
-      if (!popupWindowRef.current) {
-        return;
-      }
       if (!settings.settings.rememberLastTab) {
         setActiveTab("history");
       }
-      // Sync language to the preview window (it has a separate localStorage context)
       void emit("ui://lang-change", i18n.language);
       maxCardListHeightRef.current = null;
-      await popupWindowRef.current.setSize(new LogicalSize(COMPACT_WINDOW_WIDTH, WINDOW_HEIGHT));
-      await popupWindowRef.current.show();
-      await popupWindowRef.current.setFocus();
+
+      // Show popup immediately without waiting for data
+      if (popupWindowRef.current) {
+        await popupWindowRef.current.setSize(new LogicalSize(COMPACT_WINDOW_WIDTH, WINDOW_HEIGHT));
+        await popupWindowRef.current.show();
+        await popupWindowRef.current.setFocus();
+      }
       setPopupVisible((v) => v + 1);
+
+      // Background refreshes: the clipboard monitor polls every 400ms so the
+      // entry copied just before opening may not be in DB yet. Refresh at
+      // 0 / 300 / 700ms to catch it without blocking the popup display.
+      void history.refresh();
+      void templates.refresh();
+      setTimeout(() => { void history.refresh(); }, 300);
+      setTimeout(() => { void history.refresh(); }, 700);
     });
     const unlistenTabPromise = listen<string>("ui://select-tab", async (event) => {
       if (event.payload === "history" || event.payload === "templates" || event.payload === "settings") {
         setActiveTab(event.payload);
         if (event.payload === "history") {
           setSelectedHistoryId(null);
-          await Promise.all([history.refresh(), templates.refresh()]);
+          void history.refresh();
+          void templates.refresh();
+          setTimeout(() => { void history.refresh(); }, 300);
+          setTimeout(() => { void history.refresh(); }, 700);
         }
       }
     });
